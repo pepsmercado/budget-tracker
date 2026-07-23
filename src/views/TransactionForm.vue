@@ -67,9 +67,9 @@ async function handleSubmit() {
 
 <template>
   <div class="max-w-lg">
-    <h2 class="text-2xl font-extrabold text-charcoal mb-6">{{ isEdit ? 'Edit' : 'New' }} Transaction</h2>
+    <h2 class="text-lg font-medium text-mushroom-950 mb-4">{{ isEdit ? 'Edit' : 'New' }} Transaction</h2>
 
-    <form @submit.prevent="handleSubmit" class="card-elevated p-6 space-y-4">
+    <form @submit.prevent="handleSubmit" class="card-elevated p-5 space-y-4">
       <div>
         <label class="label-text">Date</label>
         <input v-model="form.date" type="date" required class="input-field" />
@@ -92,7 +92,7 @@ async function handleSubmit() {
         </select>
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="label-text">Amount</label>
           <input v-model="form.amount" type="number" step="0.01" min="0.01" required class="input-field" />
@@ -116,7 +116,7 @@ async function handleSubmit() {
         <input v-model="form.description" class="input-field" placeholder="Optional note" />
       </div>
 
-      <div class="flex gap-3 pt-2">
+      <div class="flex gap-2 pt-1">
         <button type="submit" :disabled="loading" class="btn-primary disabled:opacity-50">
           {{ loading ? 'Saving...' : 'Save' }}
         </button>

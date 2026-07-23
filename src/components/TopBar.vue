@@ -14,13 +14,11 @@ const totalNetWorth = computed(() => {
 </script>
 
 <template>
-  <header class="h-16 bg-white border-b border-cream-dark flex items-center justify-between px-6">
+  <header class="h-12 bg-white border-b border-mushroom-200 flex items-center justify-between px-5">
     <div></div>
-    <div class="flex items-center gap-3">
-      <div class="text-sm text-charcoal-light">Net Worth</div>
-      <div class="bg-sage/10 text-sage-dark px-4 py-1.5 rounded-full font-extrabold text-sm">
-        {{ totalNetWorth }}
-      </div>
+    <div class="flex items-center gap-2">
+      <span class="text-xs text-mushroom-400">Net Worth</span>
+      <span class="text-sm font-semibold text-kangkong-700">{{ totalNetWorth }}</span>
     </div>
   </header>
 </template>

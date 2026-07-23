@@ -39,22 +39,22 @@ const monthlyChartData = computed(() => {
       {
         label: 'Income',
         data: summary.value.monthly.map(m => m.income),
-        borderColor: '#81B29A',
-        backgroundColor: 'rgba(129, 178, 154, 0.15)',
+        borderColor: '#17ad49',
+        backgroundColor: 'rgba(23, 173, 73, 0.08)',
         fill: true,
         tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: '#81B29A',
+        pointRadius: 3,
+        pointBackgroundColor: '#17ad49',
       },
       {
         label: 'Expense',
         data: summary.value.monthly.map(m => m.expense),
-        borderColor: '#E07A5F',
-        backgroundColor: 'rgba(224, 122, 95, 0.15)',
+        borderColor: '#da2f38',
+        backgroundColor: 'rgba(218, 47, 56, 0.08)',
         fill: true,
         tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: '#E07A5F',
+        pointRadius: 3,
+        pointBackgroundColor: '#da2f38',
       },
     ],
   }
@@ -73,9 +73,9 @@ const groupChartData = computed(() => {
     labels: sorted.map(([g]) => g),
     datasets: [{
       data: sorted.map(([, v]) => v),
-      backgroundColor: ['#E07A5F', '#81B29A', '#F2A68E', '#A8D4BB', '#DDA0DD', '#87CEEB', '#B0C4DE'],
+      backgroundColor: ['#da2f38', '#17ad49', '#8952f6', '#1679fa', '#ff970a', '#0592b5', '#738482'],
       borderWidth: 0,
-      hoverOffset: 8,
+      hoverOffset: 4,
     }],
   }
 })
@@ -100,33 +100,33 @@ const categoryBreakdown = computed(() => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-5">
     <div class="flex items-center justify-between">
-      <h2 class="text-2xl font-extrabold text-charcoal">Dashboard</h2>
-      <span class="text-charcoal-light text-sm font-semibold">{{ currentYear }}</span>
+      <h2 class="text-lg font-medium text-mushroom-950">Dashboard</h2>
+      <span class="text-xs text-mushroom-400">{{ currentYear }}</span>
     </div>
 
-    <div v-if="summary" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="card-elevated p-6">
-        <h3 class="font-bold text-charcoal mb-4">Monthly Trend</h3>
-        <Line :data="monthlyChartData" :options="{ responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16 } } }, scales: { y: { grid: { color: '#EDE4CC' } }, x: { grid: { display: false } } } }" />
+    <div v-if="summary" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="card-elevated p-5">
+        <h3 class="text-sm font-medium text-mushroom-600 mb-3">Monthly Trend</h3>
+        <Line :data="monthlyChartData" :options="{ responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, font: { size: 11 } } } }, scales: { y: { grid: { color: '#e6eaea' }, ticks: { font: { size: 11 } } }, x: { grid: { display: false }, ticks: { font: { size: 11 } } } } }" />
       </div>
 
-      <div class="card-elevated p-6">
-        <h3 class="font-bold text-charcoal mb-4">Expense by Group</h3>
-        <Doughnut :data="groupChartData" :options="{ responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12 } } }, cutout: '65%' }" />
+      <div class="card-elevated p-5">
+        <h3 class="text-sm font-medium text-mushroom-600 mb-3">Expense by Group</h3>
+        <Doughnut :data="groupChartData" :options="{ responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 10, font: { size: 11 } } }, cutout: '65%' } }" />
       </div>
     </div>
 
-    <div v-if="summary" class="card-elevated p-6">
-      <h3 class="font-bold text-charcoal mb-4">Expense Breakdown</h3>
+    <div v-if="summary" class="card-elevated p-5">
+      <h3 class="text-sm font-medium text-mushroom-600 mb-3">Expense Breakdown</h3>
       <div class="space-y-4">
         <div v-for="section in categoryBreakdown" :key="section.group">
-          <div class="text-sm font-bold text-charcoal-light mb-2">{{ section.group }}</div>
+          <div class="text-xs font-medium text-mushroom-400 uppercase tracking-wide mb-1.5">{{ section.group }}</div>
           <div class="space-y-1">
             <div v-for="cat in section.categories" :key="cat.category" class="flex items-center justify-between text-sm">
-              <span class="text-charcoal">{{ cat.category }}</span>
-              <span class="font-semibold text-charcoal">{{ cat.currency }} {{ cat.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</span>
+              <span class="text-mushroom-700">{{ cat.category }}</span>
+              <span class="font-medium text-mushroom-950">{{ cat.currency }} {{ cat.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</span>
             </div>
           </div>
         </div>
@@ -134,11 +134,11 @@ const categoryBreakdown = computed(() => {
     </div>
 
     <div>
-      <h3 class="font-bold text-charcoal mb-3">Accounts</h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div v-for="b in balances" :key="b.account_id" class="card p-4 hover:shadow-md transition-shadow">
-          <div class="text-sm text-charcoal-light font-semibold">{{ b.account_name }}</div>
-          <div class="text-xl font-extrabold text-charcoal mt-1">
+      <h3 class="text-sm font-medium text-mushroom-600 mb-2">Accounts</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div v-for="b in balances" :key="b.account_id" class="card p-4">
+          <div class="text-xs text-mushroom-400">{{ b.account_name }}</div>
+          <div class="text-base font-semibold text-mushroom-950 mt-0.5">
             {{ b.currency }} {{ b.balance.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
           </div>
         </div>

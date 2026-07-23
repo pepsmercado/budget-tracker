@@ -61,40 +61,40 @@ function formatDate(dateStr) {
 
 <template>
   <div class="space-y-4">
-    <h2 class="text-2xl font-extrabold text-charcoal">Transactions</h2>
+    <h2 class="text-lg font-medium text-mushroom-950">Transactions</h2>
 
-    <div class="card p-4 flex flex-wrap gap-3">
-      <select v-model="filters.account_id" class="select-field w-auto min-w-[160px]">
+    <div class="card p-3 flex flex-wrap gap-2">
+      <select v-model="filters.account_id" class="select-field w-auto min-w-[140px]">
         <option value="">All accounts</option>
         <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option>
       </select>
-      <input v-model="filters.category" placeholder="Category" class="input-field w-auto min-w-[140px]" />
+      <input v-model="filters.category" placeholder="Category" class="input-field w-auto min-w-[120px]" />
       <input v-model="filters.start_date" type="date" class="input-field w-auto" />
       <input v-model="filters.end_date" type="date" class="input-field w-auto" />
-      <button @click="applyFilters" class="btn-primary text-sm">Filter</button>
+      <button @click="applyFilters" class="btn-primary text-xs">Filter</button>
     </div>
 
-    <div v-if="loading" class="text-center text-charcoal-light py-8 font-semibold">Loading...</div>
+    <div v-if="loading" class="text-center text-mushroom-400 py-8 text-sm">Loading...</div>
 
-    <div v-else class="space-y-4">
+    <div v-else class="space-y-3">
       <div v-for="[date, txns] in groupedByDate(transactions)" :key="date" class="card overflow-hidden">
-        <div class="px-4 py-2.5 bg-cream/50 border-b border-cream-dark">
-          <span class="text-sm font-bold text-charcoal-light">{{ formatDate(date) }}</span>
+        <div class="px-4 py-2 bg-mushroom-50 border-b border-mushroom-200">
+          <span class="text-xs font-medium text-mushroom-500">{{ formatDate(date) }}</span>
         </div>
-        <div v-for="t in txns" :key="t.id" class="flex items-center justify-between px-4 py-3 border-b border-cream-dark last:border-0 hover:bg-cream/30 transition-colors">
-          <div class="flex items-center gap-3">
+        <div v-for="t in txns" :key="t.id" class="flex items-center justify-between px-4 py-2.5 border-b border-mushroom-100 last:border-0">
+          <div class="flex items-center gap-2.5">
             <CategoryBadge :name="t.category" :group="categoryToGroup[t.category]" />
             <div>
-              <div class="text-sm font-semibold text-charcoal">{{ t.description || t.category }}</div>
-              <div class="text-xs text-charcoal-light">{{ accounts.find(a => a.id === t.account_id)?.name || t.account_id }}</div>
+              <div class="text-sm text-mushroom-950">{{ t.description || t.category }}</div>
+              <div class="text-xs text-mushroom-400">{{ accounts.find(a => a.id === t.account_id)?.name || t.account_id }}</div>
             </div>
           </div>
           <div class="flex items-center gap-3">
-            <span class="font-extrabold text-sm" :class="t.type === 'income' ? 'text-sage-dark' : 'text-coral'">
+            <span class="text-sm font-medium" :class="t.type === 'income' ? 'text-kangkong-700' : 'text-tomato-600'">
               {{ t.type === 'income' ? '+' : '-' }}{{ t.currency }} {{ t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
             </span>
-            <router-link :to="`/transactions/${t.id}/edit`" class="text-coral hover:text-coral-dark text-xs font-bold">Edit</router-link>
-            <button @click="handleDelete(t.id)" class="text-charcoal-light hover:text-coral text-xs font-bold">Del</button>
+            <router-link :to="`/transactions/${t.id}/edit`" class="text-xs text-mushroom-400 hover:text-kangkong-600">Edit</router-link>
+            <button @click="handleDelete(t.id)" class="text-xs text-mushroom-400 hover:text-tomato-600">Del</button>
           </div>
         </div>
       </div>

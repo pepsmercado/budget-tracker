@@ -30,24 +30,24 @@ async function saveBudget() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <h2 class="text-2xl font-extrabold text-charcoal">Budget</h2>
+  <div class="space-y-4">
+    <h2 class="text-lg font-medium text-mushroom-950">Budget</h2>
 
-    <div class="card-elevated p-6">
+    <div class="card-elevated p-5">
       <div class="flex items-center justify-between mb-4">
         <div>
-          <div class="text-sm text-charcoal-light font-semibold">Total Budget</div>
-          <div class="text-2xl font-extrabold text-charcoal">PHP {{ totalBudget.toLocaleString() }}</div>
+          <div class="text-xs text-mushroom-400">Total Budget</div>
+          <div class="text-xl font-semibold text-mushroom-950">PHP {{ totalBudget.toLocaleString() }}</div>
         </div>
         <div class="flex items-center gap-2">
-          <input v-model.number="totalBudget" type="number" class="input-field w-40" />
+          <input v-model.number="totalBudget" type="number" class="input-field w-36" />
           <button @click="saveBudget" class="btn-primary">Save</button>
         </div>
       </div>
 
-      <div class="mb-3 flex justify-between text-sm font-semibold">
-        <span class="text-charcoal-light">Spent: <span class="text-coral">PHP {{ totalSpent.toLocaleString() }}</span></span>
-        <span class="text-charcoal-light">Remaining: <span class="text-sage-dark">PHP {{ Math.max(0, totalBudget - totalSpent).toLocaleString() }}</span></span>
+      <div class="mb-2 flex justify-between text-xs text-mushroom-500">
+        <span>Spent: <span class="font-medium text-tomato-600">PHP {{ totalSpent.toLocaleString() }}</span></span>
+        <span>Remaining: <span class="font-medium text-kangkong-700">PHP {{ Math.max(0, totalBudget - totalSpent).toLocaleString() }}</span></span>
       </div>
       <BudgetProgressBar :spent="totalSpent" :budget="totalBudget" />
     </div>
