@@ -33,5 +33,12 @@ export function useAccounts() {
     accounts.value = accounts.value.filter(a => a.id !== id)
   }
 
-  return { accounts, loading, fetchAccounts, createAccount, updateAccount, deleteAccount }
+  async function updateAccountGoal(id, goalAmount) {
+    const { data } = await api.put(`/accounts/${id}/goal`, { goal_amount: goalAmount })
+    const idx = accounts.value.findIndex(a => a.id === id)
+    if (idx !== -1) accounts.value[idx] = data
+    return data
+  }
+
+  return { accounts, loading, fetchAccounts, createAccount, updateAccount, deleteAccount, updateAccountGoal }
 }
