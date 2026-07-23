@@ -9,6 +9,7 @@ import { useSummary } from '../composables/useSummary'
 import { useAccounts } from '../composables/useAccounts'
 import { useTransactions } from '../composables/useTransactions'
 import { useExchangeRate } from '../composables/useExchangeRate'
+import { useInsights } from '../composables/useInsights'
 import api from '../api'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend, Filler)
@@ -17,6 +18,7 @@ const { summary, balances, fetchSummary, fetchBalances } = useSummary()
 const { accounts, fetchAccounts } = useAccounts()
 const { transactions, fetchTransactions } = useTransactions()
 const { exchangeRate, fetchExchangeRate } = useExchangeRate()
+const { computeInsights } = useInsights()
 
 const currentYear = new Date().getFullYear()
 const categories = ref([])
@@ -32,6 +34,13 @@ const pieMonths = ref([])
 const trendChartRef = ref(null)
 const incomeVisible = ref(true)
 const expensesVisible = ref(true)
+const insights = ref([])
+const budgetSummary = ref(null)
+
+const currentMonth = computed(() => {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+})
 
 function toggleIncome() {
   if (incomeVisible.value && expensesVisible.value) {
@@ -133,6 +142,9 @@ onMounted(async () => {
   if (months.value.length > 0) {
     selectedMonth.value = months.value[months.value.length - 1].value
   }
+  const { data: summary } = await api.get(`/budgets/${currentMonth.value}/summary`).catch(() => ({ data: null }))
+  budgetSummary.value = summary
+  insights.value = computeInsights(transactions.value, categories.value, budgetSummary.value, balances.value)
 })
 
 const currentMonthBudget = ref(null)
@@ -662,6 +674,19 @@ const currencySymbol = computed(() => displayCurrency.value === 'USD' ? '$' : 'â
             :options="{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 8, font: { size: 10 } } }, tooltip: { callbacks: { label: pctTooltip } }, cutout: '55%' }, onClick: () => { drilledGroup = null } }"
             :style="{ cursor: 'pointer' }"
           />
+        </div>
+      </div>
+    </div>
+
+    <div v-if="insights.length > 0" class="card-elevated p-5">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-lg">ðŸ’¡</span>
+        <h3 class="text-sm font-medium text-mushroom-700">Insights</h3>
+      </div>
+      <div class="space-y-2">
+        <div v-for="(insight, i) in insights" :key="i" class="flex items-start gap-2 py-1.5">
+          <span class="text-sm mt-0.5">{{ insight.icon }}</span>
+          <span class="text-xs" :class="insight.color">{{ insight.text }}</span>
         </div>
       </div>
     </div>
