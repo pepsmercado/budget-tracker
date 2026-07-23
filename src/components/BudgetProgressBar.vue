@@ -1,8 +1,20 @@
 <script setup>
-const props = defineProps({ spent: Number, budget: Number })
+import { computed } from 'vue'
 
-const percentage = props.budget > 0 ? Math.min((props.spent / props.budget) * 100, 100) : 0
-const colorClass = percentage < 60 ? 'bg-kangkong-500' : percentage < 85 ? 'bg-mango-500' : 'bg-tomato-500'
+const props = defineProps({
+  spent: { type: Number, default: 0 },
+  budget: { type: Number, default: 0 },
+  greenThreshold: { type: Number, default: 0.7 },
+  orangeThreshold: { type: Number, default: 0.9 },
+})
+
+const percentage = computed(() => props.budget > 0 ? Math.min((props.spent / props.budget) * 100, 100) : 0)
+const ratio = computed(() => props.budget > 0 ? props.spent / props.budget : 0)
+const colorClass = computed(() => {
+  if (ratio.value < props.greenThreshold) return 'bg-kangkong-500'
+  if (ratio.value < props.orangeThreshold) return 'bg-carrot-500'
+  return 'bg-tomato-500'
+})
 </script>
 
 <template>
