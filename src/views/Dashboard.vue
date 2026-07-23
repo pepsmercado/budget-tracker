@@ -1,22 +1,109 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { Line, Doughnut } from 'vue-chartjs'
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement,
   ArcElement, Title, Tooltip, Legend, Filler
 } from 'chart.js'
 import { useSummary } from '../composables/useSummary'
+import { useAccounts } from '../composables/useAccounts'
+import { useTransactions } from '../composables/useTransactions'
+import { useExchangeRate } from '../composables/useExchangeRate'
 import api from '../api'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend, Filler)
 
 const { summary, balances, fetchSummary, fetchBalances } = useSummary()
+const { accounts, fetchAccounts } = useAccounts()
+const { transactions, fetchTransactions } = useTransactions()
+const { exchangeRate, fetchExchangeRate } = useExchangeRate()
+
 const currentYear = new Date().getFullYear()
 const categories = ref([])
+const selectedMonth = ref('')
+const drilledGroup = ref(null)
+const expenseMatrixMode = ref('category')
+const incomeMatrixMode = ref('category')
+const showAverages = ref(false)
+const selectedYear = ref(currentYear)
+const pieYear = ref(currentYear)
+const pieMonths = ref([])
 
-onMounted(async () => {
-  await Promise.all([fetchSummary(currentYear), fetchBalances(), fetchCategories()])
+const trendChartRef = ref(null)
+const incomeVisible = ref(true)
+const expensesVisible = ref(true)
+
+function toggleIncome() {
+  if (incomeVisible.value && expensesVisible.value) {
+    expensesVisible.value = false
+  } else if (!incomeVisible.value) {
+    incomeVisible.value = true
+    expensesVisible.value = true
+  } else {
+    incomeVisible.value = true
+  }
+  updateChartVisibility()
+}
+
+function toggleExpenses() {
+  if (incomeVisible.value && expensesVisible.value) {
+    incomeVisible.value = false
+  } else if (!expensesVisible.value) {
+    incomeVisible.value = true
+    expensesVisible.value = true
+  } else {
+    expensesVisible.value = true
+  }
+  updateChartVisibility()
+}
+
+function updateChartVisibility() {
+  const chart = trendChartRef.value?.chart
+  if (!chart) return
+  chart.data.datasets[0].hidden = !incomeVisible.value
+  chart.data.datasets[1].hidden = !expensesVisible.value
+  chart.update()
+}
+
+const displayCurrency = ref(localStorage.getItem('display-currency') || 'USD')
+
+function setDisplayCurrency(c) {
+  displayCurrency.value = c
+  localStorage.setItem('display-currency', c)
+}
+
+function convert(val, fromCurrency) {
+  if (displayCurrency.value === fromCurrency) return val
+  if (fromCurrency === 'PHP' && displayCurrency.value === 'USD') return val / exchangeRate.value
+  if (fromCurrency === 'USD' && displayCurrency.value === 'PHP') return val * exchangeRate.value
+  return val
+}
+
+const years = computed(() => [currentYear, currentYear - 1, currentYear - 2])
+
+const months = computed(() => {
+  if (!summary.value) return []
+  return summary.value.monthly.map(m => {
+    const [y, mo] = m.month.split('-')
+    const date = new Date(y, parseInt(mo) - 1)
+    return { value: m.month, label: date.toLocaleString('en-US', { month: 'short' }) }
+  })
 })
+
+async function fetchPieMonths() {
+  const { data } = await api.get(`/summary/${pieYear.value}`)
+  pieMonths.value = [
+    { value: 'full-year', label: 'Full Year' },
+    ...data.monthly.map(m => {
+      const [y, mo] = m.month.split('-')
+      const date = new Date(y, parseInt(mo) - 1)
+      return { value: m.month, label: date.toLocaleString('en-US', { month: 'short' }) }
+    })
+  ]
+  if (!pieMonths.value.find(m => m.value === selectedMonth.value)) {
+    selectedMonth.value = pieMonths.value[pieMonths.value.length - 1].value
+  }
+}
 
 async function fetchCategories() {
   const { data } = await api.get('/categories')
@@ -26,19 +113,76 @@ async function fetchCategories() {
 const categoryToGroup = computed(() => {
   const map = {}
   for (const c of categories.value) {
-    map[c.name] = c.group
+    if (c.type === 'expense') {
+      map[c.name] = c.group
+    }
   }
   return map
+})
+
+const GROUP_ORDER = ['Fixed', 'Essential', 'Lifestyle', 'School', 'Misc', 'Sinking']
+function groupSortKey(name) {
+  const idx = GROUP_ORDER.indexOf(name)
+  return idx >= 0 ? idx : GROUP_ORDER.length
+}
+
+onMounted(async () => {
+  await fetchCategories()
+  await Promise.all([fetchSummary(currentYear), fetchBalances(), fetchAccounts(), fetchMatrixData(), fetchPieMonths(), fetchExchangeRate(), fetchCurrentMonthSummary()])
+  await Promise.all([fetchExpenseAccountMatrix(), fetchIncomeMatrixData(), fetchIncomeAccountMatrix()])
+  if (months.value.length > 0) {
+    selectedMonth.value = months.value[months.value.length - 1].value
+  }
+})
+
+const currentMonthBudget = ref(null)
+const currentMonthIncome = ref(0)
+const currentMonthExpense = ref(0)
+
+async function fetchCurrentMonthSummary() {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  const monthKey = `${y}-${m}`
+
+  const [budgetRes, txnsRes] = await Promise.all([
+    api.get(`/budgets/${monthKey}`).catch(() => null),
+    api.get(`/transactions?start_date=${y}-${m}-01&end_date=${y}-${m}-${new Date(y, parseInt(m), 0).getDate()}`)
+  ])
+
+  if (budgetRes?.data) currentMonthBudget.value = budgetRes.data
+
+  const txns = txnsRes.data || []
+  currentMonthIncome.value = txns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+  currentMonthExpense.value = txns.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+}
+
+const budgetProgress = computed(() => {
+  if (!currentMonthBudget.value || !currentMonthBudget.value.total_budget) return 0
+  return Math.round((currentMonthExpense.value / currentMonthBudget.value.total_budget) * 100)
+})
+
+const budgetRemaining = computed(() => {
+  if (!currentMonthBudget.value) return 0
+  return currentMonthBudget.value.total_budget - currentMonthExpense.value
+})
+
+watch(pieYear, async () => {
+  await fetchPieMonths()
 })
 
 const monthlyChartData = computed(() => {
   if (!summary.value) return { labels: [], datasets: [] }
   return {
-    labels: summary.value.monthly.map(m => m.month),
+    labels: summary.value.monthly.map(m => {
+      const [y, mo] = m.month.split('-')
+      const date = new Date(y, parseInt(mo) - 1)
+      return date.toLocaleString('en-US', { month: 'short' })
+    }),
     datasets: [
       {
         label: 'Income',
-        data: summary.value.monthly.map(m => m.income),
+        data: summary.value.monthly.map(m => Math.round(convert(m.income, 'PHP'))),
         borderColor: '#17ad49',
         backgroundColor: 'rgba(23, 173, 73, 0.08)',
         fill: true,
@@ -48,7 +192,7 @@ const monthlyChartData = computed(() => {
       },
       {
         label: 'Expense',
-        data: summary.value.monthly.map(m => m.expense),
+        data: summary.value.monthly.map(m => Math.round(convert(m.expense, 'PHP'))),
         borderColor: '#da2f38',
         backgroundColor: 'rgba(218, 47, 56, 0.08)',
         fill: true,
@@ -60,88 +204,697 @@ const monthlyChartData = computed(() => {
   }
 })
 
-const groupChartData = computed(() => {
-  if (!summary.value) return { labels: [], datasets: [] }
-  const groups = {}
-  for (const c of summary.value.by_category) {
-    const group = categoryToGroup.value[c.category] || 'Other'
-    if (!groups[group]) groups[group] = 0
-    groups[group] += c.total
+const monthlyTransactions = ref([])
+watch(selectedMonth, async (val) => {
+  if (!val) return
+  if (val === 'full-year') {
+    await fetchTransactions({ start_date: `${pieYear.value}-01-01`, end_date: `${pieYear.value}-12-31` })
+  } else {
+    const [y, m] = val.split('-')
+    const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate()
+    await fetchTransactions({ start_date: `${y}-${m}-01`, end_date: `${y}-${m}-${lastDay}` })
   }
-  const sorted = Object.entries(groups).sort((a, b) => b[1] - a[1])
+  monthlyTransactions.value = transactions.value.filter(t => t.type === 'expense')
+}, { immediate: true })
+
+function pctTooltip(context) {
+  const label = context.label || ''
+  const value = context.parsed || 0
+  const dataset = context.dataset
+  const total = dataset.data.reduce((a, b) => a + b, 0)
+  if (total === 0) return label
+  const pct = ((value / total) * 100).toFixed(1)
+  return `${label}: ${pct}%`
+}
+
+const groupChartData = computed(() => {
+  const txns = monthlyTransactions.value
+  if (!txns.length) return { labels: [], datasets: [] }
+
+  const groups = {}
+  for (const t of txns) {
+    const group = categoryToGroup.value[t.category] || 'Others'
+    if (!groups[group]) groups[group] = 0
+    groups[group] += t.amount
+  }
+  const sorted = Object.entries(groups).sort((a, b) => groupSortKey(a[0]) - groupSortKey(b[0]))
+  const colors = ['#da2f38', '#17ad49', '#8952f6', '#1679fa', '#ff970a', '#0592b5', '#738482']
   return {
     labels: sorted.map(([g]) => g),
     datasets: [{
-      data: sorted.map(([, v]) => v),
-      backgroundColor: ['#da2f38', '#17ad49', '#8952f6', '#1679fa', '#ff970a', '#0592b5', '#738482'],
+      data: sorted.map(([, v]) => Math.round(convert(v, 'PHP'))),
+      backgroundColor: sorted.map((_, i) => colors[i % colors.length]),
       borderWidth: 0,
       hoverOffset: 4,
     }],
   }
 })
 
-const categoryBreakdown = computed(() => {
-  if (!summary.value) return []
-  const groups = {}
-  for (const c of summary.value.by_category) {
-    const group = categoryToGroup.value[c.category] || 'Other'
-    if (!groups[group]) groups[group] = []
-    groups[group].push(c)
-  }
-  const result = []
-  const order = ['Fixed', 'Essential', 'Lifestyle', 'Sinking', 'School', 'Income', 'Misc', 'Other']
-  for (const g of order) {
-    if (groups[g]) {
-      result.push({ group: g, categories: groups[g].sort((a, b) => b.total - a.total) })
+const drilledChartData = computed(() => {
+  if (!drilledGroup.value) return null
+  const txns = monthlyTransactions.value
+  const cats = {}
+  for (const t of txns) {
+    const group = categoryToGroup.value[t.category] || 'Others'
+    if (group === drilledGroup.value) {
+      if (!cats[t.category]) cats[t.category] = 0
+      cats[t.category] += t.amount
     }
   }
-  return result
+  const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1])
+  const colors = ['#da2f38', '#ff970a', '#ffdf1b', '#f6737a', '#ffb132', '#ffd16d']
+  return {
+    labels: sorted.map(([c]) => c),
+    datasets: [{
+      data: sorted.map(([, v]) => Math.round(convert(v, 'PHP'))),
+      backgroundColor: sorted.map((_, i) => colors[i % colors.length]),
+      borderWidth: 0,
+      hoverOffset: 4,
+    }],
+  }
 })
+
+watch(selectedYear, async () => {
+  await fetchMatrixData()
+  await fetchExpenseAccountMatrix()
+  await fetchIncomeMatrixData()
+  await fetchIncomeAccountMatrix()
+})
+
+const matrixRows = ref([])
+const matrixMonths = ref([])
+const matrixMonthlyTotals = ref([])
+const matrixGrandTotal = ref(0)
+const matrixAvg = ref(0)
+
+async function fetchMatrixData() {
+  const { data } = await api.get(`/summary/${selectedYear.value}/monthly-categories`)
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  matrixMonths.value = monthNames
+
+  const groups = {}
+  for (const row of data) {
+    const group = categoryToGroup.value[row.category] || 'Others'
+    if (!groups[group]) groups[group] = []
+    groups[group].push(row)
+  }
+
+  const sortedGroups = Object.entries(groups).sort((a, b) => groupSortKey(a[0]) - groupSortKey(b[0]))
+
+  const rows = []
+  const monthlyTotals = new Array(12).fill(0)
+  let grandTotal = 0
+
+  for (const [group, cats] of sortedGroups) {
+    rows.push({ type: 'group', name: group })
+    const groupTotals = new Array(12).fill(0)
+    for (const cat of cats) {
+      const rowData = new Array(12).fill(0)
+      let catTotal = 0
+      for (let i = 0; i < 12; i++) {
+        const m = String(i + 1).padStart(2, '0')
+        const val = cat.monthly[m] || 0
+        rowData[i] = Math.round(val)
+        groupTotals[i] += rowData[i]
+        monthlyTotals[i] += rowData[i]
+        catTotal += rowData[i]
+      }
+      rows.push({ type: 'category', name: cat.category, data: rowData, group })
+      grandTotal += catTotal
+    }
+    rows.push({ type: 'groupTotal', name: group, data: groupTotals })
+  }
+
+  matrixRows.value = rows
+  matrixMonthlyTotals.value = monthlyTotals
+  matrixGrandTotal.value = grandTotal
+  matrixAvg.value = Math.round(grandTotal / 12)
+
+  const allGroups = new Set()
+  for (const row of rows) {
+    if (row.type === 'group') allGroups.add(row.name)
+  }
+  collapsedGroups.value = allGroups
+}
+
+const collapsedGroups = ref(new Set())
+
+function toggleGroupCollapse(groupName) {
+  if (collapsedGroups.value.has(groupName)) {
+    collapsedGroups.value.delete(groupName)
+  } else {
+    collapsedGroups.value.add(groupName)
+  }
+  collapsedGroups.value = new Set(collapsedGroups.value)
+}
+
+function isGroupCollapsed(groupName) {
+  return collapsedGroups.value.has(groupName)
+}
+
+const expenseAccountRows = ref([])
+const expenseAccountMonthlyTotals = ref([])
+const expenseAccountGrandTotal = ref(0)
+const expenseAccountCollapsed = ref(new Set())
+
+function toggleExpenseAccountCollapse(typeName) {
+  if (expenseAccountCollapsed.value.has(typeName)) {
+    expenseAccountCollapsed.value.delete(typeName)
+  } else {
+    expenseAccountCollapsed.value.add(typeName)
+  }
+  expenseAccountCollapsed.value = new Set(expenseAccountCollapsed.value)
+}
+
+function isExpenseAccountCollapsed(typeName) {
+  return expenseAccountCollapsed.value.has(typeName)
+}
+
+const ACCOUNT_TYPE_ORDER = ['savings', 'checking', 'time_deposit', 'investment']
+
+async function fetchExpenseAccountMatrix() {
+  const { data: txnsData } = await api.get(`/transactions?start_date=${selectedYear.value}-01-01&end_date=${selectedYear.value}-12-31&type=expense`)
+
+  const grouped = {}
+  for (const t of txnsData) {
+    const acc = accounts.value.find(a => a.id === t.account_id)
+    const accType = acc ? acc.type : 'other'
+    if (accType === 'time_deposit' || accType === 'investment') continue
+    const accName = acc ? acc.name : t.account_id
+    if (!grouped[accType]) grouped[accType] = {}
+    if (!grouped[accType][accName]) grouped[accType][accName] = new Array(12).fill(0)
+    const d = new Date(t.date)
+    const monthIdx = d.getMonth()
+    grouped[accType][accName][monthIdx] += t.amount
+  }
+
+  const sortedTypes = Object.keys(grouped).sort((a, b) => {
+    const ai = ACCOUNT_TYPE_ORDER.indexOf(a)
+    const bi = ACCOUNT_TYPE_ORDER.indexOf(b)
+    return (ai >= 0 ? ai : 99) - (bi >= 0 ? bi : 99)
+  })
+
+  const rows = []
+  const monthlyTotals = new Array(12).fill(0)
+  let grandTotal = 0
+
+  for (const type of sortedTypes) {
+    const accs = grouped[type]
+    rows.push({ type: 'group', name: type })
+    const typeTotals = new Array(12).fill(0)
+    const sortedAccs = Object.entries(accs).sort((a, b) => b[1].reduce((s, v) => s + v, 0) - a[1].reduce((s, v) => s + v, 0))
+    for (const [accName, accData] of sortedAccs) {
+      const rowData = accData.map(v => Math.round(v))
+      let accTotal = 0
+      for (let i = 0; i < 12; i++) {
+        typeTotals[i] += rowData[i]
+        monthlyTotals[i] += rowData[i]
+        accTotal += rowData[i]
+      }
+      rows.push({ type: 'account', name: accName, data: rowData, group: type })
+      grandTotal += accTotal
+    }
+    rows.push({ type: 'groupTotal', name: type, data: typeTotals })
+  }
+
+  expenseAccountRows.value = rows
+  expenseAccountMonthlyTotals.value = monthlyTotals
+  expenseAccountGrandTotal.value = grandTotal
+
+  const allTypes = new Set()
+  for (const row of rows) {
+    if (row.type === 'group') allTypes.add(row.name)
+  }
+  expenseAccountCollapsed.value = allTypes
+}
+
+const incomeMatrixRows = ref([])
+const incomeMatrixMonths = ref([])
+const incomeMatrixMonthlyTotals = ref([])
+const incomeMatrixGrandTotal = ref(0)
+const incomeMatrixAvg = ref(0)
+
+async function fetchIncomeMatrixData() {
+  const { data } = await api.get(`/transactions?start_date=${selectedYear.value}-01-01&end_date=${selectedYear.value}-12-31&type=income`)
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  incomeMatrixMonths.value = monthNames
+
+  const cats = {}
+  for (const t of data) {
+    if (!cats[t.category]) cats[t.category] = new Array(12).fill(0)
+    const d = new Date(t.date)
+    cats[t.category][d.getMonth()] += t.amount
+  }
+
+  const rows = []
+  const monthlyTotals = new Array(12).fill(0)
+  let grandTotal = 0
+
+  for (const [cat, catData] of Object.entries(cats)) {
+    const rowData = catData.map(v => Math.round(v))
+    let catTotal = 0
+    for (let i = 0; i < 12; i++) {
+      monthlyTotals[i] += rowData[i]
+      catTotal += rowData[i]
+    }
+    rows.push({ type: 'category', name: cat, data: rowData })
+    grandTotal += catTotal
+  }
+
+  rows.sort((a, b) => {
+    const order = ['Salary', 'Interest', 'Cashback', 'Others']
+    return order.indexOf(a.name) - order.indexOf(b.name)
+  })
+
+  incomeMatrixRows.value = rows
+  incomeMatrixMonthlyTotals.value = monthlyTotals
+  incomeMatrixGrandTotal.value = grandTotal
+  incomeMatrixAvg.value = Math.round(grandTotal / 12)
+}
+
+const incomeAccountRows = ref([])
+const incomeAccountMonthlyTotals = ref([])
+const incomeAccountGrandTotal = ref(0)
+const incomeAccountCollapsed = ref(new Set())
+
+function toggleIncomeAccountCollapse(typeName) {
+  if (incomeAccountCollapsed.value.has(typeName)) {
+    incomeAccountCollapsed.value.delete(typeName)
+  } else {
+    incomeAccountCollapsed.value.add(typeName)
+  }
+  incomeAccountCollapsed.value = new Set(incomeAccountCollapsed.value)
+}
+
+function isIncomeAccountCollapsed(typeName) {
+  return incomeAccountCollapsed.value.has(typeName)
+}
+
+async function fetchIncomeAccountMatrix() {
+  const { data: txnsData } = await api.get(`/transactions?start_date=${selectedYear.value}-01-01&end_date=${selectedYear.value}-12-31&type=income`)
+
+  const grouped = {}
+  for (const t of txnsData) {
+    const acc = accounts.value.find(a => a.id === t.account_id)
+    const accType = acc ? acc.type : 'other'
+    if (accType === 'checking') continue
+    const accName = acc ? acc.name : t.account_id
+    if (!grouped[accType]) grouped[accType] = {}
+    if (!grouped[accType][accName]) grouped[accType][accName] = new Array(12).fill(0)
+    const d = new Date(t.date)
+    const monthIdx = d.getMonth()
+    grouped[accType][accName][monthIdx] += t.amount
+  }
+
+  const sortedTypes = Object.keys(grouped).sort((a, b) => {
+    const ai = ACCOUNT_TYPE_ORDER.indexOf(a)
+    const bi = ACCOUNT_TYPE_ORDER.indexOf(b)
+    return (ai >= 0 ? ai : 99) - (bi >= 0 ? bi : 99)
+  })
+
+  const rows = []
+  const monthlyTotals = new Array(12).fill(0)
+  let grandTotal = 0
+
+  for (const type of sortedTypes) {
+    const accs = grouped[type]
+    rows.push({ type: 'group', name: type })
+    const typeTotals = new Array(12).fill(0)
+    const sortedAccs = Object.entries(accs).sort((a, b) => b[1].reduce((s, v) => s + v, 0) - a[1].reduce((s, v) => s + v, 0))
+    for (const [accName, accData] of sortedAccs) {
+      const rowData = accData.map(v => Math.round(v))
+      let accTotal = 0
+      for (let i = 0; i < 12; i++) {
+        typeTotals[i] += rowData[i]
+        monthlyTotals[i] += rowData[i]
+        accTotal += rowData[i]
+      }
+      rows.push({ type: 'account', name: accName, data: rowData, group: type })
+      grandTotal += accTotal
+    }
+    rows.push({ type: 'groupTotal', name: type, data: typeTotals })
+  }
+
+  incomeAccountRows.value = rows
+  incomeAccountMonthlyTotals.value = monthlyTotals
+  incomeAccountGrandTotal.value = grandTotal
+
+  const allTypes = new Set()
+  for (const row of rows) {
+    if (row.type === 'group') allTypes.add(row.name)
+  }
+  incomeAccountCollapsed.value = allTypes
+}
+
+function formatConverted(val) {
+  const converted = convert(val, 'PHP')
+  return converted.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+}
+
+const currencySymbol = computed(() => displayCurrency.value === 'USD' ? '$' : '₱')
 </script>
 
 <template>
   <div class="space-y-5">
     <div class="flex items-center justify-between">
       <h2 class="text-lg font-medium text-mushroom-950">Dashboard</h2>
-      <span class="text-xs text-mushroom-400">{{ currentYear }}</span>
+      <div class="flex items-center gap-3">
+        <select v-model="displayCurrency" @change="setDisplayCurrency($event.target.value)" class="select-field text-xs py-1 px-2 w-auto">
+          <option value="USD">$ USD</option>
+          <option value="PHP">₱ PHP</option>
+        </select>
+        <span class="text-xs text-mushroom-400">{{ currentYear }}</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="card-elevated p-4">
+        <div class="text-xs text-mushroom-400 mb-1">Budget Status</div>
+        <div class="text-lg font-semibold text-mushroom-950">
+          {{ budgetProgress }}%
+        </div>
+        <div class="mt-2 h-2 bg-mushroom-100 rounded-full overflow-hidden">
+          <div
+            class="h-full rounded-full transition-all duration-300"
+            :class="budgetProgress > 100 ? 'bg-tomato-500' : budgetProgress > 80 ? 'bg-mango-500' : 'bg-kangkong-500'"
+            :style="{ width: Math.min(budgetProgress, 100) + '%' }"
+          ></div>
+        </div>
+        <div class="text-xs text-mushroom-400 mt-1">
+          {{ currentMonthBudget ? `${currencySymbol}${convert(currentMonthExpense, 'PHP').toLocaleString()} / ${currencySymbol}${convert(currentMonthBudget.total_budget, 'PHP').toLocaleString()}` : 'No budget set' }}
+        </div>
+      </div>
+
+      <div class="card-elevated p-4">
+        <div class="text-xs text-mushroom-400 mb-1">Expenses This Month</div>
+        <div class="text-lg font-semibold text-tomato-500">
+          {{ currencySymbol }}{{ convert(currentMonthExpense, 'PHP').toLocaleString() }}
+        </div>
+        <div class="text-xs text-mushroom-400 mt-1">
+          {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
+        </div>
+      </div>
+
+      <div class="card-elevated p-4">
+        <div class="text-xs text-mushroom-400 mb-1">Income This Month</div>
+        <div class="text-lg font-semibold text-kangkong-500">
+          {{ currencySymbol }}{{ convert(currentMonthIncome, 'PHP').toLocaleString() }}
+        </div>
+        <div class="text-xs text-mushroom-400 mt-1">
+          {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
+        </div>
+      </div>
     </div>
 
     <div v-if="summary" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="card-elevated p-5">
-        <h3 class="text-sm font-medium text-mushroom-600 mb-3">Monthly Trend</h3>
-        <Line :data="monthlyChartData" :options="{ responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, font: { size: 11 } } } }, scales: { y: { grid: { color: '#e6eaea' }, ticks: { font: { size: 11 } } }, x: { grid: { display: false }, ticks: { font: { size: 11 } } } } }" />
+      <div class="card-elevated p-4 -mb-2">
+        <h3 class="text-sm font-medium text-mushroom-600 mb-2">Monthly Trend</h3>
+        <div class="h-48">
+          <Line ref="trendChartRef" :data="monthlyChartData" :options="{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#e6eaea' }, ticks: { font: { size: 10 } } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } }" />
+        </div>
+        <div class="flex items-center justify-center gap-4 mt-2">
+          <button
+            @click="toggleIncome"
+            class="flex items-center gap-1.5 text-xs transition-opacity"
+            :class="incomeVisible ? 'opacity-100 font-medium text-mushroom-700' : 'opacity-40 text-mushroom-500'"
+          >
+            <span class="w-2.5 h-2.5 rounded-full bg-kangkong-500"></span>
+            Income
+          </button>
+          <button
+            @click="toggleExpenses"
+            class="flex items-center gap-1.5 text-xs transition-opacity"
+            :class="expensesVisible ? 'opacity-100 font-medium text-mushroom-700' : 'opacity-40 text-mushroom-500'"
+          >
+            <span class="w-2.5 h-2.5 rounded-full bg-tomato-500"></span>
+            Expenses
+          </button>
+        </div>
       </div>
 
-      <div class="card-elevated p-5">
-        <h3 class="text-sm font-medium text-mushroom-600 mb-3">Expense by Group</h3>
-        <Doughnut :data="groupChartData" :options="{ responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 10, font: { size: 11 } } }, cutout: '65%' } }" />
-      </div>
-    </div>
-
-    <div v-if="summary" class="card-elevated p-5">
-      <h3 class="text-sm font-medium text-mushroom-600 mb-3">Expense Breakdown</h3>
-      <div class="space-y-4">
-        <div v-for="section in categoryBreakdown" :key="section.group">
-          <div class="text-xs font-medium text-mushroom-400 uppercase tracking-wide mb-1.5">{{ section.group }}</div>
-          <div class="space-y-1">
-            <div v-for="cat in section.categories" :key="cat.category" class="flex items-center justify-between text-sm">
-              <span class="text-mushroom-700">{{ cat.category }}</span>
-              <span class="font-medium text-mushroom-950">{{ cat.currency }} {{ cat.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</span>
-            </div>
+      <div class="card-elevated p-4 -mb-2">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-medium text-mushroom-600">
+            {{ drilledGroup ? drilledGroup : 'Expense by Group' }}
+          </h3>
+          <div class="flex items-center gap-2">
+            <button v-if="drilledGroup" @click="drilledGroup = null" class="text-xs text-kangkong-600 hover:text-kangkong-700 font-medium whitespace-nowrap">
+              ← Back
+            </button>
+            <select v-model="selectedMonth" class="select-field text-xs py-1 px-2 min-w-[70px]">
+              <option v-for="m in pieMonths" :key="m.value" :value="m.value">{{ m.label }}</option>
+            </select>
+            <select v-model="pieYear" class="select-field text-xs py-1 px-2 min-w-[60px]">
+              <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+            </select>
           </div>
+        </div>
+        <div class="h-48">
+          <Doughnut
+            v-if="!drilledGroup"
+            :data="groupChartData"
+            :options="{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 8, font: { size: 10 } } }, tooltip: { callbacks: { label: pctTooltip } }, cutout: '55%' }, onClick: (e, el) => { if (el.length) { drilledGroup = groupChartData.labels[el[0].index] } } }"
+            :style="{ cursor: 'pointer' }"
+          />
+          <Doughnut
+            v-else
+            :data="drilledChartData"
+            :options="{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 8, font: { size: 10 } } }, tooltip: { callbacks: { label: pctTooltip } }, cutout: '55%' }, onClick: () => { drilledGroup = null } }"
+            :style="{ cursor: 'pointer' }"
+          />
         </div>
       </div>
     </div>
 
-    <div>
-      <h3 class="text-sm font-medium text-mushroom-600 mb-2">Accounts</h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div v-for="b in balances" :key="b.account_id" class="card p-4">
-          <div class="text-xs text-mushroom-400">{{ b.account_name }}</div>
-          <div class="text-base font-semibold text-mushroom-950 mt-0.5">
-            {{ b.currency }} {{ b.balance.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
+    <div class="card-elevated p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <h3 class="text-sm font-medium text-mushroom-600">Income Breakdown</h3>
+          <div class="flex bg-mushroom-100 rounded-md p-0.5">
+            <button @click="incomeMatrixMode = 'category'" class="px-2 py-0.5 text-xs rounded" :class="incomeMatrixMode === 'category' ? 'bg-white text-mushroom-900 shadow-sm' : 'text-mushroom-500'">Categories</button>
+            <button @click="incomeMatrixMode = 'account'" class="px-2 py-0.5 text-xs rounded" :class="incomeMatrixMode === 'account' ? 'bg-white text-mushroom-900 shadow-sm' : 'text-mushroom-500'">Accounts</button>
           </div>
         </div>
+        <div class="flex items-center gap-3">
+          <select v-model="selectedYear" class="select-field text-xs py-1 px-2 w-auto">
+            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+          </select>
+          <label class="flex items-center gap-1 text-xs text-mushroom-500 cursor-pointer">
+            <input type="checkbox" v-model="showAverages" class="rounded" />
+            Show Averages
+          </label>
+        </div>
+      </div>
+
+      <div v-if="incomeMatrixMode === 'category'" class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="border-b border-mushroom-200">
+              <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Category</th>
+              <th v-for="(m, i) in incomeMatrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ displayCurrency === 'USD' ? '$' : '₱' }}</th>
+              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Avg {{ displayCurrency === 'USD' ? '$' : '₱' }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in incomeMatrixRows" :key="row.name" class="border-b border-mushroom-100">
+              <td class="px-2 py-1 text-mushroom-600 sticky left-0 bg-white">{{ row.name }}</td>
+              <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 text-mushroom-700">{{ formatConverted(val) }}</td>
+              <td class="text-right px-2 py-1 font-medium text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
+              <td v-if="showAverages" class="text-right px-2 py-1 text-mushroom-500 border-l border-mushroom-200">{{ formatConverted(Math.round(row.data.reduce((a, b) => a + b, 0) / 12)) }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="border-t-2 border-mushroom-300 font-medium">
+              <td class="px-2 py-1.5 text-mushroom-950 sticky left-0 bg-white">Total</td>
+              <td v-for="(val, i) in incomeMatrixMonthlyTotals" :key="i" class="text-right px-2 py-1.5 text-mushroom-950">{{ formatConverted(val) }}</td>
+              <td class="text-right px-2 py-1.5 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(incomeMatrixGrandTotal) }}</td>
+              <td v-if="showAverages" class="text-right px-2 py-1.5 text-mushroom-600 border-l border-mushroom-200">{{ formatConverted(incomeMatrixAvg) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="border-b border-mushroom-200">
+              <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Account</th>
+              <th v-for="(m, i) in incomeMatrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ displayCurrency === 'USD' ? '$' : '₱' }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template v-for="row in incomeAccountRows" :key="row.name + row.type">
+              <tr
+                v-if="row.type === 'group'"
+                class="bg-mushroom-50 cursor-pointer select-none hover:bg-mushroom-100 transition-colors"
+                @click="toggleIncomeAccountCollapse(row.name)"
+              >
+                <td class="px-2 py-1 font-medium text-mushroom-700">
+                  <span class="inline-flex items-center gap-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="transition-transform duration-200" :class="isIncomeAccountCollapsed(row.name) ? '' : 'rotate-90'">
+                      <path d="M9 5l7 7-7 7"/>
+                    </svg>
+                    {{ row.name.replace('_', ' ') }}
+                  </span>
+                </td>
+                <template v-if="isIncomeAccountCollapsed(row.name)">
+                  <td v-for="(val, i) in incomeAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name).data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
+                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(incomeAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name).data.reduce((a, b) => a + b, 0)) }}</td>
+                </template>
+                <td v-else :colspan="13"></td>
+              </tr>
+              <tr v-else-if="row.type === 'account' && !isIncomeAccountCollapsed(row.group)" class="border-b border-mushroom-100">
+                <td class="px-2 py-1 text-mushroom-600 sticky left-0 bg-white pl-6">{{ row.name }}</td>
+                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 text-mushroom-700">{{ formatConverted(val) }}</td>
+                <td class="text-right px-2 py-1 font-medium text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
+              </tr>
+              <tr v-else-if="row.type === 'groupTotal' && !isIncomeAccountCollapsed(row.name)" class="bg-mushroom-50 border-b border-mushroom-200">
+                <td class="px-2 py-1 font-medium text-mushroom-700 sticky left-0 bg-mushroom-50 pl-6">{{ row.name.replace('_', ' ') }} Total</td>
+                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
+                <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
+              </tr>
+            </template>
+          </tbody>
+          <tfoot>
+            <tr class="border-t-2 border-mushroom-300 font-medium">
+              <td class="px-2 py-1.5 text-mushroom-950 sticky left-0 bg-white">Total</td>
+              <td v-for="(val, i) in incomeAccountMonthlyTotals" :key="i" class="text-right px-2 py-1.5 text-mushroom-950">{{ formatConverted(val) }}</td>
+              <td class="text-right px-2 py-1.5 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(incomeAccountGrandTotal) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="card-elevated p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <h3 class="text-sm font-medium text-mushroom-600">Expense Breakdown</h3>
+          <div class="flex bg-mushroom-100 rounded-md p-0.5">
+            <button @click="expenseMatrixMode = 'category'" class="px-2 py-0.5 text-xs rounded" :class="expenseMatrixMode === 'category' ? 'bg-white text-mushroom-900 shadow-sm' : 'text-mushroom-500'">Categories</button>
+            <button @click="expenseMatrixMode = 'account'" class="px-2 py-0.5 text-xs rounded" :class="expenseMatrixMode === 'account' ? 'bg-white text-mushroom-900 shadow-sm' : 'text-mushroom-500'">Accounts</button>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <select v-model="selectedYear" class="select-field text-xs py-1 px-2 w-auto">
+            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+          </select>
+          <label class="flex items-center gap-1 text-xs text-mushroom-500 cursor-pointer">
+            <input type="checkbox" v-model="showAverages" class="rounded" />
+            Show Averages
+          </label>
+        </div>
+      </div>
+
+      <div v-if="expenseMatrixMode === 'category'" class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="border-b border-mushroom-200">
+              <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Category</th>
+              <th v-for="(m, i) in matrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ displayCurrency === 'USD' ? '$' : '₱' }}</th>
+              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Avg {{ displayCurrency === 'USD' ? '$' : '₱' }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template v-for="row in matrixRows" :key="row.name + row.type">
+              <tr
+                v-if="row.type === 'group'"
+                class="bg-mushroom-50 cursor-pointer select-none hover:bg-mushroom-100 transition-colors"
+                @click="toggleGroupCollapse(row.name)"
+              >
+                <td class="px-2 py-1 font-medium text-mushroom-700">
+                  <span class="inline-flex items-center gap-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="transition-transform duration-200" :class="isGroupCollapsed(row.name) ? '' : 'rotate-90'">
+                      <path d="M9 5l7 7-7 7"/>
+                    </svg>
+                    {{ row.name }}
+                  </span>
+                </td>
+                <template v-if="isGroupCollapsed(row.name)">
+                  <td v-for="(val, i) in matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name).data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
+                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name).data.reduce((a, b) => a + b, 0)) }}</td>
+                  <td v-if="showAverages" class="text-right px-2 py-1 text-mushroom-600 border-l border-mushroom-200">{{ formatConverted(Math.round(matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name).data.reduce((a, b) => a + b, 0) / 12)) }}</td>
+                </template>
+                <td v-else :colspan="13"></td>
+              </tr>
+              <tr v-else-if="row.type === 'category' && !isGroupCollapsed(row.group)" class="border-b border-mushroom-100">
+                <td class="px-2 py-1 text-mushroom-600 sticky left-0 bg-white pl-6">{{ row.name }}</td>
+                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 text-mushroom-700">{{ formatConverted(val) }}</td>
+                <td class="text-right px-2 py-1 font-medium text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
+                <td v-if="showAverages" class="text-right px-2 py-1 text-mushroom-500 border-l border-mushroom-200">{{ formatConverted(Math.round(row.data.reduce((a, b) => a + b, 0) / 12)) }}</td>
+              </tr>
+              <tr v-else-if="row.type === 'groupTotal' && !isGroupCollapsed(row.name)" class="bg-mushroom-50 border-b border-mushroom-200">
+                <td class="px-2 py-1 font-medium text-mushroom-700 sticky left-0 bg-mushroom-50 pl-6">{{ row.name }} Total</td>
+                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
+                <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
+                <td v-if="showAverages" class="text-right px-2 py-1 text-mushroom-600 border-l border-mushroom-200">{{ formatConverted(Math.round(row.data.reduce((a, b) => a + b, 0) / 12)) }}</td>
+              </tr>
+            </template>
+          </tbody>
+          <tfoot>
+            <tr class="border-t-2 border-mushroom-300 font-medium">
+              <td class="px-2 py-1.5 text-mushroom-950 sticky left-0 bg-white">Total</td>
+              <td v-for="(val, i) in matrixMonthlyTotals" :key="i" class="text-right px-2 py-1.5 text-mushroom-950">{{ formatConverted(val) }}</td>
+              <td class="text-right px-2 py-1.5 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(matrixGrandTotal) }}</td>
+              <td v-if="showAverages" class="text-right px-2 py-1.5 text-mushroom-600 border-l border-mushroom-200">{{ formatConverted(matrixAvg) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="border-b border-mushroom-200">
+              <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Account</th>
+              <th v-for="(m, i) in matrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ displayCurrency === 'USD' ? '$' : '₱' }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template v-for="row in expenseAccountRows" :key="row.name + row.type">
+              <tr
+                v-if="row.type === 'group'"
+                class="bg-mushroom-50 cursor-pointer select-none hover:bg-mushroom-100 transition-colors"
+                @click="toggleExpenseAccountCollapse(row.name)"
+              >
+                <td class="px-2 py-1 font-medium text-mushroom-700">
+                  <span class="inline-flex items-center gap-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="transition-transform duration-200" :class="isExpenseAccountCollapsed(row.name) ? '' : 'rotate-90'">
+                      <path d="M9 5l7 7-7 7"/>
+                    </svg>
+                    {{ row.name.replace('_', ' ') }}
+                  </span>
+                </td>
+                <template v-if="isExpenseAccountCollapsed(row.name)">
+                  <td v-for="(val, i) in expenseAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name).data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
+                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(expenseAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name).data.reduce((a, b) => a + b, 0)) }}</td>
+                </template>
+                <td v-else :colspan="13"></td>
+              </tr>
+              <tr v-else-if="row.type === 'account' && !isExpenseAccountCollapsed(row.group)" class="border-b border-mushroom-100">
+                <td class="px-2 py-1 text-mushroom-600 sticky left-0 bg-white pl-6">{{ row.name }}</td>
+                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 text-mushroom-700">{{ formatConverted(val) }}</td>
+                <td class="text-right px-2 py-1 font-medium text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
+              </tr>
+              <tr v-else-if="row.type === 'groupTotal' && !isExpenseAccountCollapsed(row.name)" class="bg-mushroom-50 border-b border-mushroom-200">
+                <td class="px-2 py-1 font-medium text-mushroom-700 sticky left-0 bg-mushroom-50 pl-6">{{ row.name.replace('_', ' ') }} Total</td>
+                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
+                <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
+              </tr>
+            </template>
+          </tbody>
+          <tfoot>
+            <tr class="border-t-2 border-mushroom-300 font-medium">
+              <td class="px-2 py-1.5 text-mushroom-950 sticky left-0 bg-white">Total</td>
+              <td v-for="(val, i) in expenseAccountMonthlyTotals" :key="i" class="text-right px-2 py-1.5 text-mushroom-950">{{ formatConverted(val) }}</td>
+              <td class="text-right px-2 py-1.5 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(expenseAccountGrandTotal) }}</td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
     </div>
   </div>
