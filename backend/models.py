@@ -37,6 +37,7 @@ class Transaction(BaseModel):
     category: str
     description: str = ""
     transfer_pair_id: Optional[str] = None
+    sub_account_id: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.now)
 
 
@@ -49,6 +50,7 @@ class TransactionCreate(BaseModel):
     category: str
     description: str = ""
     transfer_pair_id: Optional[str] = None
+    sub_account_id: Optional[str] = None
 
 
 class Category(BaseModel):
@@ -65,6 +67,11 @@ class CategoryCreate(BaseModel):
     type: str
     group: str
     budget_amount: float = 0.0
+    budget_currency: str = "PHP"
+
+
+class CategoryBudgetUpdate(BaseModel):
+    budget_amount: float = Field(ge=0)
     budget_currency: str = "PHP"
 
 
@@ -134,6 +141,8 @@ class BankStatementRow(BaseModel):
     description: str
     amount: float
     type: str  # "income" or "expense"
+    category: str = ""
+    warnings: list[str] = []
     raw: dict = {}
 
 
@@ -144,3 +153,8 @@ class BankStatementPreview(BaseModel):
     total_rows: int
     total_income: float
     total_expense: float
+
+
+class MonthlyCategoryRow(BaseModel):
+    category: str
+    monthly: dict[str, float]  # "01": amount, "02": amount, ...

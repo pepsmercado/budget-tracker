@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from models import CategoryCreate
+from models import CategoryCreate, CategoryBudgetUpdate
 from app_state import backend
 
 router = APIRouter()
@@ -19,6 +19,14 @@ def create_category(data: CategoryCreate):
 def update_category(category_id: str, data: CategoryCreate):
     try:
         return backend.update_category(category_id, data)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+
+@router.put("/categories/{category_id}/budget")
+def update_category_budget(category_id: str, data: CategoryBudgetUpdate):
+    try:
+        return backend.update_category_budget(category_id, data.budget_amount, data.budget_currency)
     except KeyError:
         raise HTTPException(status_code=404, detail="Category not found")
 

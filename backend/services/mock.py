@@ -1,4 +1,6 @@
 import uuid
+import json
+import os
 from datetime import date, datetime, timedelta
 import random
 
@@ -10,6 +12,8 @@ from models import (
     AnnualSummary, RatesResponse, SubAccount,
 )
 
+DATA_FILE = os.path.join(os.path.dirname(__file__), "..", "data.json")
+
 
 class MockBackend(BackendService):
     def __init__(self):
@@ -17,10 +21,43 @@ class MockBackend(BackendService):
         self.transactions: dict[str, Transaction] = {}
         self.categories: dict[str, Category] = {}
         self.budgets: dict[str, Budget] = {}
-        self._seed()
+        if not self._load():
+            self._seed()
 
     def _uid(self) -> str:
         return uuid.uuid4().hex[:12]
+
+    def _save(self):
+        data = {
+            "accounts": {k: v.model_dump() for k, v in self.accounts.items()},
+            "transactions": {k: v.model_dump() for k, v in self.transactions.items()},
+            "categories": {k: v.model_dump() for k, v in self.categories.items()},
+            "budgets": {k: v.model_dump() for k, v in self.budgets.items()},
+        }
+        with open(DATA_FILE, "w") as f:
+            json.dump(data, f, default=str)
+
+    def _load(self) -> bool:
+        if not os.path.exists(DATA_FILE):
+            return False
+        try:
+            with open(DATA_FILE) as f:
+                data = json.load(f)
+            for k, v in data.get("accounts", {}).items():
+                self.accounts[k] = Account(**v)
+            for k, v in data.get("transactions", {}).items():
+                if "created_at" in v and isinstance(v["created_at"], str):
+                    v["created_at"] = datetime.fromisoformat(v["created_at"])
+                if "date" in v and isinstance(v["date"], str):
+                    v["date"] = date.fromisoformat(v["date"])
+                self.transactions[k] = Transaction(**v)
+            for k, v in data.get("categories", {}).items():
+                self.categories[k] = Category(**v)
+            for k, v in data.get("budgets", {}).items():
+                self.budgets[k] = Budget(**v)
+            return True
+        except Exception:
+            return False
 
     def _seed(self):
         random.seed(42)
@@ -30,18 +67,16 @@ class MockBackend(BackendService):
             ("Maya Savings", "savings", "PHP", 85000.0),
             ("BDO Savings", "savings", "PHP", 200000.0),
             ("Bank of America Savings", "savings", "USD", 15000.0),
-            ("BPI Beneficiary", "checking", "PHP", 75000.0),
+            ("BPI Settlement", "savings", "PHP", 75000.0),
             ("Bank of America Checking", "checking", "USD", 8500.0),
             ("Maya Time Deposit", "time_deposit", "PHP", 100000.0),
             ("BPI Time Deposit", "time_deposit", "PHP", 250000.0),
             ("BPI Investments", "investment", "PHP", 500000.0, [
-                SubAccount(id=self._uid(), name="UITF", balance=200000.0),
-                SubAccount(id=self._uid(), name="FMETF", balance=150000.0),
+                SubAccount(id=self._uid(), name="Preferred Shares", balance=200000.0),
+                SubAccount(id=self._uid(), name="REIT", balance=150000.0),
                 SubAccount(id=self._uid(), name="Bonds", balance=100000.0),
-                SubAccount(id=self._uid(), name="Other", balance=50000.0),
+                SubAccount(id=self._uid(), name="Index Funds", balance=50000.0),
             ]),
-            ("BPI Credit Card", "credit_card", "PHP", 0.0),
-            ("Bank of America Credit Card", "credit_card", "USD", 0.0),
         ]
 
         for data in accounts_data:
@@ -55,24 +90,25 @@ class MockBackend(BackendService):
             ("Electricity", "expense", "Fixed", 3000),
             ("Gas", "expense", "Fixed", 1500),
             ("Subscriptions", "expense", "Fixed", 2000),
-            ("Phone + Wifi", "expense", "Fixed", 1500),
-            ("Renter's Insurance", "expense", "Fixed", 800),
+            ("Phone & Wifi", "expense", "Fixed", 1500),
+            ("Rent Insurance", "expense", "Fixed", 800),
             ("Health Insurance", "expense", "Fixed", 2500),
             ("Groceries", "expense", "Essential", 12000),
-            ("Household and Toiletries", "expense", "Essential", 3000),
+            ("Household", "expense", "Essential", 3000),
             ("Transportation", "expense", "Essential", 4000),
-            ("Medical and Health", "expense", "Essential", 2000),
+            ("Medical", "expense", "Essential", 2000),
             ("Eating Out", "expense", "Lifestyle", 5000),
             ("Social Events", "expense", "Lifestyle", 3000),
             ("Hobbies", "expense", "Lifestyle", 2000),
             ("Shopping", "expense", "Sinking", 5000),
-            ("Beauty and Grooming", "expense", "Sinking", 2000),
+            ("Beauty", "expense", "Sinking", 2000),
             ("Travel", "expense", "Sinking", 8000),
             ("Others", "expense", "Sinking", 2000),
             ("Tuition", "expense", "School", 25000),
             ("School Supplies", "expense", "School", 2000),
             ("Salary", "income", "Income", 0),
             ("Cashback", "income", "Income", 0),
+            ("Interest", "income", "Income", 0),
             ("Others", "income", "Income", 0),
             ("Transfer Fees", "expense", "Misc", 0),
         ]
@@ -143,6 +179,7 @@ class MockBackend(BackendService):
     def create_account(self, data: AccountCreate) -> Account:
         acc = Account(id=self._uid(), **data.model_dump())
         self.accounts[acc.id] = acc
+        self._save()
         return acc
 
     def update_account(self, account_id: str, data: AccountCreate) -> Account:
@@ -150,17 +187,24 @@ class MockBackend(BackendService):
             raise KeyError("Account not found")
         acc = Account(id=account_id, **data.model_dump(), created_at=self.accounts[account_id].created_at)
         self.accounts[account_id] = acc
+        self._save()
         return acc
 
     def delete_account(self, account_id: str) -> None:
         if account_id not in self.accounts:
             raise KeyError("Account not found")
         del self.accounts[account_id]
+        self._save()
 
-    def get_transactions(self, account_id=None, category=None, start_date=None, end_date=None) -> list[Transaction]:
+    def get_transactions(self, account_id=None, type=None, group=None, category=None, start_date=None, end_date=None) -> list[Transaction]:
         result = list(self.transactions.values())
         if account_id:
             result = [t for t in result if t.account_id == account_id]
+        if type:
+            result = [t for t in result if t.type == type]
+        if group:
+            group_cats = {c.name for c in self.categories.values() if c.group == group}
+            result = [t for t in result if t.category in group_cats]
         if category:
             result = [t for t in result if t.category == category]
         if start_date:
@@ -173,6 +217,7 @@ class MockBackend(BackendService):
     def create_transaction(self, data: TransactionCreate) -> Transaction:
         t = Transaction(id=self._uid(), **data.model_dump())
         self.transactions[t.id] = t
+        self._save()
         return t
 
     def update_transaction(self, transaction_id: str, data: TransactionCreate) -> Transaction:
@@ -180,12 +225,14 @@ class MockBackend(BackendService):
             raise KeyError("Transaction not found")
         t = Transaction(id=transaction_id, **data.model_dump(), created_at=self.transactions[transaction_id].created_at)
         self.transactions[transaction_id] = t
+        self._save()
         return t
 
     def delete_transaction(self, transaction_id: str) -> None:
         if transaction_id not in self.transactions:
             raise KeyError("Transaction not found")
         del self.transactions[transaction_id]
+        self._save()
 
     def get_categories(self) -> list[Category]:
         return list(self.categories.values())
@@ -193,6 +240,7 @@ class MockBackend(BackendService):
     def create_category(self, data: CategoryCreate) -> Category:
         c = Category(id=self._uid(), **data.model_dump())
         self.categories[c.id] = c
+        self._save()
         return c
 
     def update_category(self, category_id: str, data: CategoryCreate) -> Category:
@@ -200,12 +248,23 @@ class MockBackend(BackendService):
             raise KeyError("Category not found")
         c = Category(id=category_id, **data.model_dump())
         self.categories[category_id] = c
+        self._save()
         return c
 
     def delete_category(self, category_id: str) -> None:
         if category_id not in self.categories:
             raise KeyError("Category not found")
         del self.categories[category_id]
+        self._save()
+
+    def update_category_budget(self, category_id: str, budget_amount: float, budget_currency: str) -> Category:
+        if category_id not in self.categories:
+            raise KeyError("Category not found")
+        c = self.categories[category_id]
+        c.budget_amount = budget_amount
+        c.budget_currency = budget_currency
+        self._save()
+        return c
 
     def get_budget(self, month: str) -> Budget | None:
         for b in self.budgets.values():
@@ -218,9 +277,11 @@ class MockBackend(BackendService):
             if b.month == month:
                 b.total_budget = data.total_budget
                 b.currency = data.currency
+                self._save()
                 return b
         b = Budget(id=self._uid(), month=month, **data.model_dump())
         self.budgets[b.id] = b
+        self._save()
         return b
 
     def get_balances(self) -> list[Balance]:
@@ -294,3 +355,14 @@ class MockBackend(BackendService):
 
     def get_rates(self) -> RatesResponse:
         return RatesResponse(base="USD", rates={"USD": 1.0, "PHP": 56.0, "EUR": 0.92, "GBP": 0.79, "JPY": 149.5})
+
+    def get_monthly_category_breakdown(self, year: int) -> list[MonthlyCategoryRow]:
+        from models import MonthlyCategoryRow
+        all_txns = [t for t in self.transactions.values() if t.date.year == year and t.type == "expense"]
+        cats = {}
+        for t in all_txns:
+            if t.category not in cats:
+                cats[t.category] = {}
+            m = f"{t.date.month:02d}"
+            cats[t.category][m] = cats[t.category].get(m, 0) + t.amount
+        return [MonthlyCategoryRow(category=c, monthly=m) for c, m in sorted(cats.items())]

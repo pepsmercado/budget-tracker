@@ -25,7 +25,7 @@ class BackendService(ABC):
         pass
 
     @abstractmethod
-    def get_transactions(self, account_id: str | None = None, category: str | None = None, start_date: str | None = None, end_date: str | None = None) -> list[Transaction]:
+    def get_transactions(self, account_id: str | None = None, type: str | None = None, group: str | None = None, category: str | None = None, start_date: str | None = None, end_date: str | None = None) -> list[Transaction]:
         pass
 
     @abstractmethod
@@ -54,6 +54,10 @@ class BackendService(ABC):
 
     @abstractmethod
     def delete_category(self, category_id: str) -> None:
+        pass
+
+    @abstractmethod
+    def update_category_budget(self, category_id: str, budget_amount: float, budget_currency: str) -> Category:
         pass
 
     @abstractmethod
