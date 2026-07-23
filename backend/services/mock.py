@@ -412,26 +412,53 @@ class MockBackend(BackendService):
             monthly=sorted(monthly.values(), key=lambda x: x.month),
         )
 
+    _rates_cache = None
+    _rates_cache_time = None
+
     def get_rates(self) -> RatesResponse:
         import urllib.request
         import json
-        try:
-            req = urllib.request.Request('https://open.er-api.com/v6/latest/USD', headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=5) as res:
-                data = json.loads(res.read())
-                rates = data.get('rates', {})
-                return RatesResponse(
-                    base="USD",
-                    rates={
-                        "USD": 1.0,
-                        "PHP": rates.get("PHP", 56.0),
-                        "EUR": rates.get("EUR", 0.92),
-                        "GBP": rates.get("GBP", 0.79),
-                        "JPY": rates.get("JPY", 149.5),
-                    }
-                )
-        except Exception:
-            return RatesResponse(base="USD", rates={"USD": 1.0, "PHP": 56.0, "EUR": 0.92, "GBP": 0.79, "JPY": 149.5})
+        from datetime import datetime, timedelta
+
+        # Use cache if less than 12 hours old
+        if MockBackend._rates_cache and MockBackend._rates_cache_time:
+            if datetime.now() - MockBackend._rates_cache_time < timedelta(hours=12):
+                return MockBackend._rates_cache
+
+        # Try multiple sources for accuracy
+        apis = [
+            'https://open.er-api.com/v6/latest/USD',
+            'https://api.exchangerate-api.com/v4/latest/USD',
+        ]
+
+        for api_url in apis:
+            try:
+                req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=5) as res:
+                    data = json.loads(res.read())
+                    rates = data.get('rates', {})
+                    php_rate = rates.get("PHP")
+                    if php_rate:
+                        result = RatesResponse(
+                            base="USD",
+                            rates={
+                                "USD": 1.0,
+                                "PHP": php_rate,
+                                "EUR": rates.get("EUR", 0.92),
+                                "GBP": rates.get("GBP", 0.79),
+                                "JPY": rates.get("JPY", 149.5),
+                            }
+                        )
+                        MockBackend._rates_cache = result
+                        MockBackend._rates_cache_time = datetime.now()
+                        return result
+            except Exception:
+                continue
+
+        # Return cache even if stale, or defaults
+        if MockBackend._rates_cache:
+            return MockBackend._rates_cache
+        return RatesResponse(base="USD", rates={"USD": 1.0, "PHP": 56.0, "EUR": 0.92, "GBP": 0.79, "JPY": 149.5})
 
     def get_monthly_category_breakdown(self, year: int) -> list[MonthlyCategoryRow]:
         all_txns = [t for t in self.transactions.values() if t.date.year == year and t.type == "expense"]
