@@ -32,7 +32,7 @@ const usAccounts = computed(() => balances.value.filter(b => b.currency === 'USD
 const phpAccounts = computed(() => balances.value.filter(b => b.currency === 'PHP'))
 
 function openExchangeRateSite() {
-  window.open('https://www.google.com/finance/quote/USD-PHP', '_blank')
+  window.open('https://www.x-rates.com/calculator/?from=USD&to=PHP&amount=1', '_blank')
 }
 
 function formatBal(val, currency) {
