@@ -26,6 +26,10 @@ class BackendService(ABC):
         pass
 
     @abstractmethod
+    def update_account_goal(self, account_id: str, goal_amount: float) -> Account:
+        pass
+
+    @abstractmethod
     def get_transactions(self, account_id: str | None = None, type: str | None = None, group: str | None = None, category: str | None = None, start_date: str | None = None, end_date: str | None = None) -> list[Transaction]:
         pass
 

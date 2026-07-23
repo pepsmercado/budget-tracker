@@ -15,6 +15,7 @@ class Account(BaseModel):
     type: str  # "savings", "checking", "time_deposit", "investment", "credit_card"
     currency: str
     initial_balance: float = 0.0
+    goal_amount: float = 0.0
     sub_accounts: list[SubAccount] = []
     created_at: datetime = Field(default_factory=datetime.now)
 
@@ -25,6 +26,10 @@ class AccountCreate(BaseModel):
     currency: str
     initial_balance: float = 0.0
     sub_accounts: list[SubAccount] = []
+
+
+class AccountGoalUpdate(BaseModel):
+    goal_amount: float = Field(ge=0)
 
 
 class Transaction(BaseModel):

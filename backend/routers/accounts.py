@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from models import AccountCreate
+from models import AccountCreate, AccountGoalUpdate
 from app_state import backend
 
 router = APIRouter()
@@ -27,5 +27,13 @@ def update_account(account_id: str, data: AccountCreate):
 def delete_account(account_id: str):
     try:
         backend.delete_account(account_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+
+@router.put("/accounts/{account_id}/goal")
+def update_account_goal(account_id: str, data: AccountGoalUpdate):
+    try:
+        return backend.update_account_goal(account_id, data.goal_amount)
     except KeyError:
         raise HTTPException(status_code=404, detail="Account not found")

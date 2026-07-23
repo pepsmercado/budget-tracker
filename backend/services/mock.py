@@ -196,6 +196,13 @@ class MockBackend(BackendService):
         del self.accounts[account_id]
         self._save()
 
+    def update_account_goal(self, account_id: str, goal_amount: float) -> Account:
+        if account_id not in self.accounts:
+            raise KeyError("Account not found")
+        self.accounts[account_id].goal_amount = goal_amount
+        self._save()
+        return self.accounts[account_id]
+
     def get_transactions(self, account_id=None, type=None, group=None, category=None, start_date=None, end_date=None) -> list[Transaction]:
         result = list(self.transactions.values())
         if account_id:
