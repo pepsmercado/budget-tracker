@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from models import (
     Account, AccountCreate, Transaction, TransactionCreate,
     Category, CategoryCreate, Budget, BudgetSet,
-    Balance, AnnualSummary, RatesResponse,
+    Balance, AnnualSummary, RatesResponse, MonthlyCategoryRow,
 )
 
 
@@ -78,4 +78,8 @@ class BackendService(ABC):
 
     @abstractmethod
     def get_rates(self) -> RatesResponse:
+        pass
+
+    @abstractmethod
+    def get_monthly_category_breakdown(self, year: int) -> list[MonthlyCategoryRow]:
         pass

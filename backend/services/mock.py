@@ -9,7 +9,7 @@ from models import (
     Account, AccountCreate, Transaction, TransactionCreate,
     Category, CategoryCreate, Budget, BudgetSet,
     Balance, AccountBalance, CategorySummary, MonthlyTotal,
-    AnnualSummary, RatesResponse, SubAccount,
+    AnnualSummary, RatesResponse, SubAccount, MonthlyCategoryRow,
 )
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "..", "data.json")
@@ -357,7 +357,6 @@ class MockBackend(BackendService):
         return RatesResponse(base="USD", rates={"USD": 1.0, "PHP": 56.0, "EUR": 0.92, "GBP": 0.79, "JPY": 149.5})
 
     def get_monthly_category_breakdown(self, year: int) -> list[MonthlyCategoryRow]:
-        from models import MonthlyCategoryRow
         all_txns = [t for t in self.transactions.values() if t.date.year == year and t.type == "expense"]
         cats = {}
         for t in all_txns:
