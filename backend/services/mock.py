@@ -413,7 +413,25 @@ class MockBackend(BackendService):
         )
 
     def get_rates(self) -> RatesResponse:
-        return RatesResponse(base="USD", rates={"USD": 1.0, "PHP": 56.0, "EUR": 0.92, "GBP": 0.79, "JPY": 149.5})
+        import urllib.request
+        import json
+        try:
+            req = urllib.request.Request('https://open.er-api.com/v6/latest/USD', headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=5) as res:
+                data = json.loads(res.read())
+                rates = data.get('rates', {})
+                return RatesResponse(
+                    base="USD",
+                    rates={
+                        "USD": 1.0,
+                        "PHP": rates.get("PHP", 56.0),
+                        "EUR": rates.get("EUR", 0.92),
+                        "GBP": rates.get("GBP", 0.79),
+                        "JPY": rates.get("JPY", 149.5),
+                    }
+                )
+        except Exception:
+            return RatesResponse(base="USD", rates={"USD": 1.0, "PHP": 56.0, "EUR": 0.92, "GBP": 0.79, "JPY": 149.5})
 
     def get_monthly_category_breakdown(self, year: int) -> list[MonthlyCategoryRow]:
         all_txns = [t for t in self.transactions.values() if t.date.year == year and t.type == "expense"]
