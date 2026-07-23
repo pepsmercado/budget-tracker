@@ -159,8 +159,8 @@ async function fetchCurrentMonthSummary() {
   if (budgetRes?.data) currentMonthBudget.value = budgetRes.data
 
   const txns = txnsRes.data || []
-  currentMonthIncome.value = txns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
-  currentMonthExpense.value = txns.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+  currentMonthIncome.value = txns.filter(t => t.type === 'income').reduce((s, t) => s + convert(t.amount, t.currency), 0)
+  currentMonthExpense.value = txns.filter(t => t.type === 'expense').reduce((s, t) => s + convert(t.amount, t.currency), 0)
 }
 
 const budgetProgress = computed(() => {
@@ -188,7 +188,7 @@ const monthlyChartData = computed(() => {
     datasets: [
       {
         label: 'Income',
-        data: summary.value.monthly.map(m => Math.round(convert(m.income, 'PHP'))),
+        data: summary.value.monthly.map(m => Math.round(m.income)),
         borderColor: '#17ad49',
         backgroundColor: 'rgba(23, 173, 73, 0.08)',
         fill: true,
@@ -198,7 +198,7 @@ const monthlyChartData = computed(() => {
       },
       {
         label: 'Expense',
-        data: summary.value.monthly.map(m => Math.round(convert(m.expense, 'PHP'))),
+        data: summary.value.monthly.map(m => Math.round(m.expense)),
         borderColor: '#da2f38',
         backgroundColor: 'rgba(218, 47, 56, 0.08)',
         fill: true,
@@ -241,14 +241,14 @@ const groupChartData = computed(() => {
   for (const t of txns) {
     const group = categoryToGroup.value[t.category] || 'Others'
     if (!groups[group]) groups[group] = 0
-    groups[group] += t.amount
+    groups[group] += convert(t.amount, t.currency)
   }
   const sorted = Object.entries(groups).sort((a, b) => groupSortKey(a[0]) - groupSortKey(b[0]))
   const colors = ['#da2f38', '#17ad49', '#8952f6', '#1679fa', '#ff970a', '#0592b5', '#738482']
   return {
     labels: sorted.map(([g]) => g),
     datasets: [{
-      data: sorted.map(([, v]) => Math.round(convert(v, 'PHP'))),
+      data: sorted.map(([, v]) => Math.round(v)),
       backgroundColor: sorted.map((_, i) => colors[i % colors.length]),
       borderWidth: 0,
       hoverOffset: 4,
@@ -264,7 +264,7 @@ const drilledChartData = computed(() => {
     const group = categoryToGroup.value[t.category] || 'Others'
     if (group === drilledGroup.value) {
       if (!cats[t.category]) cats[t.category] = 0
-      cats[t.category] += t.amount
+      cats[t.category] += convert(t.amount, t.currency)
     }
   }
   const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1])
@@ -272,7 +272,7 @@ const drilledChartData = computed(() => {
   return {
     labels: sorted.map(([c]) => c),
     datasets: [{
-      data: sorted.map(([, v]) => Math.round(convert(v, 'PHP'))),
+      data: sorted.map(([, v]) => Math.round(v)),
       backgroundColor: sorted.map((_, i) => colors[i % colors.length]),
       borderWidth: 0,
       hoverOffset: 4,
@@ -553,8 +553,7 @@ async function fetchIncomeAccountMatrix() {
 }
 
 function formatConverted(val) {
-  const converted = convert(val, 'PHP')
-  return converted.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+  return val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 }
 
 const currencySymbol = computed(() => '$')
@@ -583,14 +582,14 @@ const currencySymbol = computed(() => '$')
           ></div>
         </div>
         <div class="text-xs text-mushroom-400 mt-1">
-          {{ currentMonthBudget ? `${currencySymbol}${convert(currentMonthExpense, 'PHP').toLocaleString()} / ${currencySymbol}${convert(currentMonthBudget.total_budget, 'PHP').toLocaleString()}` : 'No budget set' }}
+          {{ currentMonthBudget ? `${currencySymbol}${currentMonthExpense.toLocaleString()} / ${currencySymbol}${currentMonthBudget.total_budget.toLocaleString()}` : 'No budget set' }}
         </div>
       </div>
 
       <div class="card-elevated p-4">
         <div class="text-xs text-mushroom-400 mb-1">Expenses This Month</div>
         <div class="text-lg font-semibold text-tomato-500">
-          {{ currencySymbol }}{{ convert(currentMonthExpense, 'PHP').toLocaleString() }}
+          {{ currencySymbol }}{{ currentMonthExpense.toLocaleString() }}
         </div>
         <div class="text-xs text-mushroom-400 mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
@@ -600,7 +599,7 @@ const currencySymbol = computed(() => '$')
       <div class="card-elevated p-4">
         <div class="text-xs text-mushroom-400 mb-1">Income This Month</div>
         <div class="text-lg font-semibold text-kangkong-500">
-          {{ currencySymbol }}{{ convert(currentMonthIncome, 'PHP').toLocaleString() }}
+          {{ currencySymbol }}{{ currentMonthIncome.toLocaleString() }}
         </div>
         <div class="text-xs text-mushroom-400 mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}

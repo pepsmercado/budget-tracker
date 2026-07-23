@@ -300,18 +300,29 @@ class MockBackend(BackendService):
         else:
             end = date(year, mon + 1, 1)
 
+        rates = self.get_rates().rates
+        php_to_usd = 1 / rates.get("PHP", 56)
+
+        def to_usd(amount, currency):
+            if currency == "USD":
+                return amount
+            if currency == "PHP":
+                return amount * php_to_usd
+            return amount
+
         exp_cats = [c for c in self.categories.values() if c.type == "expense"]
         cat_spent = {c.name: 0.0 for c in exp_cats}
         for t in self.transactions.values():
             if t.type == "expense" and start <= t.date < end:
-                cat_spent[t.category] = cat_spent.get(t.category, 0) + t.amount
+                cat_spent[t.category] = cat_spent.get(t.category, 0) + to_usd(t.amount, t.currency)
 
         categories = []
         for c in exp_cats:
             if c.budget_amount > 0:
+                budget_usd = to_usd(c.budget_amount, c.budget_currency)
                 categories.append(CategoryBudgetSummary(
-                    name=c.name, group=c.group, budget=c.budget_amount,
-                    currency=c.budget_currency, spent=round(cat_spent.get(c.name, 0), 2),
+                    name=c.name, group=c.group, budget=round(budget_usd, 2),
+                    currency="USD", spent=round(cat_spent.get(c.name, 0), 2),
                 ))
 
         total_budget = sum(c.budget for c in categories)
@@ -346,8 +357,18 @@ class MockBackend(BackendService):
 
     def get_annual_summary(self, year: int) -> AnnualSummary:
         all_txns = [t for t in self.transactions.values() if t.date.year == year]
-        total_income = sum(t.amount for t in all_txns if t.type == "income")
-        total_expense = sum(t.amount for t in all_txns if t.type == "expense")
+        rates = self.get_rates().rates
+        php_to_usd = 1 / rates.get("PHP", 56)
+
+        def to_usd(amount, currency):
+            if currency == "USD":
+                return amount
+            if currency == "PHP":
+                return amount * php_to_usd
+            return amount
+
+        total_income = sum(to_usd(t.amount, t.currency) for t in all_txns if t.type == "income")
+        total_expense = sum(to_usd(t.amount, t.currency) for t in all_txns if t.type == "expense")
 
         by_account = {}
         for t in all_txns:
@@ -356,36 +377,36 @@ class MockBackend(BackendService):
                 by_account[t.account_id] = AccountBalance(
                     account_id=t.account_id,
                     account_name=acc.name if acc else "Unknown",
-                    currency=t.currency,
+                    currency="USD",
                     balance=0,
                 )
             if t.type == "income":
-                by_account[t.account_id].balance += t.amount
+                by_account[t.account_id].balance += to_usd(t.amount, t.currency)
             else:
-                by_account[t.account_id].balance -= t.amount
+                by_account[t.account_id].balance -= to_usd(t.amount, t.currency)
 
         by_category = {}
         for t in all_txns:
             if t.type == "expense":
                 if t.category not in by_category:
-                    by_category[t.category] = CategorySummary(category=t.category, total=0, currency=t.currency)
-                by_category[t.category].total += t.amount
+                    by_category[t.category] = CategorySummary(category=t.category, total=0, currency="USD")
+                by_category[t.category].total += to_usd(t.amount, t.currency)
 
         monthly = {}
         for t in all_txns:
             m = f"{t.date.year}-{t.date.month:02d}"
             if m not in monthly:
-                monthly[m] = MonthlyTotal(month=m, income=0, expense=0, currency="PHP")
+                monthly[m] = MonthlyTotal(month=m, income=0, expense=0, currency="USD")
             if t.type == "income":
-                monthly[m].income += t.amount
+                monthly[m].income += to_usd(t.amount, t.currency)
             else:
-                monthly[m].expense += t.amount
+                monthly[m].expense += to_usd(t.amount, t.currency)
 
         return AnnualSummary(
             year=year,
             total_income=round(total_income, 2),
             total_expense=round(total_expense, 2),
-            currency="PHP",
+            currency="USD",
             by_account=list(by_account.values()),
             by_category=sorted(by_category.values(), key=lambda x: x.total, reverse=True),
             monthly=sorted(monthly.values(), key=lambda x: x.month),
@@ -396,10 +417,20 @@ class MockBackend(BackendService):
 
     def get_monthly_category_breakdown(self, year: int) -> list[MonthlyCategoryRow]:
         all_txns = [t for t in self.transactions.values() if t.date.year == year and t.type == "expense"]
+        rates = self.get_rates().rates
+        php_to_usd = 1 / rates.get("PHP", 56)
+
+        def to_usd(amount, currency):
+            if currency == "USD":
+                return amount
+            if currency == "PHP":
+                return amount * php_to_usd
+            return amount
+
         cats = {}
         for t in all_txns:
             if t.category not in cats:
                 cats[t.category] = {}
             m = f"{t.date.month:02d}"
-            cats[t.category][m] = cats[t.category].get(m, 0) + t.amount
+            cats[t.category][m] = cats[t.category].get(m, 0) + to_usd(t.amount, t.currency)
         return [MonthlyCategoryRow(category=c, monthly=m) for c, m in sorted(cats.items())]
