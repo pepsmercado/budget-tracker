@@ -74,17 +74,11 @@ function updateChartVisibility() {
   chart.update()
 }
 
-const displayCurrency = ref(localStorage.getItem('display-currency') || 'USD')
-
-function setDisplayCurrency(c) {
-  displayCurrency.value = c
-  localStorage.setItem('display-currency', c)
-}
+const displayCurrency = ref('USD')
 
 function convert(val, fromCurrency) {
-  if (displayCurrency.value === fromCurrency) return val
-  if (fromCurrency === 'PHP' && displayCurrency.value === 'USD') return val / exchangeRate.value
-  if (fromCurrency === 'USD' && displayCurrency.value === 'PHP') return val * exchangeRate.value
+  if (fromCurrency === 'USD') return val
+  if (fromCurrency === 'PHP') return val / (exchangeRate.value || 56)
   return val
 }
 
@@ -563,7 +557,7 @@ function formatConverted(val) {
   return converted.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 }
 
-const currencySymbol = computed(() => displayCurrency.value === 'USD' ? '$' : 'â‚±')
+const currencySymbol = computed(() => '$')
 </script>
 
 <template>
@@ -571,10 +565,6 @@ const currencySymbol = computed(() => displayCurrency.value === 'USD' ? '$' : 'â
     <div class="flex items-center justify-between">
       <h2 class="text-lg font-medium text-mushroom-950">Dashboard</h2>
       <div class="flex items-center gap-3">
-        <select v-model="displayCurrency" @change="setDisplayCurrency($event.target.value)" class="select-field text-xs py-1 px-2 w-auto">
-          <option value="USD">$ USD</option>
-          <option value="PHP">â‚± PHP</option>
-        </select>
         <span class="text-xs text-mushroom-400">{{ currentYear }}</span>
       </div>
     </div>
@@ -704,8 +694,8 @@ const currencySymbol = computed(() => displayCurrency.value === 'USD' ? '$' : 'â
             <tr class="border-b border-mushroom-200">
               <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Category</th>
               <th v-for="(m, i) in incomeMatrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ displayCurrency === 'USD' ? '$' : 'â‚±' }}</th>
-              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Avg {{ displayCurrency === 'USD' ? '$' : 'â‚±' }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total $</th>
+              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Avg $</th>
             </tr>
           </thead>
           <tbody>
@@ -733,7 +723,7 @@ const currencySymbol = computed(() => displayCurrency.value === 'USD' ? '$' : 'â
             <tr class="border-b border-mushroom-200">
               <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Account</th>
               <th v-for="(m, i) in incomeMatrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ displayCurrency === 'USD' ? '$' : 'â‚±' }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total $</th>
             </tr>
           </thead>
           <tbody>
@@ -806,8 +796,8 @@ const currencySymbol = computed(() => displayCurrency.value === 'USD' ? '$' : 'â
             <tr class="border-b border-mushroom-200">
               <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Category</th>
               <th v-for="(m, i) in matrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ displayCurrency === 'USD' ? '$' : 'â‚±' }}</th>
-              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Avg {{ displayCurrency === 'USD' ? '$' : 'â‚±' }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total $</th>
+              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Avg $</th>
             </tr>
           </thead>
           <tbody>
@@ -863,7 +853,7 @@ const currencySymbol = computed(() => displayCurrency.value === 'USD' ? '$' : 'â
             <tr class="border-b border-mushroom-200">
               <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Account</th>
               <th v-for="(m, i) in matrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ displayCurrency === 'USD' ? '$' : 'â‚±' }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total $</th>
             </tr>
           </thead>
           <tbody>
