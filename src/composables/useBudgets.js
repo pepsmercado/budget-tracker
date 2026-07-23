@@ -4,6 +4,7 @@ import api from '../api'
 export function useBudgets() {
   const budget = ref(null)
   const loading = ref(false)
+  const budgetSummary = ref(null)
 
   async function fetchBudget(month) {
     loading.value = true
@@ -21,5 +22,15 @@ export function useBudgets() {
     return data
   }
 
-  return { budget, loading, fetchBudget, setBudget }
+  async function fetchBudgetSummary(month) {
+    loading.value = true
+    try {
+      const { data } = await api.get(`/budgets/${month}/summary`)
+      budgetSummary.value = data
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { budget, loading, budgetSummary, fetchBudget, setBudget, fetchBudgetSummary }
 }
