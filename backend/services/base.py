@@ -3,6 +3,7 @@ from models import (
     Account, AccountCreate, Transaction, TransactionCreate,
     Category, CategoryCreate, Budget, BudgetSet,
     Balance, AnnualSummary, RatesResponse, MonthlyCategoryRow,
+    BudgetSummary,
 )
 
 
@@ -66,6 +67,10 @@ class BackendService(ABC):
 
     @abstractmethod
     def set_budget(self, month: str, data: BudgetSet) -> Budget:
+        pass
+
+    @abstractmethod
+    def get_budget_summary(self, month: str) -> BudgetSummary:
         pass
 
     @abstractmethod

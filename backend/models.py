@@ -158,3 +158,17 @@ class BankStatementPreview(BaseModel):
 class MonthlyCategoryRow(BaseModel):
     category: str
     monthly: dict[str, float]  # "01": amount, "02": amount, ...
+
+
+class CategoryBudgetSummary(BaseModel):
+    name: str
+    group: str
+    budget: float
+    currency: str
+    spent: float
+
+class BudgetSummary(BaseModel):
+    month: str
+    total_budget: float
+    total_spent: float
+    categories: list[CategoryBudgetSummary]

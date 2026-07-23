@@ -284,6 +284,37 @@ class MockBackend(BackendService):
         self._save()
         return b
 
+    def get_budget_summary(self, month: str) -> BudgetSummary:
+        from models import CategoryBudgetSummary, BudgetSummary
+        year, mon = int(month.split('-')[0]), int(month.split('-')[1])
+        start = date(year, mon, 1)
+        if mon == 12:
+            end = date(year + 1, 1, 1)
+        else:
+            end = date(year, mon + 1, 1)
+
+        exp_cats = [c for c in self.categories.values() if c.type == "expense"]
+        cat_spent = {c.name: 0.0 for c in exp_cats}
+        for t in self.transactions.values():
+            if t.type == "expense" and start <= t.date < end:
+                cat_spent[t.category] = cat_spent.get(t.category, 0) + t.amount
+
+        categories = []
+        for c in exp_cats:
+            if c.budget_amount > 0:
+                categories.append(CategoryBudgetSummary(
+                    name=c.name, group=c.group, budget=c.budget_amount,
+                    currency=c.budget_currency, spent=round(cat_spent.get(c.name, 0), 2),
+                ))
+
+        total_budget = sum(c.budget for c in categories)
+        total_spent = sum(c.spent for c in categories)
+
+        return BudgetSummary(
+            month=month, total_budget=round(total_budget, 2),
+            total_spent=round(total_spent, 2), categories=categories,
+        )
+
     def get_balances(self) -> list[Balance]:
         balances = {}
         for acc in self.accounts.values():

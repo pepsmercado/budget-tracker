@@ -14,3 +14,8 @@ def get_budget(month: str):
 @router.put("/budgets/{month}")
 def set_budget(month: str, data: BudgetSet):
     return backend.set_budget(month, data)
+
+
+@router.get("/budgets/{month}/summary")
+def get_budget_summary(month: str):
+    return backend.get_budget_summary(month)
