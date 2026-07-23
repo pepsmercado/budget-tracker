@@ -391,7 +391,7 @@ async function fetchExpenseAccountMatrix() {
     if (!grouped[accType][accName]) grouped[accType][accName] = new Array(12).fill(0)
     const d = new Date(t.date)
     const monthIdx = d.getMonth()
-    grouped[accType][accName][monthIdx] += t.amount
+    grouped[accType][accName][monthIdx] += convert(t.amount, t.currency)
   }
 
   const sortedTypes = Object.keys(grouped).sort((a, b) => {
@@ -449,7 +449,7 @@ async function fetchIncomeMatrixData() {
   for (const t of data) {
     if (!cats[t.category]) cats[t.category] = new Array(12).fill(0)
     const d = new Date(t.date)
-    cats[t.category][d.getMonth()] += t.amount
+    cats[t.category][d.getMonth()] += convert(t.amount, t.currency)
   }
 
   const rows = []
@@ -509,7 +509,7 @@ async function fetchIncomeAccountMatrix() {
     if (!grouped[accType][accName]) grouped[accType][accName] = new Array(12).fill(0)
     const d = new Date(t.date)
     const monthIdx = d.getMonth()
-    grouped[accType][accName][monthIdx] += t.amount
+    grouped[accType][accName][monthIdx] += convert(t.amount, t.currency)
   }
 
   const sortedTypes = Object.keys(grouped).sort((a, b) => {
