@@ -678,19 +678,6 @@ const currencySymbol = computed(() => displayCurrency.value === 'USD' ? '$' : 'â
       </div>
     </div>
 
-    <div v-if="insights.length > 0" class="card-elevated p-5">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="text-lg">ðŸ’¡</span>
-        <h3 class="text-sm font-medium text-mushroom-700">Insights</h3>
-      </div>
-      <div class="space-y-2">
-        <div v-for="(insight, i) in insights" :key="i" class="flex items-start gap-2 py-1.5">
-          <span class="text-sm mt-0.5">{{ insight.icon }}</span>
-          <span class="text-xs" :class="insight.color">{{ insight.text }}</span>
-        </div>
-      </div>
-    </div>
-
     <div class="card-elevated p-4">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-3">
