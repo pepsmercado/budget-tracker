@@ -15,7 +15,7 @@ onMounted(() => {
 })
 
 const totalNetWorth = computed(() => {
-  return balances.value.reduce((sum, b) => sum + b.balance_display, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return '$' + balances.value.reduce((sum, b) => sum + b.balance_display, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 })
 
 const rateDisplay = computed(() => {
@@ -111,7 +111,7 @@ function formatBal(val, currency) {
           <div class="border-t border-mushroom-100 pt-2 mt-2">
             <div class="flex items-center justify-between text-xs">
               <span class="text-mushroom-500">Total (USD)</span>
-              <span class="font-semibold text-kangkong-700">{{ totalNetWorth }}</span>
+              <span class="font-semibold text-kangkong-700">${{ balances.value.reduce((sum, b) => sum + b.balance_display, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
             </div>
           </div>
         </div>

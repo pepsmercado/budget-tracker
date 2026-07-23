@@ -343,15 +343,23 @@ class MockBackend(BackendService):
                     balances[t.account_id] += t.amount
                 elif t.type == "expense":
                     balances[t.account_id] -= t.amount
+
+        rates = self.get_rates().rates
+        php_to_usd = 1 / rates.get("PHP", 56)
+
         result = []
         for acc in self.accounts.values():
             bal = balances.get(acc.id, acc.initial_balance)
+            if acc.currency == "PHP":
+                bal_display = round(bal * php_to_usd, 2)
+            else:
+                bal_display = round(bal, 2)
             result.append(Balance(
                 account_id=acc.id,
                 account_name=acc.name,
                 currency=acc.currency,
                 balance=round(bal, 2),
-                balance_display=round(bal, 2),
+                balance_display=bal_display,
             ))
         return result
 
