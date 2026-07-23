@@ -7,6 +7,7 @@ const { balances, fetchBalances } = useSummary()
 const { exchangeRate, lastUpdated, fetchExchangeRate } = useExchangeRate()
 
 const showNetWorthTooltip = ref(false)
+const showRateTooltip = ref(false)
 
 onMounted(() => {
   fetchBalances()
@@ -22,16 +23,21 @@ const rateDisplay = computed(() => {
   return `1 USD = ₱${exchangeRate.value.toFixed(2)}`
 })
 
+const phpToUsd = computed(() => {
+  if (!exchangeRate.value) return '—'
+  return `1 PHP = $${(1 / exchangeRate.value).toFixed(4)}`
+})
+
 const usAccounts = computed(() => balances.value.filter(b => b.currency === 'USD'))
 const phpAccounts = computed(() => balances.value.filter(b => b.currency === 'PHP'))
 
-function openExchangeRateSource() {
-  window.open('https://open.er-api.com', '_blank')
+function openExchangeRateSite() {
+  window.open('https://www.x-rates.com/calculator/?from=USD&to=PHP&amount=1', '_blank')
 }
 
 function formatBal(val, currency) {
-  if (currency === 'USD') return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-  return `₱${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+  if (currency === 'USD') return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return `₱${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 </script>
 
@@ -39,11 +45,36 @@ function formatBal(val, currency) {
   <header class="h-12 bg-white border-b border-mushroom-200 flex items-center justify-between px-5 relative">
     <div></div>
     <div class="flex items-center gap-5">
-      <span
-        class="text-xs text-mushroom-500 cursor-pointer hover:text-kangkong-600 transition-colors"
-        title="Source: open.er-api.com"
-        @click="openExchangeRateSource"
-      >{{ rateDisplay }}</span>
+      <div
+        class="relative"
+        @mouseenter="showRateTooltip = true"
+        @mouseleave="showRateTooltip = false"
+      >
+        <span
+          class="text-xs text-mushroom-500 cursor-pointer hover:text-kangkong-600 transition-colors"
+          @click="openExchangeRateSite"
+        >{{ rateDisplay }}</span>
+
+        <div
+          v-if="showRateTooltip"
+          class="absolute right-0 top-full mt-2 w-48 card-elevated shadow-lg p-3 z-50"
+        >
+          <div class="text-xs font-medium text-mushroom-700 mb-2">Exchange Rate</div>
+          <div class="space-y-1">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-mushroom-500">USD → PHP</span>
+              <span class="font-medium text-mushroom-800">₱{{ exchangeRate?.toFixed(2) || '—' }}</span>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-mushroom-500">PHP → USD</span>
+              <span class="font-medium text-mushroom-800">{{ phpToUsd }}</span>
+            </div>
+          </div>
+          <div class="mt-2 pt-2 border-t border-mushroom-100 text-[10px] text-mushroom-400">
+            Click to view live rate
+          </div>
+        </div>
+      </div>
       <div class="w-px h-4 bg-mushroom-200"></div>
       <div
         class="relative group"

@@ -553,7 +553,7 @@ async function fetchIncomeAccountMatrix() {
 }
 
 function formatConverted(val) {
-  return val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+  return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 const currencySymbol = computed(() => '$')
@@ -582,14 +582,14 @@ const currencySymbol = computed(() => '$')
           ></div>
         </div>
         <div class="text-xs text-mushroom-400 mt-1">
-          {{ currentMonthBudget ? `${currencySymbol}${currentMonthExpense.toLocaleString()} / ${currencySymbol}${currentMonthBudget.total_budget.toLocaleString()}` : 'No budget set' }}
+          {{ currentMonthBudget ? `${currencySymbol}${currentMonthExpense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${currencySymbol}${currentMonthBudget.total_budget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'No budget set' }}
         </div>
       </div>
 
       <div class="card-elevated p-4">
         <div class="text-xs text-mushroom-400 mb-1">Expenses This Month</div>
         <div class="text-lg font-semibold text-tomato-500">
-          {{ currencySymbol }}{{ currentMonthExpense.toLocaleString() }}
+          {{ currencySymbol }}{{ currentMonthExpense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
         </div>
         <div class="text-xs text-mushroom-400 mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
@@ -599,7 +599,7 @@ const currencySymbol = computed(() => '$')
       <div class="card-elevated p-4">
         <div class="text-xs text-mushroom-400 mb-1">Income This Month</div>
         <div class="text-lg font-semibold text-kangkong-500">
-          {{ currencySymbol }}{{ currentMonthIncome.toLocaleString() }}
+          {{ currencySymbol }}{{ currentMonthIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
         </div>
         <div class="text-xs text-mushroom-400 mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
