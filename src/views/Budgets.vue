@@ -136,10 +136,22 @@ async function resetToTemplate() {
 
 function openTemplateEditor() {
   templateEditValues.value = {}
-  for (const cat of (categories.value || []).filter(c => c.type === 'expense')) {
-    templateEditValues.value[cat.name] = cat.budget_amount || 0
+  const expenseCategories = (categories.value || []).filter(c => c.type === 'expense')
+  if (expenseCategories.length === 0) {
+    // Categories not loaded yet, fetch them first
+    api.get('/categories').then(({ data }) => {
+      categories.value = data
+      for (const cat of data.filter(c => c.type === 'expense')) {
+        templateEditValues.value[cat.name] = cat.budget_amount || 0
+      }
+      showTemplateEditor.value = true
+    })
+  } else {
+    for (const cat of expenseCategories) {
+      templateEditValues.value[cat.name] = cat.budget_amount || 0
+    }
+    showTemplateEditor.value = true
   }
-  showTemplateEditor.value = true
 }
 
 async function saveTemplateEditor() {
