@@ -14,8 +14,14 @@ from models import (
     Transfer, TransferCreate,
 )
 
-DATA_FILE = os.path.join(os.path.dirname(__file__), "..", "data.json")
-MONTHLY_BUDGETS_FILE = os.path.join(os.path.dirname(__file__), "..", "monthly_budgets.json")
+# Use /tmp on Vercel (serverless), local file otherwise
+if os.environ.get("VERCEL"):
+    DATA_DIR = "/tmp"
+else:
+    DATA_DIR = os.path.join(os.path.dirname(__file__), "..")
+
+DATA_FILE = os.path.join(DATA_DIR, "data.json")
+MONTHLY_BUDGETS_FILE = os.path.join(DATA_DIR, "monthly_budgets.json")
 
 
 class MockBackend(BackendService):
