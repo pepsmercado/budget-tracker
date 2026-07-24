@@ -1,21 +1,31 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, inject, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useSummary } from '../composables/useSummary'
 import { useExchangeRate } from '../composables/useExchangeRate'
 
+const route = useRoute()
 const { balances, fetchBalances } = useSummary()
 const { exchangeRate, lastUpdated, fetchExchangeRate } = useExchangeRate()
+const sidebarOpen = inject('sidebarOpen')
 
 const showNetWorthTooltip = ref(false)
 const showRateTooltip = ref(false)
 
-onMounted(() => {
-  fetchBalances()
-  fetchExchangeRate()
+const currentCurrency = computed(() => {
+  if (route.path.startsWith('/usd')) return 'USD'
+  return 'PHP'
+})
+
+const currencySymbol = computed(() => currentCurrency.value === 'USD' ? '$' : '₱')
+
+const filteredBalances = computed(() => {
+  return balances.value.filter(b => b.currency === currentCurrency.value)
 })
 
 const totalNetWorth = computed(() => {
-  return '$' + balances.value.reduce((sum, b) => sum + b.balance_display, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const total = filteredBalances.value.reduce((sum, b) => sum + b.balance, 0)
+  return `${currencySymbol.value}${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 })
 
 const rateDisplay = computed(() => {
@@ -28,8 +38,14 @@ const phpToUsd = computed(() => {
   return `1 PHP = $${(1 / exchangeRate.value).toFixed(4)}`
 })
 
-const usAccounts = computed(() => balances.value.filter(b => b.currency === 'USD'))
-const phpAccounts = computed(() => balances.value.filter(b => b.currency === 'PHP'))
+onMounted(() => {
+  fetchBalances()
+  fetchExchangeRate()
+})
+
+watch(() => route.path, () => {
+  fetchBalances()
+})
 
 function openExchangeRateSite() {
   window.open('https://www.x-rates.com/calculator/?from=USD&to=PHP&amount=1', '_blank')
@@ -42,11 +58,15 @@ function formatBal(val, currency) {
 </script>
 
 <template>
-  <header class="h-12 bg-white border-b border-mushroom-200 flex items-center justify-between px-5 relative">
-    <div></div>
-    <div class="flex items-center gap-5">
+  <header class="h-12 bg-white border-b border-mushroom-200 flex items-center justify-between px-3 sm:px-5 relative">
+    <div class="flex items-center gap-3">
+      <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden text-mushroom-500 hover:text-mushroom-700 transition-colors">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+    <div class="flex items-center gap-3 sm:gap-5">
       <div
-        class="relative"
+        class="relative hidden sm:block"
         @mouseenter="showRateTooltip = true"
         @mouseleave="showRateTooltip = false"
       >
@@ -82,36 +102,29 @@ function formatBal(val, currency) {
         @mouseleave="showNetWorthTooltip = false"
       >
         <div class="flex items-center gap-1.5 cursor-default">
-          <span class="text-xs text-mushroom-400">Net Worth</span>
-          <span class="text-sm font-semibold text-kangkong-700">{{ totalNetWorth }}</span>
+          <span class="text-xs text-mushroom-400">
+            {{ currentCurrency === 'USD' ? '🇺🇸' : '🇵🇭' }} Net Worth
+          </span>
+          <span class="text-sm font-semibold" :class="currentCurrency === 'USD' ? 'text-kangkong-700' : 'text-kangkong-700'">{{ totalNetWorth }}</span>
         </div>
 
         <div
           v-if="showNetWorthTooltip"
           class="absolute right-0 top-full mt-2 w-72 card-elevated shadow-lg p-4 z-50"
         >
-          <div class="text-xs font-medium text-mushroom-700 mb-3">Net Worth Breakdown</div>
-
-          <div v-if="usAccounts.length" class="mb-3">
-            <div class="text-[10px] uppercase tracking-wide text-mushroom-400 mb-1">🇺🇸 US Accounts</div>
-            <div v-for="b in usAccounts" :key="b.account_id" class="flex items-center justify-between py-0.5 text-xs">
-              <span class="text-mushroom-600">{{ b.account_name }}</span>
-              <span class="font-medium text-mushroom-800">{{ formatBal(b.balance, b.currency) }}</span>
-            </div>
+          <div class="text-xs font-medium text-mushroom-700 mb-3">
+            {{ currentCurrency === 'USD' ? '🇺🇸 US Accounts' : '🇵🇭 Philippine Accounts' }}
           </div>
 
-          <div v-if="phpAccounts.length" class="mb-3">
-            <div class="text-[10px] uppercase tracking-wide text-mushroom-400 mb-1">🇵🇭 Philippine Accounts</div>
-            <div v-for="b in phpAccounts" :key="b.account_id" class="flex items-center justify-between py-0.5 text-xs">
-              <span class="text-mushroom-600">{{ b.account_name }}</span>
-              <span class="font-medium text-mushroom-800">{{ formatBal(b.balance, b.currency) }}</span>
-            </div>
+          <div v-for="b in filteredBalances" :key="b.account_id" class="flex items-center justify-between py-0.5 text-xs">
+            <span class="text-mushroom-600">{{ b.account_name }}</span>
+            <span class="font-medium text-mushroom-800">{{ formatBal(b.balance, b.currency) }}</span>
           </div>
 
           <div class="border-t border-mushroom-100 pt-2 mt-2">
             <div class="flex items-center justify-between text-xs">
-              <span class="text-mushroom-500">Total (USD)</span>
-              <span class="font-semibold text-kangkong-700">${{ balances.reduce((sum, b) => sum + b.balance_display, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+              <span class="text-mushroom-500">Total ({{ currentCurrency }})</span>
+              <span class="font-semibold text-kangkong-700">{{ totalNetWorth }}</span>
             </div>
           </div>
         </div>

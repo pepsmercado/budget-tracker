@@ -1,6 +1,6 @@
 export function useInsights() {
 
-  function computeInsights(transactions, categories, budgetSummary, balances) {
+  function computeInsights(transactions, categories, budgetSummary, balances, currencySymbol) {
     const insights = []
     const now = new Date()
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -61,13 +61,14 @@ export function useInsights() {
       }
     }
 
-    const totalNetWorth = balances.reduce((s, b) => s + b.balance_display, 0)
+    const sym = currencySymbol || '$'
+    const totalNetWorth = balances.reduce((s, b) => s + b.balance, 0)
     const milestones = [5000, 10000, 15000, 20000, 25000, 30000, 50000, 100000]
     for (const m of milestones) {
       if (totalNetWorth >= m && totalNetWorth < m * 1.05) {
         insights.push({
           icon: '🎉',
-          text: `Net worth crossed $${m.toLocaleString()}!`,
+          text: `Net worth crossed ${sym}${m.toLocaleString()}!`,
           color: 'text-kangkong-600',
         })
         break

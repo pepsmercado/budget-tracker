@@ -10,9 +10,12 @@ export function useTransactions() {
     try {
       const params = {}
       if (filters.account_id) params.account_id = filters.account_id
+      if (filters.type) params.type = filters.type
+      if (filters.group) params.group = filters.group
       if (filters.category) params.category = filters.category
       if (filters.start_date) params.start_date = filters.start_date
       if (filters.end_date) params.end_date = filters.end_date
+      if (filters.currency) params.currency = filters.currency
       const { data } = await api.get('/transactions', { params })
       transactions.value = data
     } finally {

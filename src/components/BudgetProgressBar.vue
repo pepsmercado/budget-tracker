@@ -6,11 +6,17 @@ const props = defineProps({
   budget: { type: Number, default: 0 },
   greenThreshold: { type: Number, default: 0.7 },
   orangeThreshold: { type: Number, default: 0.9 },
+  invert: { type: Boolean, default: false },
 })
 
 const percentage = computed(() => props.budget > 0 ? Math.min((props.spent / props.budget) * 100, 100) : 0)
 const ratio = computed(() => props.budget > 0 ? props.spent / props.budget : 0)
 const colorClass = computed(() => {
+  if (props.invert) {
+    if (ratio.value >= props.orangeThreshold) return 'bg-kangkong-500'
+    if (ratio.value >= props.greenThreshold) return 'bg-carrot-500'
+    return 'bg-tomato-500'
+  }
   if (ratio.value < props.greenThreshold) return 'bg-kangkong-500'
   if (ratio.value < props.orangeThreshold) return 'bg-carrot-500'
   return 'bg-tomato-500'

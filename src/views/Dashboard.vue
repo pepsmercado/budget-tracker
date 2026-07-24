@@ -8,17 +8,15 @@ import {
 import { useSummary } from '../composables/useSummary'
 import { useAccounts } from '../composables/useAccounts'
 import { useTransactions } from '../composables/useTransactions'
-import { useExchangeRate } from '../composables/useExchangeRate'
-import { useInsights } from '../composables/useInsights'
 import api from '../api'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend, Filler)
 
+const props = defineProps({ currency: { type: String, default: 'php' } })
+
 const { summary, balances, fetchSummary, fetchBalances } = useSummary()
 const { accounts, fetchAccounts } = useAccounts()
 const { transactions, fetchTransactions } = useTransactions()
-const { exchangeRate, fetchExchangeRate } = useExchangeRate()
-const { computeInsights } = useInsights()
 
 const currentYear = new Date().getFullYear()
 const categories = ref([])
@@ -34,8 +32,11 @@ const pieMonths = ref([])
 const trendChartRef = ref(null)
 const incomeVisible = ref(true)
 const expensesVisible = ref(true)
-const insights = ref([])
 const budgetSummary = ref(null)
+
+const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
+const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
+const viewLabel = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 
 const currentMonth = computed(() => {
   const now = new Date()
@@ -74,14 +75,6 @@ function updateChartVisibility() {
   chart.update()
 }
 
-const displayCurrency = ref('USD')
-
-function convert(val, fromCurrency) {
-  if (fromCurrency === 'USD') return val
-  if (fromCurrency === 'PHP') return val / (exchangeRate.value || 56)
-  return val
-}
-
 const years = computed(() => [currentYear, currentYear - 1, currentYear - 2])
 
 const months = computed(() => {
@@ -94,7 +87,7 @@ const months = computed(() => {
 })
 
 async function fetchPieMonths() {
-  const { data } = await api.get(`/summary/${pieYear.value}`)
+  const { data } = await api.get(`/summary/${pieYear.value}`, { params: { currency: currencyParam.value } })
   pieMonths.value = [
     { value: 'full-year', label: 'Full Year' },
     ...data.monthly.map(m => {
@@ -129,17 +122,20 @@ function groupSortKey(name) {
   return idx >= 0 ? idx : GROUP_ORDER.length
 }
 
-onMounted(async () => {
+async function loadDashboard() {
   await fetchCategories()
-  await Promise.all([fetchSummary(currentYear), fetchBalances(), fetchAccounts(), fetchMatrixData(), fetchPieMonths(), fetchExchangeRate(), fetchCurrentMonthSummary()])
+  await Promise.all([fetchSummary(currentYear, currencyParam.value), fetchBalances(currencyParam.value), fetchAccounts(), fetchMatrixData(), fetchPieMonths(), fetchCurrentMonthSummary()])
   await Promise.all([fetchExpenseAccountMatrix(), fetchIncomeMatrixData(), fetchIncomeAccountMatrix()])
   if (months.value.length > 0) {
     selectedMonth.value = months.value[months.value.length - 1].value
   }
-  const { data: summary } = await api.get(`/budgets/${currentMonth.value}/summary`).catch(() => ({ data: null }))
+  const { data: summary } = await api.get(`/budgets/${currentMonth.value}/summary`, { params: { currency: currencyParam.value } }).catch(() => ({ data: null }))
   budgetSummary.value = summary
-  insights.value = computeInsights(transactions.value, categories.value, budgetSummary.value, balances.value)
-})
+}
+
+onMounted(loadDashboard)
+
+watch(currencyParam, loadDashboard)
 
 const currentMonthBudget = ref(null)
 const currentMonthIncome = ref(0)
@@ -153,14 +149,14 @@ async function fetchCurrentMonthSummary() {
 
   const [budgetRes, txnsRes] = await Promise.all([
     api.get(`/budgets/${monthKey}`).catch(() => null),
-    api.get(`/transactions?start_date=${y}-${m}-01&end_date=${y}-${m}-${new Date(y, parseInt(m), 0).getDate()}`)
+    api.get(`/transactions`, { params: { currency: currencyParam.value, start_date: `${y}-${m}-01`, end_date: `${y}-${m}-${new Date(y, parseInt(m), 0).getDate()}` } })
   ])
 
   if (budgetRes?.data) currentMonthBudget.value = budgetRes.data
 
   const txns = txnsRes.data || []
-  currentMonthIncome.value = txns.filter(t => t.type === 'income').reduce((s, t) => s + convert(t.amount, t.currency), 0)
-  currentMonthExpense.value = txns.filter(t => t.type === 'expense').reduce((s, t) => s + convert(t.amount, t.currency), 0)
+  currentMonthIncome.value = txns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+  currentMonthExpense.value = txns.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
 }
 
 const budgetProgress = computed(() => {
@@ -214,11 +210,11 @@ const monthlyTransactions = ref([])
 watch(selectedMonth, async (val) => {
   if (!val) return
   if (val === 'full-year') {
-    await fetchTransactions({ start_date: `${pieYear.value}-01-01`, end_date: `${pieYear.value}-12-31` })
+    await fetchTransactions({ currency: currencyParam.value, start_date: `${pieYear.value}-01-01`, end_date: `${pieYear.value}-12-31` })
   } else {
     const [y, m] = val.split('-')
     const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate()
-    await fetchTransactions({ start_date: `${y}-${m}-01`, end_date: `${y}-${m}-${lastDay}` })
+    await fetchTransactions({ currency: currencyParam.value, start_date: `${y}-${m}-01`, end_date: `${y}-${m}-${lastDay}` })
   }
   monthlyTransactions.value = transactions.value.filter(t => t.type === 'expense')
 }, { immediate: true })
@@ -241,7 +237,7 @@ const groupChartData = computed(() => {
   for (const t of txns) {
     const group = categoryToGroup.value[t.category] || 'Others'
     if (!groups[group]) groups[group] = 0
-    groups[group] += convert(t.amount, t.currency)
+    groups[group] += t.amount
   }
   const sorted = Object.entries(groups).sort((a, b) => groupSortKey(a[0]) - groupSortKey(b[0]))
   const colors = ['#da2f38', '#17ad49', '#8952f6', '#1679fa', '#ff970a', '#0592b5', '#738482']
@@ -264,7 +260,7 @@ const drilledChartData = computed(() => {
     const group = categoryToGroup.value[t.category] || 'Others'
     if (group === drilledGroup.value) {
       if (!cats[t.category]) cats[t.category] = 0
-      cats[t.category] += convert(t.amount, t.currency)
+      cats[t.category] += t.amount
     }
   }
   const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1])
@@ -281,10 +277,7 @@ const drilledChartData = computed(() => {
 })
 
 watch(selectedYear, async () => {
-  await fetchMatrixData()
-  await fetchExpenseAccountMatrix()
-  await fetchIncomeMatrixData()
-  await fetchIncomeAccountMatrix()
+  await Promise.all([fetchMatrixData(), fetchExpenseAccountMatrix(), fetchIncomeMatrixData(), fetchIncomeAccountMatrix()])
 })
 
 const matrixRows = ref([])
@@ -294,7 +287,7 @@ const matrixGrandTotal = ref(0)
 const matrixAvg = ref(0)
 
 async function fetchMatrixData() {
-  const { data } = await api.get(`/summary/${selectedYear.value}/monthly-categories`)
+  const { data } = await api.get(`/summary/${selectedYear.value}/monthly-categories`, { params: { currency: currencyParam.value } })
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   matrixMonths.value = monthNames
 
@@ -376,22 +369,22 @@ function isExpenseAccountCollapsed(typeName) {
   return expenseAccountCollapsed.value.has(typeName)
 }
 
-const ACCOUNT_TYPE_ORDER = ['savings', 'checking', 'time_deposit', 'investment']
+const ACCOUNT_TYPE_ORDER = ['savings', 'checking', 'time_deposit', 'equity', 'investment']
 
 async function fetchExpenseAccountMatrix() {
-  const { data: txnsData } = await api.get(`/transactions?start_date=${selectedYear.value}-01-01&end_date=${selectedYear.value}-12-31&type=expense`)
+  const { data: txnsData } = await api.get(`/transactions`, { params: { currency: currencyParam.value, start_date: `${selectedYear.value}-01-01`, end_date: `${selectedYear.value}-12-31`, type: 'expense' } })
 
   const grouped = {}
   for (const t of txnsData) {
     const acc = accounts.value.find(a => a.id === t.account_id)
     const accType = acc ? acc.type : 'other'
-    if (accType === 'time_deposit' || accType === 'investment') continue
+    if (accType === 'time_deposit' || accType === 'investment' || accType === 'equity') continue
     const accName = acc ? acc.name : t.account_id
     if (!grouped[accType]) grouped[accType] = {}
     if (!grouped[accType][accName]) grouped[accType][accName] = new Array(12).fill(0)
     const d = new Date(t.date)
     const monthIdx = d.getMonth()
-    grouped[accType][accName][monthIdx] += convert(t.amount, t.currency)
+    grouped[accType][accName][monthIdx] += t.amount
   }
 
   const sortedTypes = Object.keys(grouped).sort((a, b) => {
@@ -441,7 +434,7 @@ const incomeMatrixGrandTotal = ref(0)
 const incomeMatrixAvg = ref(0)
 
 async function fetchIncomeMatrixData() {
-  const { data } = await api.get(`/transactions?start_date=${selectedYear.value}-01-01&end_date=${selectedYear.value}-12-31&type=income`)
+  const { data } = await api.get(`/transactions`, { params: { currency: currencyParam.value, start_date: `${selectedYear.value}-01-01`, end_date: `${selectedYear.value}-12-31`, type: 'income' } })
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   incomeMatrixMonths.value = monthNames
 
@@ -449,7 +442,7 @@ async function fetchIncomeMatrixData() {
   for (const t of data) {
     if (!cats[t.category]) cats[t.category] = new Array(12).fill(0)
     const d = new Date(t.date)
-    cats[t.category][d.getMonth()] += convert(t.amount, t.currency)
+    cats[t.category][d.getMonth()] += t.amount
   }
 
   const rows = []
@@ -497,7 +490,7 @@ function isIncomeAccountCollapsed(typeName) {
 }
 
 async function fetchIncomeAccountMatrix() {
-  const { data: txnsData } = await api.get(`/transactions?start_date=${selectedYear.value}-01-01&end_date=${selectedYear.value}-12-31&type=income`)
+  const { data: txnsData } = await api.get(`/transactions`, { params: { currency: currencyParam.value, start_date: `${selectedYear.value}-01-01`, end_date: `${selectedYear.value}-12-31`, type: 'income' } })
 
   const grouped = {}
   for (const t of txnsData) {
@@ -509,7 +502,7 @@ async function fetchIncomeAccountMatrix() {
     if (!grouped[accType][accName]) grouped[accType][accName] = new Array(12).fill(0)
     const d = new Date(t.date)
     const monthIdx = d.getMonth()
-    grouped[accType][accName][monthIdx] += convert(t.amount, t.currency)
+    grouped[accType][accName][monthIdx] += t.amount
   }
 
   const sortedTypes = Object.keys(grouped).sort((a, b) => {
@@ -555,14 +548,12 @@ async function fetchIncomeAccountMatrix() {
 function formatConverted(val) {
   return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
-
-const currencySymbol = computed(() => '$')
 </script>
 
 <template>
   <div class="space-y-5">
     <div class="flex items-center justify-between">
-      <h2 class="text-lg font-medium text-mushroom-950">Dashboard</h2>
+      <h2 class="text-lg font-medium text-mushroom-950">{{ viewLabel }} Dashboard</h2>
       <div class="flex items-center gap-3">
         <span class="text-xs text-mushroom-400">{{ currentYear }}</span>
       </div>
@@ -693,8 +684,8 @@ const currencySymbol = computed(() => '$')
             <tr class="border-b border-mushroom-200">
               <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Category</th>
               <th v-for="(m, i) in incomeMatrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total $</th>
-              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Avg $</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ currencySymbol }}</th>
+              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Avg {{ currencySymbol }}</th>
             </tr>
           </thead>
           <tbody>
@@ -722,7 +713,7 @@ const currencySymbol = computed(() => '$')
             <tr class="border-b border-mushroom-200">
               <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Account</th>
               <th v-for="(m, i) in incomeMatrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total $</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ currencySymbol }}</th>
             </tr>
           </thead>
           <tbody>
@@ -741,8 +732,8 @@ const currencySymbol = computed(() => '$')
                   </span>
                 </td>
                 <template v-if="isIncomeAccountCollapsed(row.name)">
-                  <td v-for="(val, i) in incomeAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name).data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
-                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(incomeAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name).data.reduce((a, b) => a + b, 0)) }}</td>
+                  <td v-for="(val, i) in (incomeAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
+                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(((incomeAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []).reduce((a, b) => a + b, 0)) }}</td>
                 </template>
                 <td v-else :colspan="13"></td>
               </tr>
@@ -795,8 +786,8 @@ const currencySymbol = computed(() => '$')
             <tr class="border-b border-mushroom-200">
               <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Category</th>
               <th v-for="(m, i) in matrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total $</th>
-              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Avg $</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ currencySymbol }}</th>
+              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Avg {{ currencySymbol }}</th>
             </tr>
           </thead>
           <tbody>
@@ -815,9 +806,9 @@ const currencySymbol = computed(() => '$')
                   </span>
                 </td>
                 <template v-if="isGroupCollapsed(row.name)">
-                  <td v-for="(val, i) in matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name).data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
-                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name).data.reduce((a, b) => a + b, 0)) }}</td>
-                  <td v-if="showAverages" class="text-right px-2 py-1 text-mushroom-600 border-l border-mushroom-200">{{ formatConverted(Math.round(matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name).data.reduce((a, b) => a + b, 0) / 12)) }}</td>
+                  <td v-for="(val, i) in (matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
+                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(((matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []).reduce((a, b) => a + b, 0)) }}</td>
+                  <td v-if="showAverages" class="text-right px-2 py-1 text-mushroom-600 border-l border-mushroom-200">{{ formatConverted(Math.round(((matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []).reduce((a, b) => a + b, 0) / 12)) }}</td>
                 </template>
                 <td v-else :colspan="13"></td>
               </tr>
@@ -852,7 +843,7 @@ const currencySymbol = computed(() => '$')
             <tr class="border-b border-mushroom-200">
               <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Account</th>
               <th v-for="(m, i) in matrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total $</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ currencySymbol }}</th>
             </tr>
           </thead>
           <tbody>
@@ -871,8 +862,8 @@ const currencySymbol = computed(() => '$')
                   </span>
                 </td>
                 <template v-if="isExpenseAccountCollapsed(row.name)">
-                  <td v-for="(val, i) in expenseAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name).data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
-                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(expenseAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name).data.reduce((a, b) => a + b, 0)) }}</td>
+                  <td v-for="(val, i) in (expenseAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
+                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(((expenseAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []).reduce((a, b) => a + b, 0)) }}</td>
                 </template>
                 <td v-else :colspan="13"></td>
               </tr>

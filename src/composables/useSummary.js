@@ -7,18 +7,22 @@ export function useSummary() {
   const rates = ref(null)
   const loading = ref(false)
 
-  async function fetchSummary(year) {
+  async function fetchSummary(year, currency) {
     loading.value = true
     try {
-      const { data } = await api.get(`/summary/${year}`)
+      const params = {}
+      if (currency) params.currency = currency
+      const { data } = await api.get(`/summary/${year}`, { params })
       summary.value = data
     } finally {
       loading.value = false
     }
   }
 
-  async function fetchBalances() {
-    const { data } = await api.get('/balance')
+  async function fetchBalances(currency) {
+    const params = {}
+    if (currency) params.currency = currency
+    const { data } = await api.get('/balance', { params })
     balances.value = data
   }
 

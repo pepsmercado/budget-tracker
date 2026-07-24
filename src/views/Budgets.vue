@@ -1,30 +1,61 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useBudgets } from '../composables/useBudgets'
-import { useAccounts } from '../composables/useAccounts'
 import api from '../api'
 import BudgetProgressBar from '../components/BudgetProgressBar.vue'
+import { categoryIcons } from '../constants.js'
 
-const { budgetSummary, fetchBudgetSummary, fetchBudget, setBudget } = useBudgets()
-const { accounts, fetchAccounts } = useAccounts()
+const props = defineProps({ currency: { type: String, default: 'php' } })
+
+const { budgetSummary, fetchBudgetSummary } = useBudgets()
+
+const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
+const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
+const viewLabel = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 
 const now = new Date()
-const selectedMonth = ref(localStorage.getItem('budgets-month') || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`)
+const selectedMonth = ref(localStorage.getItem(`budgets-month-${currencyParam.value}`) || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`)
 const categories = ref([])
 const editingCategory = ref(null)
 const editValue = ref(0)
-const collapsedGroups = ref({})
-const loadingCatBudget = ref(null)
+const showHidden = ref(false)
+
+const hiddenStorageKey = computed(() => `budgets-hidden-${currencyParam.value}-${selectedMonth.value}`)
+const hiddenCategories = ref(new Set(JSON.parse(localStorage.getItem(hiddenStorageKey.value) || '[]')))
+
+function isHidden(catName) {
+  return hiddenCategories.value.has(catName)
+}
+
+function toggleHide(catName) {
+  const next = new Set(hiddenCategories.value)
+  if (next.has(catName)) {
+    next.delete(catName)
+  } else {
+    next.add(catName)
+  }
+  hiddenCategories.value = next
+  localStorage.setItem(hiddenStorageKey.value, JSON.stringify([...next]))
+}
+
+const hiddenCount = computed(() => {
+  if (!budgetSummary.value?.categories) return 0
+  return budgetSummary.value.categories.filter(c => hiddenCategories.value.has(c.name)).length
+})
 
 const monthLabel = computed(() => {
   const [y, m] = selectedMonth.value.split('-')
   return new Date(parseInt(y), parseInt(m) - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })
 })
 
-const groupedCategories = computed(() => {
-  if (!budgetSummary.value?.categories) return {}
+const budgetCategories = computed(() => {
+  if (!budgetSummary.value?.categories) return []
+  return budgetSummary.value.categories.filter(c => showHidden.value ? hiddenCategories.value.has(c.name) : !hiddenCategories.value.has(c.name))
+})
+
+const groupedBudgetCategories = computed(() => {
   const groups = {}
-  for (const cat of budgetSummary.value.categories) {
+  for (const cat of budgetCategories.value) {
     if (!groups[cat.group]) groups[cat.group] = []
     groups[cat.group].push(cat)
   }
@@ -32,17 +63,22 @@ const groupedCategories = computed(() => {
 })
 
 const groupOrder = ['Fixed', 'Essential', 'Lifestyle', 'School', 'Misc', 'Sinking']
-const sortedGroups = computed(() => {
-  return groupOrder.filter(g => groupedCategories.value[g])
+const sortedGroupKeys = computed(() => {
+  return groupOrder.filter(g => groupedBudgetCategories.value[g])
 })
 
 function groupSpent(group) {
-  return (groupedCategories.value[group] || []).reduce((s, c) => s + c.spent, 0)
+  return (groupedBudgetCategories.value[group] || []).reduce((s, c) => s + c.spent, 0)
 }
 
 function groupBudget(group) {
-  return (groupedCategories.value[group] || []).reduce((s, c) => s + c.budget, 0)
+  return (groupedBudgetCategories.value[group] || []).reduce((s, c) => s + c.budget, 0)
 }
+
+const totalBudget = computed(() => budgetSummary.value?.total_budget || 0)
+const totalSpent = computed(() => budgetSummary.value?.total_spent || 0)
+const totalRemaining = computed(() => Math.max(0, totalBudget.value - totalSpent.value))
+const totalPercent = computed(() => totalBudget.value > 0 ? (totalSpent.value / totalBudget.value) * 100 : 0)
 
 function prevMonth() {
   const [y, m] = selectedMonth.value.split('-').map(Number)
@@ -56,55 +92,72 @@ function nextMonth() {
   selectedMonth.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-function toggleGroup(group) {
-  collapsedGroups.value[group] = !collapsedGroups.value[group]
-}
-
 function startEdit(cat) {
   editingCategory.value = cat.name
   editValue.value = cat.budget
 }
 
 async function saveEdit(cat) {
-  loadingCatBudget.value = cat.name
   const catObj = categories.value.find(c => c.name === cat.name)
   if (catObj) {
     await api.put(`/categories/${catObj.id}/budget`, {
       budget_amount: editValue.value,
-      budget_currency: cat.currency || 'PHP'
+      budget_currency: currencyParam.value
     })
   }
   editingCategory.value = null
-  await fetchBudgetSummary(selectedMonth.value)
-  loadingCatBudget.value = null
+  await fetchBudgetSummary(selectedMonth.value, currencyParam.value)
 }
 
 function cancelEdit() {
   editingCategory.value = null
 }
 
-function formatAmount(val, currency) {
-  if (currency === 'USD') return `$${val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-  return `₱${val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+function formatAmount(val) {
+  return `${currencySymbol.value}${val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 }
 
-onMounted(async () => {
+function formatAmountDecimal(val) {
+  return `${currencySymbol.value}${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+}
+
+function percent(spent, budget) {
+  if (!budget || budget <= 0) return 0
+  return Math.min((spent / budget) * 100, 100)
+}
+
+async function loadAll() {
   const { data } = await api.get('/categories')
   categories.value = data
-  await fetchBudgetSummary(selectedMonth.value)
+  await fetchBudgetSummary(selectedMonth.value, currencyParam.value)
+}
+
+onMounted(loadAll)
+
+watch(currencyParam, () => {
+  showHidden.value = false
+  hiddenCategories.value = new Set(JSON.parse(localStorage.getItem(hiddenStorageKey.value) || '[]'))
+  loadAll()
 })
 
 watch(selectedMonth, (val) => {
-  localStorage.setItem('budgets-month', val)
-  fetchBudgetSummary(val)
+  localStorage.setItem(`budgets-month-${currencyParam.value}`, val)
+  showHidden.value = false
+  hiddenCategories.value = new Set(JSON.parse(localStorage.getItem(hiddenStorageKey.value) || '[]'))
+  fetchBudgetSummary(val, currencyParam.value)
 })
 </script>
 
 <template>
   <div class="space-y-5">
     <div class="flex items-center justify-between">
-      <h2 class="text-lg font-medium text-mushroom-950">Budget</h2>
+      <h2 class="text-lg font-medium text-mushroom-950">{{ viewLabel }} Budgets</h2>
       <div class="flex items-center gap-2">
+        <button v-if="hiddenCount > 0" @click="showHidden = !showHidden" class="flex items-center gap-1 px-2 py-1 text-xs rounded-lg transition-colors" :class="showHidden ? 'bg-mushroom-200 text-mushroom-700' : 'text-mushroom-400 hover:text-mushroom-600 hover:bg-mushroom-100'">
+          <svg v-if="!showHidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          {{ showHidden ? 'Showing hidden' : `${hiddenCount} hidden` }}
+        </button>
         <button @click="prevMonth" class="p-1.5 rounded-lg hover:bg-mushroom-100 text-mushroom-500 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
@@ -115,79 +168,91 @@ watch(selectedMonth, (val) => {
       </div>
     </div>
 
-    <div v-if="budgetSummary" class="card-elevated p-5">
-      <div class="flex items-center justify-between mb-3">
-        <div>
-          <div class="text-xs text-mushroom-400">Total Budget</div>
-          <div class="text-2xl font-semibold text-mushroom-950">
-            {{ formatAmount(budgetSummary.total_spent, 'PHP') }}
-            <span class="text-sm font-normal text-mushroom-400">/ {{ formatAmount(budgetSummary.total_budget, 'PHP') }}</span>
+    <div v-if="budgetSummary" class="space-y-5">
+      <div class="card-elevated p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="text-xs font-medium uppercase tracking-wider text-mushroom-400 mb-1">Total Budget</div>
+            <div class="text-3xl font-bold text-mushroom-950">
+              {{ formatAmount(totalSpent) }}
+              <span class="text-lg font-normal text-mushroom-400">/ {{ formatAmount(totalBudget) }}</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-xs font-medium uppercase tracking-wider text-mushroom-400 mb-1">Remaining</div>
+            <div class="text-xl font-semibold" :class="totalSpent > totalBudget ? 'text-tomato-600' : 'text-kangkong-700'">
+              {{ formatAmount(totalRemaining) }}
+            </div>
+            <div class="text-xs mt-0.5" :class="totalSpent > totalBudget ? 'text-tomato-500' : 'text-mushroom-400'">
+              {{ totalPercent.toFixed(1) }}% spent
+            </div>
           </div>
         </div>
-        <div class="text-right">
-          <div class="text-xs text-mushroom-400">Remaining</div>
-          <div class="text-sm font-semibold" :class="budgetSummary.total_spent > budgetSummary.total_budget ? 'text-tomato-600' : 'text-kangkong-700'">
-            {{ formatAmount(Math.max(0, budgetSummary.total_budget - budgetSummary.total_spent), 'PHP') }}
+        <BudgetProgressBar :spent="totalSpent" :budget="totalBudget" />
+      </div>
+
+      <div v-for="group in sortedGroupKeys" :key="group">
+        <div class="flex items-center gap-3 mb-3">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-mushroom-400">{{ group }}</h3>
+          <div class="flex-1 h-px bg-mushroom-100"></div>
+          <div class="text-xs text-mushroom-400">
+            <span class="font-medium text-mushroom-600">{{ formatAmount(groupSpent(group)) }}</span> / {{ formatAmount(groupBudget(group)) }}
           </div>
         </div>
-      </div>
-      <BudgetProgressBar :spent="budgetSummary.total_spent" :budget="budgetSummary.total_budget" />
-      <div class="mt-2 text-right text-xs text-mushroom-400">
-        {{ budgetSummary.total_budget > 0 ? ((budgetSummary.total_spent / budgetSummary.total_budget) * 100).toFixed(1) : 0 }}% spent
-      </div>
-    </div>
-
-    <div v-if="budgetSummary" class="space-y-3">
-      <div v-for="group in sortedGroups" :key="group" class="card-elevated overflow-hidden">
-        <button
-          @click="toggleGroup(group)"
-          class="w-full flex items-center justify-between px-5 py-3 hover:bg-mushroom-50 transition-colors"
-        >
-          <div class="flex items-center gap-2">
-            <svg
-              width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              class="text-mushroom-400 transition-transform duration-200"
-              :class="collapsedGroups[group] ? '' : 'rotate-90'"
-            ><path d="M9 18l6-6-6-6"/></svg>
-            <span class="text-sm font-medium text-mushroom-800">{{ group }}</span>
-          </div>
-          <div class="flex items-center gap-3 text-xs">
-            <span class="text-mushroom-500">{{ formatAmount(groupSpent(group), 'PHP') }} / {{ formatAmount(groupBudget(group), 'PHP') }}</span>
-            <BudgetProgressBar :spent="groupSpent(group)" :budget="groupBudget(group)" class="w-20" />
-          </div>
-        </button>
-
-        <div v-if="!collapsedGroups[group]" class="border-t border-mushroom-100">
-          <div v-for="cat in groupedCategories[group]" :key="cat.name" class="px-5 py-3 border-b border-mushroom-50 last:border-b-0">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-sm text-mushroom-700">{{ cat.name }}</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
+          <div v-for="cat in groupedBudgetCategories[group]" :key="cat.name" class="card-elevated p-4 flex flex-col">
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-lg bg-mushroom-50 flex items-center justify-center text-base flex-shrink-0">
+                  {{ categoryIcons[cat.name] || '📋' }}
+                </div>
+                <div>
+                  <div class="text-sm font-medium text-mushroom-950">{{ cat.name }}</div>
+                  <div class="text-[10px] font-medium uppercase tracking-wider text-mushroom-400">{{ cat.group }}</div>
+                </div>
+              </div>
               <div class="flex items-center gap-2">
-                <template v-if="editingCategory === cat.name">
-                  <input
-                    v-model.number="editValue"
-                    @keyup.enter="saveEdit(cat)"
-                    @keyup.escape="cancelEdit"
-                    @blur="saveEdit(cat)"
-                    type="number"
-                    step="1"
-                    min="0"
-                    class="input-field text-sm py-0.5 px-2 w-24"
-                    autofocus
-                  />
-                </template>
-                <template v-else>
-                  <span
-                    @click="startEdit(cat)"
-                    class="cursor-pointer hover:text-kangkong-600 text-sm font-medium text-mushroom-700"
-                  >
-                    {{ formatAmount(cat.budget, cat.currency) }}
-                  </span>
-                </template>
+                <button @click="toggleHide(cat.name)" class="text-mushroom-300 hover:text-mushroom-600 transition-colors" :title="showHidden ? 'Unhide' : 'Hide'">
+                  <svg v-if="showHidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+                <div class="text-right">
+                  <template v-if="editingCategory === cat.name">
+                    <input
+                      v-model.number="editValue"
+                      @keyup.enter="saveEdit(cat)"
+                      @keyup.escape="cancelEdit"
+                      type="number"
+                      step="1"
+                      min="0"
+                      class="input-field text-sm py-0.5 px-2 w-24 text-right"
+                      autofocus
+                    />
+                  </template>
+                  <template v-else>
+                    <span
+                      @click="startEdit(cat)"
+                      class="text-lg font-semibold text-mushroom-950 cursor-pointer hover:text-kangkong-600"
+                    >
+                      {{ formatAmount(cat.budget) }}
+                    </span>
+                  </template>
+                </div>
               </div>
             </div>
-            <BudgetProgressBar :spent="cat.spent" :budget="cat.budget" />
-            <div class="mt-1 text-xs text-mushroom-400 text-right">
-              {{ formatAmount(cat.spent, cat.currency) }} / {{ formatAmount(cat.budget, cat.currency) }}
+            <div class="mt-auto">
+              <BudgetProgressBar :spent="cat.spent" :budget="cat.budget" />
+              <div class="flex items-center justify-between mt-2 text-xs">
+                <span class="text-mushroom-500">
+                  <span class="font-medium text-mushroom-700">{{ formatAmountDecimal(cat.spent) }}</span> spent
+                </span>
+                <span :class="cat.spent > cat.budget && cat.budget > 0 ? 'text-tomato-600 font-medium' : 'text-kangkong-600'">
+                  {{ formatAmount(Math.max(0, cat.budget - cat.spent)) }} left
+                </span>
+              </div>
+              <div class="text-right text-[10px] text-mushroom-400 mt-0.5">
+                {{ percent(cat.spent, cat.budget).toFixed(0) }}% used
+              </div>
             </div>
           </div>
         </div>

@@ -1,24 +1,50 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useAccounts } from '../composables/useAccounts'
 import { useSummary } from '../composables/useSummary'
 import BudgetProgressBar from '../components/BudgetProgressBar.vue'
+import Skeleton from '../components/Skeleton.vue'
+
+const props = defineProps({ currency: { type: String, default: 'php' } })
 
 const { accounts, loading, fetchAccounts, createAccount, deleteAccount, updateAccount, updateAccountGoal } = useAccounts()
 const { balances, fetchBalances } = useSummary()
 
+const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
+const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
+const viewLabel = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
+
 const showForm = ref(false)
-const form = ref({ name: '', type: 'savings', currency: 'PHP', initial_balance: 0 })
+const form = ref({ name: '', type: 'savings', currency: currencyParam.value, bank: '', account_number: '', initial_balance: 0 })
 const eyeHidden = ref(false)
 const editingGoal = ref(null)
 const goalValue = ref(0)
+const editingMaturity = ref(null)
+const maturityValue = ref('')
+const editingName = ref(null)
+const nameValue = ref('')
+const confirmingDelete = ref(null)
+const editingAcctNum = ref(null)
+const acctNumValue = ref('')
+const confirmingAcctNum = ref(null)
 
-const goalTypes = ['savings', 'time_deposit']
+const bankColors = {
+  BPI: 'bg-tomato-100 text-tomato-700',
+  BDO: 'bg-blueberry-100 text-blueberry-700',
+  Maya: 'bg-kangkong-100 text-kangkong-700',
+  'Bank of America': 'bg-blueberry-100 text-blueberry-700',
+}
+
+const bankOptions = [
+  'BPI', 'BDO', 'Maya', 'Security Bank', 'Metrobank', 'Landbank', 'PNB', 'EastWest',
+  'Bank of America', 'Chase', 'Wells Fargo', 'Citi', 'US Bank',
+]
 
 const accountTypeLabels = {
   savings: 'Savings',
   checking: 'Checking',
   time_deposit: 'Time Deposit',
+  equity: 'Equity',
   investment: 'Investment',
   credit_card: 'Credit Card',
 }
@@ -27,27 +53,25 @@ const accountTypeColors = {
   savings: 'border-l-kangkong-500',
   checking: 'border-l-blueberry-500',
   time_deposit: 'border-l-mango-500',
+  equity: 'border-l-ubas-500',
   investment: 'border-l-ubas-500',
 }
 
-const currencyLabels = { USD: '🇺🇸 US Accounts', PHP: '🇵🇭 Philippine Accounts' }
-const currencyOrder = ['USD', 'PHP']
-
-const groupedAccounts = computed(() => {
+const groupedByType = computed(() => {
+  const typeOrder = ['savings', 'time_deposit', 'equity', 'checking', 'investment']
   const groups = {}
   for (const acc of accounts.value) {
-    const currency = acc.currency || 'PHP'
-    if (!groups[currency]) groups[currency] = []
-    groups[currency].push(acc)
+    if (acc.currency !== currencyParam.value) continue
+    if (!groups[acc.type]) groups[acc.type] = []
+    groups[acc.type].push(acc)
   }
-  const sorted = {}
-  for (const curr of currencyOrder) {
-    if (groups[curr]) sorted[curr] = groups[curr]
+  const ordered = []
+  for (const type of typeOrder) {
+    if (groups[type]) {
+      ordered.push({ type, label: accountTypeLabels[type] || type, accounts: groups[type] })
+    }
   }
-  for (const curr of Object.keys(groups).sort()) {
-    if (!sorted[curr]) sorted[curr] = groups[curr]
-  }
-  return sorted
+  return ordered
 })
 
 function getBalance(accountId) {
@@ -55,10 +79,9 @@ function getBalance(accountId) {
   return b ? b.balance : 0
 }
 
-function formatCurrency(val, currency) {
+function formatCurrency(val) {
   if (eyeHidden.value) return '***'
-  if (currency === 'USD') return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-  return `₱${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+  return `${currencySymbol.value}${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
 }
 
 function goalProgress(balance, goal) {
@@ -80,22 +103,119 @@ function cancelGoal() {
   editingGoal.value = null
 }
 
-onMounted(async () => {
-  await Promise.all([fetchAccounts(), fetchBalances()])
+function startEditMaturity(acc) {
+  editingMaturity.value = acc.id
+  maturityValue.value = acc.maturity_date || ''
+}
+
+async function saveMaturity(acc) {
+  await updateAccount(acc.id, {
+    name: acc.name,
+    type: acc.type,
+    currency: acc.currency,
+    bank: acc.bank || '',
+    account_number: acc.account_number || '',
+    initial_balance: acc.initial_balance,
+    goal_amount: acc.goal_amount || 0,
+    sub_accounts: acc.sub_accounts || [],
+    dividend_type: acc.dividend_type || '',
+    maturity_date: maturityValue.value,
+  })
+  editingMaturity.value = null
+}
+
+function cancelMaturity() {
+  editingMaturity.value = null
+}
+
+function startEditName(acc) {
+  editingName.value = acc.id
+  nameValue.value = acc.name
+}
+
+async function saveName(acc) {
+  if (nameValue.value.trim() && nameValue.value.trim() !== acc.name) {
+    editingName.value = null
+    await updateAccount(acc.id, {
+      name: nameValue.value.trim(),
+      type: acc.type,
+      currency: acc.currency,
+      bank: acc.bank || '',
+      account_number: acc.account_number || '',
+      initial_balance: acc.initial_balance,
+      goal_amount: acc.goal_amount || 0,
+      sub_accounts: acc.sub_accounts || [],
+      dividend_type: acc.dividend_type || '',
+      maturity_date: acc.maturity_date || '',
+    })
+  } else {
+    editingName.value = null
+  }
+}
+
+function cancelName() {
+  editingName.value = null
+}
+
+function startEditAcctNum(acc) {
+  editingAcctNum.value = acc.id
+  acctNumValue.value = acc.account_number || ''
+}
+
+function confirmSaveAcctNum(acc) {
+  confirmingAcctNum.value = acc.id
+}
+
+async function saveAcctNum(acc) {
+  await updateAccount(acc.id, {
+    name: acc.name,
+    type: acc.type,
+    currency: acc.currency,
+    bank: acc.bank || '',
+    account_number: acctNumValue.value.trim(),
+    initial_balance: acc.initial_balance,
+    goal_amount: acc.goal_amount || 0,
+    sub_accounts: acc.sub_accounts || [],
+    dividend_type: acc.dividend_type || '',
+    maturity_date: acc.maturity_date || '',
+  })
+  confirmingAcctNum.value = null
+  editingAcctNum.value = null
+}
+
+function cancelAcctNum() {
+  confirmingAcctNum.value = null
+  editingAcctNum.value = null
+}
+
+async function handleDelete(acc) {
+  await deleteAccount(acc.id)
+  confirmingDelete.value = null
+  await fetchBalances(currencyParam.value)
+}
+
+async function loadAll() {
+  await Promise.all([fetchAccounts(), fetchBalances(currencyParam.value)])
+}
+
+onMounted(loadAll)
+
+watch(currencyParam, () => {
+  loadAll()
 })
 
 async function handleCreate() {
   await createAccount(form.value)
   showForm.value = false
-  form.value = { name: '', type: 'savings', currency: 'PHP', initial_balance: 0 }
-  await fetchBalances()
+  form.value = { name: '', type: 'savings', currency: currencyParam.value, bank: '', account_number: '', initial_balance: 0 }
+  await fetchBalances(currencyParam.value)
 }
 </script>
 
 <template>
   <div class="space-y-5">
     <div class="flex items-center justify-between">
-      <h2 class="text-lg font-medium text-mushroom-950">Savings Goals</h2>
+      <h2 class="text-lg font-medium text-mushroom-950">{{ viewLabel }} Accounts</h2>
       <div class="flex items-center gap-3">
         <button @click="eyeHidden = !eyeHidden" class="text-mushroom-400 hover:text-mushroom-600">
           <svg v-if="!eyeHidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -111,7 +231,14 @@ async function handleCreate() {
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="label-text">Account Name</label>
-          <input v-model="form.name" placeholder="e.g. BPI Savings" required class="input-field" />
+          <input v-model="form.name" placeholder="e.g. Savings" required class="input-field" />
+        </div>
+        <div>
+          <label class="label-text">Bank</label>
+          <select v-model="form.bank" class="select-field">
+            <option value="">Select bank...</option>
+            <option v-for="b in bankOptions" :key="b" :value="b">{{ b }}</option>
+          </select>
         </div>
         <div>
           <label class="label-text">Type</label>
@@ -119,15 +246,13 @@ async function handleCreate() {
             <option value="savings">Savings</option>
             <option value="checking">Checking</option>
             <option value="time_deposit">Time Deposit</option>
+            <option value="equity">Equity</option>
             <option value="investment">Investment</option>
           </select>
         </div>
         <div>
-          <label class="label-text">Currency</label>
-          <select v-model="form.currency" required class="select-field">
-            <option value="PHP">PHP</option>
-            <option value="USD">USD</option>
-          </select>
+          <label class="label-text">Account Number</label>
+          <input v-model="form.account_number" placeholder="e.g. ****4521" class="input-field" />
         </div>
         <div>
           <label class="label-text">Initial Balance</label>
@@ -137,73 +262,148 @@ async function handleCreate() {
       <button type="submit" class="btn-secondary text-xs">Create Account</button>
     </form>
 
-    <div v-if="loading" class="text-center text-mushroom-400 py-8 text-sm">Loading...</div>
+    <!-- Skeleton loading -->
+    <div v-if="loading" class="space-y-6">
+      <div v-for="g in 2" :key="g">
+        <Skeleton width="80px" height="10px" class="mb-3" />
+        <div class="space-y-3">
+          <div v-for="c in 2" :key="c" class="card-elevated p-4 border-l-4 border-l-mushroom-200">
+            <div class="flex items-center justify-between mb-2">
+              <div class="space-y-1.5">
+                <div class="flex items-center gap-2">
+                  <Skeleton width="40px" height="16px" rounded="rounded-full" />
+                  <Skeleton width="100px" height="14px" />
+                </div>
+                <Skeleton width="80px" height="10px" />
+              </div>
+              <Skeleton width="100px" height="20px" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div v-else class="space-y-6">
-      <div v-for="currency in currencyOrder" :key="currency" v-show="groupedAccounts[currency]">
-        <div class="text-sm font-medium text-mushroom-700 mb-3">{{ currencyLabels[currency] || currency }}</div>
+      <div v-for="(group, gi) in groupedByType" :key="group.type">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-mushroom-400 mb-3 mt-4 first:mt-0">{{ group.label }}</h3>
 
         <div class="space-y-3">
-          <template v-for="acc in groupedAccounts[currency]" :key="acc.id">
-            <div v-if="goalTypes.includes(acc.type)" class="card-elevated p-4 border-l-4" :class="accountTypeColors[acc.type] || 'border-l-mushroom-400'">
-              <div class="flex items-center justify-between mb-3">
-                <div>
-                  <div class="text-sm font-medium text-mushroom-950">{{ acc.name }}</div>
-                  <div class="text-xs text-mushroom-400">{{ accountTypeLabels[acc.type] }}</div>
+          <div v-for="acc in group.accounts" :key="acc.id" class="card-elevated p-4 border-l-4" :class="accountTypeColors[acc.type] || 'border-l-mushroom-400'">
+            <div class="flex items-center justify-between mb-2">
+              <div>
+                <div class="flex items-center gap-2.5 mb-1">
+                  <span v-if="acc.bank" class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium" :class="bankColors[acc.bank] || 'bg-mushroom-100 text-mushroom-600'">{{ acc.bank }}</span>
+                  <input
+                    v-show="editingName === acc.id"
+                    v-model="nameValue"
+                    @keyup.enter="saveName(acc)"
+                    @keyup.escape="cancelName"
+                    class="input-field text-sm font-medium py-0.5 px-1.5 w-48"
+                    :ref="el => { if (el && editingName === acc.id) el.focus() }"
+                  />
+                  <span
+                    v-show="editingName !== acc.id"
+                    class="text-sm font-medium text-mushroom-950 cursor-pointer hover:text-kangkong-600"
+                    @click="startEditName(acc)"
+                  >{{ acc.name }}</span>
                 </div>
-                <div class="text-right">
-                  <div class="text-xl font-semibold text-mushroom-950">{{ formatCurrency(getBalance(acc.id), acc.currency) }}</div>
-                </div>
-              </div>
-
-              <div v-if="acc.goal_amount > 0">
-                <BudgetProgressBar
-                  :spent="getBalance(acc.id)"
-                  :budget="acc.goal_amount"
-                  :greenThreshold="0.7"
-                  :orangeThreshold="0.4"
-                  class="mb-2"
-                />
-                <div class="flex items-center justify-between text-xs text-mushroom-500">
-                  <span>
-                    <template v-if="editingGoal === acc.id">
+                <template v-if="editingAcctNum === acc.id">
+                  <template v-if="confirmingAcctNum === acc.id">
+                    <div class="flex items-center gap-1.5 mt-1">
+                      <span class="text-xs text-mushroom-400">Save change?</span>
+                      <button @click="saveAcctNum(acc)" class="text-kangkong-600 hover:text-kangkong-800 text-xs font-medium">Yes</button>
+                      <button @click="cancelAcctNum" class="text-mushroom-400 hover:text-mushroom-600 text-xs">No</button>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="flex items-center gap-1 mt-1">
                       <input
-                        v-model.number="goalValue"
-                        @keyup.enter="saveGoal(acc)"
-                        @keyup.escape="cancelGoal"
-                        @blur="saveGoal(acc)"
-                        type="number"
-                        step="1"
-                        min="0"
-                        class="input-field text-xs py-0.5 px-1.5 w-24 inline"
+                        v-model="acctNumValue"
+                        @keyup.enter="confirmSaveAcctNum(acc)"
+                        @keyup.escape="cancelAcctNum"
+                        class="input-field text-xs py-0.5 px-1.5 w-28"
+                        placeholder="e.g. ****4521"
                         autofocus
                       />
-                    </template>
-                    <template v-else>
-                      <span @click="startEditGoal(acc)" class="cursor-pointer hover:text-kangkong-600">
-                        {{ formatCurrency(acc.goal_amount, acc.currency) }}
-                      </span>
-                    </template>
-                  </span>
-                  <span>{{ goalProgress(getBalance(acc.id), acc.goal_amount).toFixed(1) }}%</span>
+                    </div>
+                  </template>
+                </template>
+                <div v-else-if="acc.account_number" class="text-xs text-mushroom-400 mt-1 cursor-pointer hover:text-kangkong-600" @click="startEditAcctNum(acc)">{{ acc.account_number }}</div>
+                <div v-else class="text-xs text-mushroom-300 mt-1 cursor-pointer hover:text-kangkong-600" @click="startEditAcctNum(acc)">+ Add account number</div>
+                <div v-if="acc.dividend_type" class="text-xs text-mushroom-400 mt-1">{{ acc.dividend_type }}</div>
+                <template v-if="acc.type === 'time_deposit'">
+                  <template v-if="editingMaturity === acc.id">
+                    <div class="flex items-center gap-2 mt-2 pt-2 border-t border-mushroom-100">
+                      <input
+                        v-model="maturityValue"
+                        @keyup.enter="saveMaturity(acc)"
+                        @keyup.escape="cancelMaturity"
+                        type="date"
+                        class="input-field text-xs py-0.5 px-1.5 w-36"
+                        autofocus
+                      />
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="text-xs text-mushroom-400 cursor-pointer hover:text-kangkong-600 mt-2 pt-2 border-t border-mushroom-100" @click="startEditMaturity(acc)">
+                      {{ acc.maturity_date ? 'Maturity: ' + acc.maturity_date : '+ Set maturity date' }}
+                    </div>
+                  </template>
+                </template>
+                <div v-else-if="acc.maturity_date" class="text-xs text-mushroom-400 mt-2 pt-2 border-t border-mushroom-100">Maturity: {{ acc.maturity_date }}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-xl font-semibold text-mushroom-950">{{ formatCurrency(getBalance(acc.id)) }}</div>
+                <div class="flex justify-end mt-1">
+                  <template v-if="confirmingDelete === acc.id">
+                    <span class="text-xs text-mushroom-400 mr-1">Delete?</span>
+                    <button @click="handleDelete(acc)" class="text-tomato-500 hover:text-tomato-700 text-xs font-medium mr-1">Yes</button>
+                    <button @click="confirmingDelete = null" class="text-mushroom-400 hover:text-mushroom-600 text-xs">No</button>
+                  </template>
+                  <button v-else @click="confirmingDelete = acc.id" class="text-mushroom-300 hover:text-tomato-500 transition-colors" title="Delete account">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  </button>
                 </div>
               </div>
-
-              <div v-else>
-                <button @click="startEditGoal(acc)" class="text-xs text-kangkong-600 hover:text-kangkong-800">Set goal</button>
-              </div>
             </div>
 
-            <div v-else class="card p-3 border-l-4 flex items-center justify-between" :class="accountTypeColors[acc.type] || 'border-l-mushroom-400'">
-              <div>
-                <div class="text-sm font-medium text-mushroom-950">{{ acc.name }}</div>
-                <div class="text-xs text-mushroom-400">{{ accountTypeLabels[acc.type] }}</div>
+            <template v-if="acc.type === 'savings' && !(acc.bank === 'BPI' && acc.name === 'Settlement')">
+              <div class="mt-3 pt-3 border-t border-mushroom-100">
+                <template v-if="editingGoal === acc.id">
+                  <div class="flex items-center gap-2">
+                    <input
+                      v-model.number="goalValue"
+                      @keyup.enter="saveGoal(acc)"
+                      @keyup.escape="cancelGoal"
+                      @blur="saveGoal(acc)"
+                      type="number"
+                      step="1"
+                      min="0"
+                      class="input-field text-xs py-0.5 px-1.5 w-24"
+                      autofocus
+                    />
+                    <span class="text-xs text-mushroom-400">Press Enter to save</span>
+                  </div>
+                </template>
+                <template v-else>
+                  <BudgetProgressBar
+                    v-if="acc.goal_amount > 0"
+                    :spent="getBalance(acc.id)"
+                    :budget="acc.goal_amount"
+                    :invert="true"
+                    class="mb-2"
+                  />
+                  <div v-if="acc.goal_amount > 0" class="flex items-center justify-between text-xs text-mushroom-500">
+                    <span @click="startEditGoal(acc)" class="cursor-pointer hover:text-kangkong-600">
+                      Goal: {{ formatCurrency(acc.goal_amount) }}
+                    </span>
+                    <span>{{ goalProgress(getBalance(acc.id), acc.goal_amount).toFixed(1) }}%</span>
+                  </div>
+                  <button v-else @click="startEditGoal(acc)" class="text-xs text-kangkong-600 hover:text-kangkong-800">Set goal</button>
+                </template>
               </div>
-              <div class="text-sm font-semibold text-mushroom-950">
-                {{ formatCurrency(getBalance(acc.id), acc.currency) }}
-              </div>
-            </div>
-          </template>
+            </template>
+          </div>
         </div>
       </div>
     </div>

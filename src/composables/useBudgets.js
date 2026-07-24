@@ -22,10 +22,12 @@ export function useBudgets() {
     return data
   }
 
-  async function fetchBudgetSummary(month) {
+  async function fetchBudgetSummary(month, currency) {
     loading.value = true
     try {
-      const { data } = await api.get(`/budgets/${month}/summary`)
+      const params = {}
+      if (currency) params.currency = currency
+      const { data } = await api.get(`/budgets/${month}/summary`, { params })
       budgetSummary.value = data
     } finally {
       loading.value = false

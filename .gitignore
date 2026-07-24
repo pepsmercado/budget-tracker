@@ -12,6 +12,22 @@ dist
 dist-ssr
 *.local
 
+# Backend
+backend/data.json
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.pytest_cache/
+backend/venv2/
+
+# Environment
+.env
+.env.*
+!.env.example
+*.iam.gserviceaccount.com*.json
+
+# Reference files (large/media)
+reference files/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
