@@ -331,7 +331,7 @@ watch(selectedMonth, (val) => {
         </button>
       </div>
       <p class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-4">Changes here become the default for new months. Monthly overrides are unaffected.</p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto">
         <div v-for="cat in budgetSummary?.categories || []" :key="cat.name" class="flex items-center gap-3 p-2 bg-mushroom-50 dark:bg-mushroom-800 rounded-lg">
           <div class="w-8 h-8 rounded-lg bg-mushroom-100 dark:bg-mushroom-700 flex items-center justify-center text-sm flex-shrink-0">
             {{ categoryIcons[cat.name] || '📋' }}
@@ -345,7 +345,7 @@ watch(selectedMonth, (val) => {
             type="number"
             step="1"
             min="0"
-            class="input-field text-sm py-1 px-2 w-24 text-right"
+            class="input-field text-sm py-1 px-2 w-20 text-right flex-shrink-0"
           />
         </div>
       </div>
