@@ -24,6 +24,7 @@ const showHidden = ref(false)
 const monthlyOverrides = ref({})
 const showTemplateEditor = ref(false)
 const templateEditValues = ref({})
+const templateEditorLoading = ref(false)
 
 const hiddenStorageKey = computed(() => `budgets-hidden-${currencyParam.value}-${selectedMonth.value}`)
 const hiddenCategories = ref(new Set(JSON.parse(localStorage.getItem(hiddenStorageKey.value) || '[]')))
@@ -137,22 +138,25 @@ async function resetToTemplate() {
 
 function openTemplateEditor() {
   templateEditValues.value = {}
-  
+
   async function loadAndOpen() {
-    await loadAll()
-    const expenseCategories = categories.value?.filter(c => c.type === 'expense') || []
-    for (const cat of expenseCategories) {
-      templateEditValues.value[cat.name] = cat.budget_amount || 0
+    templateEditorLoading.value = true
+    try {
+      // Only load categories if not already loaded
+      if (!categories.value || categories.value.length === 0) {
+        await loadAll()
+      }
+      const expenseCategories = categories.value?.filter(c => c.type === 'expense') || []
+      for (const cat of expenseCategories) {
+        templateEditValues.value[cat.name] = cat.budget_amount || 0
+      }
+      showTemplateEditor.value = true
+    } finally {
+      templateEditorLoading.value = false
     }
-    showTemplateEditor.value = true
   }
-  
-  if (categories.value && categories.value.length > 0) {
-    loadAndOpen()
-  } else {
-    showTemplateEditor.value = true
-    loadAndOpen()
-  }
+
+  loadAndOpen()
 }
 
 async function saveTemplateEditor() {
@@ -376,7 +380,7 @@ watch(selectedMonth, (val) => {
       </div>
       <p class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-4">Changes here become the default for new months. Monthly overrides are unaffected.</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto">
-        <template v-if="categoriesLoading || (!categories.value || categories.value.length === 0)">
+        <template v-if="templateEditorLoading || (!categories.value || categories.value.length === 0)">
           <div v-for="g in 6" :key="g" class="flex items-center gap-2 p-2 bg-mushroom-50 dark:bg-mushroom-800 rounded-lg flex-nowrap">
             <Skeleton width="28px" height="28px" rounded="rounded-lg" />
             <div class="flex-1 space-y-1.5">
