@@ -136,8 +136,6 @@ async function resetToTemplate() {
 }
 
 function openTemplateEditor() {
-  if (categoriesLoading.value) return
-  
   templateEditValues.value = {}
   
   async function loadAndOpen() {
