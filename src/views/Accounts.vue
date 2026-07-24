@@ -16,6 +16,7 @@ const viewLabel = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 
 const showForm = ref(false)
 const form = ref({ name: '', type: 'savings', currency: currencyParam.value, bank: '', account_number: '', initial_balance: 0 })
+const creating = ref(false)
 const eyeHidden = ref(false)
 const editingGoal = ref(null)
 const goalValue = ref(0)
@@ -205,10 +206,18 @@ watch(currencyParam, () => {
 })
 
 async function handleCreate() {
-  await createAccount(form.value)
-  showForm.value = false
-  form.value = { name: '', type: 'savings', currency: currencyParam.value, bank: '', account_number: '', initial_balance: 0 }
-  await fetchBalances(currencyParam.value)
+  creating.value = true
+  try {
+    await createAccount(form.value)
+    showForm.value = false
+    form.value = { name: '', type: 'savings', currency: currencyParam.value, bank: '', account_number: '', initial_balance: 0 }
+    await fetchBalances(currencyParam.value)
+  } catch (e) {
+    console.error('Create account failed:', e)
+    alert(e.response?.data?.detail || 'Failed to create account')
+  } finally {
+    creating.value = false
+  }
 }
 </script>
 
@@ -259,7 +268,9 @@ async function handleCreate() {
           <input v-model.number="form.initial_balance" type="number" step="0.01" class="input-field" />
         </div>
       </div>
-      <button type="submit" class="btn-secondary text-xs">Create Account</button>
+      <button type="submit" :disabled="creating" class="btn-secondary text-xs">
+        {{ creating ? 'Creating...' : 'Create Account' }}
+      </button>
     </form>
 
     <!-- Skeleton loading -->
