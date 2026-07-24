@@ -81,3 +81,15 @@ def debug_data():
         except Exception as e:
             result["error"] = str(e)
     return result
+
+
+@app.get("/api/debug/backend")
+def debug_backend():
+    """Debug endpoint to check backend state"""
+    from app_state import backend
+    return {
+        "backend_type": type(backend).__name__,
+        "accounts_count": len(backend.accounts) if hasattr(backend, 'accounts') else 0,
+        "transactions_count": len(backend.transactions) if hasattr(backend, 'transactions') else 0,
+        "categories_count": len(backend.categories) if hasattr(backend, 'categories') else 0,
+    }
