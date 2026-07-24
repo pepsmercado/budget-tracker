@@ -44,6 +44,17 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/api/debug/backend")
+def debug_backend():
+    from app_state import backend
+    return {
+        "accounts": len(backend.accounts),
+        "transactions": len(backend.transactions),
+        "categories": len(backend.categories),
+        "backend_type": type(backend).__name__,
+    }
+
+
 @app.get("/api/debug/env")
 def debug_env():
     """Debug endpoint to check environment"""
