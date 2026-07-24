@@ -225,6 +225,8 @@ class MockBackend(BackendService):
         )
         self.recurring_rules[r2.id] = r2
 
+        self._save()
+
     def get_accounts(self) -> list[Account]:
         return list(self.accounts.values())
 
