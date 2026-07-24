@@ -33,8 +33,11 @@ class MockBackend(BackendService):
         self.recurring_rules: dict[str, RecurringRule] = {}
         self.transfers: dict[str, Transfer] = {}
         self.monthly_budgets: dict[str, dict[str, dict]] = {}
+        print(f"MockBackend: Initializing, DATA_FILE={DATA_FILE}")
         if not self._load() or not self.accounts:
+            print("MockBackend: Seeding data...")
             self._seed()
+        print(f"MockBackend: Initialized with {len(self.accounts)} accounts, {len(self.transactions)} transactions")
 
     def _uid(self) -> str:
         return uuid.uuid4().hex[:12]
@@ -55,10 +58,12 @@ class MockBackend(BackendService):
 
     def _load(self) -> bool:
         if not os.path.exists(DATA_FILE):
+            print(f"MockBackend: DATA_FILE does not exist: {DATA_FILE}")
             return False
         try:
             with open(DATA_FILE) as f:
                 data = json.load(f)
+            print(f"MockBackend: Loaded data.json with {len(data.get('accounts', {}))} accounts, {len(data.get('transactions', {}))} transactions")
             for k, v in data.get("accounts", {}).items():
                 self.accounts[k] = Account(**v)
             for k, v in data.get("transactions", {}).items():
@@ -85,7 +90,8 @@ class MockBackend(BackendService):
                 with open(MONTHLY_BUDGETS_FILE) as f:
                     self.monthly_budgets = json.load(f)
             return True
-        except Exception:
+        except Exception as e:
+            print(f"MockBackend: Error loading data: {e}")
             return False
 
     def _seed(self):
