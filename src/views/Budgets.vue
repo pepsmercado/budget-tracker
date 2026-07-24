@@ -17,6 +17,7 @@ const viewLabel = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 const now = new Date()
 const selectedMonth = ref(localStorage.getItem(`budgets-month-${currencyParam.value}`) || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`)
 const categories = ref([])
+const categoriesLoading = ref(true)
 const editingCategory = ref(null)
 const editValue = ref(0)
 const showHidden = ref(false)
@@ -135,22 +136,24 @@ async function resetToTemplate() {
 }
 
 function openTemplateEditor() {
+  if (categoriesLoading.value) return
+  
   templateEditValues.value = {}
-  const expenseCategories = (categories.value || []).filter(c => c.type === 'expense')
-  if (expenseCategories.length === 0) {
-    // Categories not loaded yet, fetch them first
-    api.get('/categories').then(({ data }) => {
-      categories.value = data
-      for (const cat of data.filter(c => c.type === 'expense')) {
-        templateEditValues.value[cat.name] = cat.budget_amount || 0
-      }
-      showTemplateEditor.value = true
-    })
-  } else {
+  
+  async function loadAndOpen() {
+    await loadAll()
+    const expenseCategories = categories.value?.filter(c => c.type === 'expense') || []
     for (const cat of expenseCategories) {
       templateEditValues.value[cat.name] = cat.budget_amount || 0
     }
     showTemplateEditor.value = true
+  }
+  
+  if (categories.value && categories.value.length > 0) {
+    loadAndOpen()
+  } else {
+    showTemplateEditor.value = true
+    loadAndOpen()
   }
 }
 
@@ -195,8 +198,13 @@ function percent(spent, budget) {
 }
 
 async function loadAll() {
-  const { data } = await api.get('/categories')
-  categories.value = data
+  categoriesLoading.value = true
+  try {
+    const { data } = await api.get('/categories')
+    categories.value = data
+  } finally {
+    categoriesLoading.value = false
+  }
   await fetchBudgetSummary(selectedMonth.value, currencyParam.value)
   await fetchMonthlyOverrides()
 }
@@ -228,7 +236,7 @@ watch(selectedMonth, (val) => {
             <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             {{ showHidden ? 'Showing hidden' : `${hiddenCount} hidden` }}
           </button>
-          <button @click="openTemplateEditor" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors" title="Edit Template">
+          <button @click="openTemplateEditor" :disabled="categoriesLoading" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="Edit Template">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
           <button v-if="Object.keys(monthlyOverrides).length > 0" @click="resetToTemplate" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors" title="Reset to Template">
@@ -370,22 +378,34 @@ watch(selectedMonth, (val) => {
       </div>
       <p class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-4">Changes here become the default for new months. Monthly overrides are unaffected.</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto">
-        <div v-for="cat in (categories.value || []).filter(c => c.type === 'expense')" :key="cat.name" class="flex items-center gap-2 p-2 bg-mushroom-50 dark:bg-mushroom-800 rounded-lg flex-nowrap">
-          <div class="w-7 h-7 rounded-lg bg-mushroom-100 dark:bg-mushroom-700 flex items-center justify-center text-sm flex-shrink-0">
-            {{ categoryIcons[cat.name] || '📋' }}
+        <template v-if="categoriesLoading || (!categories.value || categories.value.length === 0)">
+          <div v-for="g in 6" :key="g" class="flex items-center gap-2 p-2 bg-mushroom-50 dark:bg-mushroom-800 rounded-lg flex-nowrap">
+            <Skeleton width="28px" height="28px" rounded="rounded-lg" />
+            <div class="flex-1 space-y-1.5">
+              <Skeleton width="120px" height="16px" />
+              <Skeleton width="80px" height="10px" />
+            </div>
+            <Skeleton width="48px" height="28px" />
           </div>
-          <div class="flex-1 min-w-0">
-            <div class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50 truncate">{{ cat.name }}</div>
-            <div class="text-[10px] font-medium uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500 truncate">{{ cat.group }}</div>
+        </template>
+        <template v-else>
+          <div v-for="cat in (categories.value || []).filter(c => c.type === 'expense')" :key="cat.name" class="flex items-center gap-2 p-2 bg-mushroom-50 dark:bg-mushroom-800 rounded-lg flex-nowrap">
+            <div class="w-7 h-7 rounded-lg bg-mushroom-100 dark:bg-mushroom-700 flex items-center justify-center text-sm flex-shrink-0">
+              {{ categoryIcons[cat.name] || '📋' }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50 truncate">{{ cat.name }}</div>
+              <div class="text-[10px] font-medium uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500 truncate">{{ cat.group }}</div>
+            </div>
+            <input
+              v-model.number="templateEditValues[cat.name]"
+              type="number"
+              step="1"
+              min="0"
+              class="input-field text-sm py-1 px-2 w-16 text-right flex-shrink-0"
+            />
           </div>
-          <input
-            v-model.number="templateEditValues[cat.name]"
-            type="number"
-            step="1"
-            min="0"
-            class="input-field text-sm py-1 px-2 w-16 text-right flex-shrink-0"
-          />
-        </div>
+        </template>
       </div>
       <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-mushroom-200 dark:border-mushroom-700">
         <button @click="showTemplateEditor = false" class="btn-ghost text-sm">Cancel</button>
