@@ -499,9 +499,7 @@ class SheetsBackend(BackendService):
                 budget_val = c.budget_amount
                 bud_currency = c.budget_currency or "PHP"
 
-            if currency and bud_currency != currency:
-                continue
-
+            # Show category if it has a budget > 0, regardless of currency match
             if budget_val > 0:
                 categories.append(CategoryBudgetSummary(
                     name=c.name, group=c.group, budget=round(budget_val, 2),
