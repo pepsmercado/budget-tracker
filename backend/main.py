@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 
 from routers import accounts, transactions, categories, budgets, summary, upload, recurring, transfers, reports
+from routers import monthly_budgets
 from auth import router as auth_router
 
 app = FastAPI(title="Expense Tracker API", redirect_slashes=False)
@@ -33,6 +34,7 @@ app.include_router(upload.router, prefix="/api")
 app.include_router(recurring.router, prefix="/api")
 app.include_router(transfers.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
+app.include_router(monthly_budgets.router, prefix="/api")
 
 
 @app.get("/api/health")

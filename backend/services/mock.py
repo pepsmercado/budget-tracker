@@ -15,6 +15,7 @@ from models import (
 )
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "..", "data.json")
+MONTHLY_BUDGETS_FILE = os.path.join(os.path.dirname(__file__), "..", "monthly_budgets.json")
 
 
 class MockBackend(BackendService):
@@ -25,6 +26,7 @@ class MockBackend(BackendService):
         self.budgets: dict[str, Budget] = {}
         self.recurring_rules: dict[str, RecurringRule] = {}
         self.transfers: dict[str, Transfer] = {}
+        self.monthly_budgets: dict[str, dict[str, dict]] = {}
         if not self._load():
             self._seed()
 
@@ -42,6 +44,8 @@ class MockBackend(BackendService):
         }
         with open(DATA_FILE, "w") as f:
             json.dump(data, f, default=str)
+        with open(MONTHLY_BUDGETS_FILE, "w") as f:
+            json.dump(self.monthly_budgets, f, default=str)
 
     def _load(self) -> bool:
         if not os.path.exists(DATA_FILE):
@@ -71,6 +75,9 @@ class MockBackend(BackendService):
                 if "date" in v and isinstance(v["date"], str):
                     v["date"] = date.fromisoformat(v["date"])
                 self.transfers[k] = Transfer(**v)
+            if os.path.exists(MONTHLY_BUDGETS_FILE):
+                with open(MONTHLY_BUDGETS_FILE) as f:
+                    self.monthly_budgets = json.load(f)
             return True
         except Exception:
             return False
@@ -356,12 +363,25 @@ class MockBackend(BackendService):
                     continue
                 cat_spent[t.category] = cat_spent.get(t.category, 0) + t.amount
 
+        overrides = self.monthly_budgets.get(month, {})
+
         categories = []
         for c in exp_cats:
-            if c.budget_amount > 0:
+            if c.name in overrides:
+                ov = overrides[c.name]
+                budget_val = ov["budget"]
+                bud_currency = ov.get("currency", currency or "PHP")
+            else:
+                budget_val = c.budget_amount
+                bud_currency = c.budget_currency or "PHP"
+
+            if currency and bud_currency != currency:
+                continue
+
+            if budget_val > 0:
                 categories.append(CategoryBudgetSummary(
-                    name=c.name, group=c.group, budget=round(c.budget_amount, 2),
-                    currency=c.budget_currency or "PHP", spent=round(cat_spent.get(c.name, 0), 2),
+                    name=c.name, group=c.group, budget=round(budget_val, 2),
+                    currency=bud_currency, spent=round(cat_spent.get(c.name, 0), 2),
                 ))
 
         total_budget = sum(c.budget for c in categories)
@@ -371,6 +391,34 @@ class MockBackend(BackendService):
             month=month, total_budget=round(total_budget, 2),
             total_spent=round(total_spent, 2), categories=categories,
         )
+
+    def get_monthly_budgets(self, month: str, currency: str | None = None) -> dict:
+        overrides = self.monthly_budgets.get(month, {})
+        if currency:
+            return {k: v for k, v in overrides.items() if v.get("currency", "PHP") == currency}
+        return overrides
+
+    def set_monthly_budget(self, month: str, category: str, budget: float, currency: str = "PHP"):
+        if month not in self.monthly_budgets:
+            self.monthly_budgets[month] = {}
+        self.monthly_budgets[month][category] = {"budget": budget, "currency": currency}
+        self._save()
+
+    def bulk_set_monthly_budget(self, month: str, overrides: list[dict], currency: str = "PHP"):
+        if month not in self.monthly_budgets:
+            self.monthly_budgets[month] = {}
+        for ov in overrides:
+            self.monthly_budgets[month][ov["category"]] = {"budget": ov["budget"], "currency": currency}
+        self._save()
+
+    def clear_monthly_budgets(self, month: str, currency: str | None = None):
+        if month not in self.monthly_budgets:
+            return
+        if currency:
+            self.monthly_budgets[month] = {k: v for k, v in self.monthly_budgets[month].items() if v.get("currency") != currency}
+        else:
+            del self.monthly_budgets[month]
+        self._save()
 
     def get_balances(self, currency: str | None = None) -> list[Balance]:
         balances = {}

@@ -106,6 +106,16 @@ class MonthlyBudget(BaseModel):
     currency: str = "PHP"
 
 
+class MonthlyBudgetOverride(BaseModel):
+    category: str
+    budget: float
+    currency: str = "PHP"
+
+
+class MonthlyBudgetBulkSet(BaseModel):
+    overrides: list[MonthlyBudgetOverride]
+
+
 class Balance(BaseModel):
     account_id: str
     account_name: str

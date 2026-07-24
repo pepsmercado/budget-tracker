@@ -79,6 +79,22 @@ class BackendService(ABC):
         pass
 
     @abstractmethod
+    def get_monthly_budgets(self, month: str, currency: str | None = None) -> dict:
+        pass
+
+    @abstractmethod
+    def set_monthly_budget(self, month: str, category: str, budget: float, currency: str = "PHP"):
+        pass
+
+    @abstractmethod
+    def bulk_set_monthly_budget(self, month: str, overrides: list[dict], currency: str = "PHP"):
+        pass
+
+    @abstractmethod
+    def clear_monthly_budgets(self, month: str, currency: str | None = None):
+        pass
+
+    @abstractmethod
     def get_balances(self, currency: str | None = None) -> list[Balance]:
         pass
 

@@ -487,13 +487,25 @@ class SheetsBackend(BackendService):
                     continue
                 cat_spent[t.category] = cat_spent.get(t.category, 0) + t.amount
 
+        overrides = self._load_monthly_budgets().get(month, {})
+
         categories = []
         for c in exp_cats:
-            if c.budget_amount > 0:
+            if c.name in overrides:
+                ov = overrides[c.name]
+                budget_val = ov["budget"]
+                bud_currency = ov.get("currency", currency or "PHP")
+            else:
+                budget_val = c.budget_amount
+                bud_currency = c.budget_currency or "PHP"
+
+            if currency and bud_currency != currency:
+                continue
+
+            if budget_val > 0:
                 categories.append(CategoryBudgetSummary(
-                    name=c.name, group=c.group, budget=round(c.budget_amount, 2),
-                    currency=c.budget_currency or "PHP",
-                    spent=round(cat_spent.get(c.name, 0), 2),
+                    name=c.name, group=c.group, budget=round(budget_val, 2),
+                    currency=bud_currency, spent=round(cat_spent.get(c.name, 0), 2),
                 ))
 
         total_budget = sum(c.budget for c in categories)
@@ -503,6 +515,52 @@ class SheetsBackend(BackendService):
             month=month, total_budget=round(total_budget, 2),
             total_spent=round(total_spent, 2), categories=categories,
         )
+
+    def _load_monthly_budgets(self) -> dict:
+        import json as _json
+        f = os.path.join(os.path.dirname(__file__), "..", "monthly_budgets.json")
+        if os.path.exists(f):
+            with open(f) as fh:
+                return _json.load(fh)
+        return {}
+
+    def _save_monthly_budgets(self, data: dict):
+        import json as _json
+        f = os.path.join(os.path.dirname(__file__), "..", "monthly_budgets.json")
+        with open(f, "w") as fh:
+            _json.dump(data, fh, default=str)
+
+    def get_monthly_budgets(self, month: str, currency: str | None = None) -> dict:
+        all_mb = self._load_monthly_budgets()
+        overrides = all_mb.get(month, {})
+        if currency:
+            return {k: v for k, v in overrides.items() if v.get("currency", "PHP") == currency}
+        return overrides
+
+    def set_monthly_budget(self, month: str, category: str, budget: float, currency: str = "PHP"):
+        all_mb = self._load_monthly_budgets()
+        if month not in all_mb:
+            all_mb[month] = {}
+        all_mb[month][category] = {"budget": budget, "currency": currency}
+        self._save_monthly_budgets(all_mb)
+
+    def bulk_set_monthly_budget(self, month: str, overrides: list[dict], currency: str = "PHP"):
+        all_mb = self._load_monthly_budgets()
+        if month not in all_mb:
+            all_mb[month] = {}
+        for ov in overrides:
+            all_mb[month][ov["category"]] = {"budget": ov["budget"], "currency": currency}
+        self._save_monthly_budgets(all_mb)
+
+    def clear_monthly_budgets(self, month: str, currency: str | None = None):
+        all_mb = self._load_monthly_budgets()
+        if month not in all_mb:
+            return
+        if currency:
+            all_mb[month] = {k: v for k, v in all_mb[month].items() if v.get("currency") != currency}
+        else:
+            del all_mb[month]
+        self._save_monthly_budgets(all_mb)
 
     # ===================== BALANCES / SUMMARY =====================
 
