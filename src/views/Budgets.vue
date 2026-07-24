@@ -323,7 +323,7 @@ watch(selectedMonth, (val) => {
 
   <!-- Template Editor Modal -->
   <div v-if="showTemplateEditor" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" @click.self="showTemplateEditor = false">
-    <div class="w-full max-w-3xl max-h-[80vh] overflow-y-auto card-elevated rounded-xl p-6">
+    <div class="w-full max-w-5xl max-h-[80vh] overflow-y-auto card-elevated rounded-xl p-6">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">Edit Budget Template ({{ viewLabel }})</h3>
         <button @click="showTemplateEditor = false" class="p-1 text-mushroom-400 hover:text-mushroom-600">
@@ -331,7 +331,7 @@ watch(selectedMonth, (val) => {
         </button>
       </div>
       <p class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-4">Changes here become the default for new months. Monthly overrides are unaffected.</p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto">
         <div v-for="cat in budgetSummary?.categories || []" :key="cat.name" class="flex items-center gap-2 p-2 bg-mushroom-50 dark:bg-mushroom-800 rounded-lg">
           <div class="w-7 h-7 rounded-lg bg-mushroom-100 dark:bg-mushroom-700 flex items-center justify-center text-xs flex-shrink-0">
             {{ categoryIcons[cat.name] || '📋' }}
