@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from models import BudgetSet
 from app_state import backend
+from auth import require_auth
 
 router = APIRouter()
 
@@ -12,7 +13,7 @@ def get_budget(month: str):
 
 
 @router.put("/budgets/{month}")
-def set_budget(month: str, data: BudgetSet):
+def set_budget(month: str, data: BudgetSet, _auth: None = Depends(require_auth)):
     return backend.set_budget(month, data)
 
 

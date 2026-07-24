@@ -3,11 +3,12 @@ import io
 import re
 import pdfplumber
 from datetime import datetime, date
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from models import BankStatementRow, BankStatementPreview, TransactionCreate
 from app_state import backend
+from auth import require_auth
 
 
 MONTH_MAP = {
@@ -261,7 +262,7 @@ PARSERS = {
 
 
 @router.post("/upload/preview")
-async def preview_statement(file: UploadFile = File(...), bank: str = Form("")):
+async def preview_statement(file: UploadFile = File(...), bank: str = Form(""), _auth: None = Depends(require_auth)):
     content = await file.read()
     filename = file.filename.lower()
 
@@ -332,7 +333,7 @@ class BankImportRequest(BaseModel):
 
 
 @router.post("/upload/bank-import")
-async def bank_import(req: BankImportRequest):
+async def bank_import(req: BankImportRequest, _auth: None = Depends(require_auth)):
     accounts = {a.id: a for a in backend.get_accounts()}
     if req.account_id not in accounts:
         suggestions = [a.name for a in backend.get_accounts()][:5]
@@ -457,7 +458,7 @@ def fuzzy_match(query, candidates):
 
 
 @router.post("/upload/bulk-preview")
-async def bulk_preview(file: UploadFile = File(...)):
+async def bulk_preview(file: UploadFile = File(...), _auth: None = Depends(require_auth)):
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are supported")
 
@@ -571,7 +572,7 @@ class BulkImportRequest(BaseModel):
 
 
 @router.post("/upload/bulk-import")
-async def bulk_import(req: BulkImportRequest):
+async def bulk_import(req: BulkImportRequest, _auth: None = Depends(require_auth)):
     categories_map = {c.name.lower(): c.name for c in backend.get_categories()}
     accounts = backend.get_accounts()
     account_by_id = {a.id: a for a in accounts}

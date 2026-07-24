@@ -4,12 +4,14 @@ import { useRoute } from 'vue-router'
 import { useSummary } from '../composables/useSummary'
 import { useExchangeRate } from '../composables/useExchangeRate'
 import { useTheme } from '../composables/useTheme'
+import { useAuth } from '../composables/useAuth'
 
 const route = useRoute()
 const { balances, fetchBalances } = useSummary()
 const { exchangeRate, lastUpdated, fetchExchangeRate } = useExchangeRate()
 const sidebarOpen = inject('sidebarOpen')
 const { theme, toggleTheme } = useTheme()
+const { isVerified, logout } = useAuth()
 
 const showNetWorthTooltip = ref(false)
 const showRateTooltip = ref(false)
@@ -84,6 +86,16 @@ function formatBal(val, currency) {
         </svg>
         <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        </svg>
+      </button>
+      <button
+        v-if="isVerified"
+        @click="logout"
+        class="p-1.5 rounded-lg text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-700 dark:hover:text-mushroom-200 hover:bg-mushroom-100 dark:hover:bg-mushroom-800 transition-colors"
+        title="Lock"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
         </svg>
       </button>
       <div

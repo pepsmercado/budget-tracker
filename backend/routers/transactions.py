@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from models import TransactionCreate
 from app_state import backend
+from auth import require_auth
 
 router = APIRouter()
 
@@ -27,12 +28,12 @@ def list_transactions(
 
 
 @router.post("/transactions", status_code=201)
-def create_transaction(data: TransactionCreate):
+def create_transaction(data: TransactionCreate, _auth: None = Depends(require_auth)):
     return backend.create_transaction(data)
 
 
 @router.put("/transactions/{transaction_id}")
-def update_transaction(transaction_id: str, data: TransactionCreate):
+def update_transaction(transaction_id: str, data: TransactionCreate, _auth: None = Depends(require_auth)):
     try:
         return backend.update_transaction(transaction_id, data)
     except KeyError:
@@ -40,7 +41,7 @@ def update_transaction(transaction_id: str, data: TransactionCreate):
 
 
 @router.delete("/transactions/{transaction_id}", status_code=204)
-def delete_transaction(transaction_id: str):
+def delete_transaction(transaction_id: str, _auth: None = Depends(require_auth)):
     try:
         backend.delete_transaction(transaction_id)
     except KeyError:

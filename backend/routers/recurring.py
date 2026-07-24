@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from models import RecurringRuleCreate
 from app_state import backend
+from auth import require_auth
 
 router = APIRouter()
 
@@ -11,12 +12,12 @@ def list_recurring(currency: str | None = Query(None)):
 
 
 @router.post("/recurring", status_code=201)
-def create_recurring(data: RecurringRuleCreate):
+def create_recurring(data: RecurringRuleCreate, _auth: None = Depends(require_auth)):
     return backend.create_recurring_rule(data)
 
 
 @router.put("/recurring/{rule_id}")
-def update_recurring(rule_id: str, data: RecurringRuleCreate):
+def update_recurring(rule_id: str, data: RecurringRuleCreate, _auth: None = Depends(require_auth)):
     try:
         return backend.update_recurring_rule(rule_id, data)
     except KeyError:
@@ -24,7 +25,7 @@ def update_recurring(rule_id: str, data: RecurringRuleCreate):
 
 
 @router.delete("/recurring/{rule_id}", status_code=204)
-def delete_recurring(rule_id: str):
+def delete_recurring(rule_id: str, _auth: None = Depends(require_auth)):
     try:
         backend.delete_recurring_rule(rule_id)
     except KeyError:
@@ -32,7 +33,7 @@ def delete_recurring(rule_id: str):
 
 
 @router.put("/recurring/{rule_id}/toggle")
-def toggle_recurring(rule_id: str, data: dict):
+def toggle_recurring(rule_id: str, data: dict, _auth: None = Depends(require_auth)):
     try:
         return backend.toggle_recurring_rule(rule_id, data.get("active", True))
     except KeyError:
@@ -40,5 +41,5 @@ def toggle_recurring(rule_id: str, data: dict):
 
 
 @router.post("/recurring/run")
-def run_recurring(currency: str | None = Query(None)):
+def run_recurring(currency: str | None = Query(None), _auth: None = Depends(require_auth)):
     return backend.run_recurring(currency=currency)
