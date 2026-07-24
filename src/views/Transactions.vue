@@ -8,6 +8,8 @@ import { categoryIcons } from '../constants.js'
 import { useToast } from '../composables/useToast.js'
 import api from '../api'
 
+const loadingPage = ref(true)
+
 const props = defineProps({ currency: { type: String, default: 'php' } })
 
 const { transactions, loading, fetchTransactions, deleteTransaction } = useTransactions()
@@ -172,12 +174,31 @@ function exportCSV() {
 
 <template>
   <div class="space-y-4">
-    <div class="flex items-center justify-between">
+    <!-- Page Header Skeleton -->
+    <div v-if="loadingPage" class="flex items-center justify-between">
+      <Skeleton width="120px" height="24px" />
+      <Skeleton width="80px" height="32px" rounded="rounded-lg" />
+    </div>
+    
+    <!-- Page Header -->
+    <div v-else class="flex items-center justify-between">
       <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ viewLabel }} Transactions</h2>
       <button @click="exportCSV" class="px-3 py-1.5 text-xs bg-kangkong-600 text-white rounded-lg hover:bg-kangkong-700 transition-colors font-medium">Export CSV</button>
     </div>
 
-    <div class="card p-3 flex flex-wrap items-center gap-2 text-xs overflow-x-auto">
+    <!-- Filter Skeleton -->
+    <div v-if="loadingPage" class="card p-4 space-y-3">
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <Skeleton width="100%" height="40px" rounded="rounded-lg" />
+        <Skeleton width="100%" height="40px" rounded="rounded-lg" />
+        <Skeleton width="100%" height="40px" rounded="rounded-lg" />
+        <Skeleton width="100%" height="40px" rounded="rounded-lg" />
+        <Skeleton width="100%" height="40px" rounded="rounded-lg" />
+      </div>
+    </div>
+    
+    <!-- Filters -->
+    <div v-else class="card p-3 flex flex-wrap items-center gap-2 text-xs overflow-x-auto">
       <select v-model="filters.account_id" class="select-field py-1 px-1.5 text-xs min-w-[120px] w-auto shrink-0">
         <option value="">All accounts</option>
         <template v-for="(accs, type) in groupedAccounts" :key="type">

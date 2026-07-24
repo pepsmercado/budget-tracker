@@ -10,6 +10,7 @@ import { useAccounts } from '../composables/useAccounts'
 import { useTransactions } from '../composables/useTransactions'
 import { useTheme } from '../composables/useTheme'
 import api from '../api'
+import Skeleton from '../components/Skeleton.vue'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend, Filler)
 
@@ -17,6 +18,7 @@ const { isDark } = useTheme()
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
 
+const loading = ref(true)
 const { summary, balances, fetchSummary, fetchBalances } = useSummary()
 const { accounts, fetchAccounts } = useAccounts()
 const { transactions, fetchTransactions } = useTransactions()
@@ -134,6 +136,7 @@ async function loadDashboard() {
   }
   const { data: summary } = await api.get(`/budgets/${currentMonth.value}/summary`, { params: { currency: currencyParam.value } }).catch(() => ({ data: null }))
   budgetSummary.value = summary
+  loading.value = false
 }
 
 onMounted(loadDashboard)

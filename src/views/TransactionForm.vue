@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import { useTransactions } from '../composables/useTransactions'
 import { useAccounts } from '../composables/useAccounts'
+import Skeleton from '../components/Skeleton.vue'
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
 
@@ -18,6 +19,7 @@ const currencyUrl = computed(() => props.currency)
 const categories = ref([])
 const isEdit = computed(() => !!route.params.id)
 const loading = ref(false)
+const pageLoading = ref(true)
 
 const currencyAccounts = computed(() => {
   return accounts.value.filter(a => a.currency === currencyParam.value)
@@ -72,6 +74,7 @@ function onAccountChange() {
 
 onMounted(async () => {
   await Promise.all([fetchAccounts(), fetchCategories()])
+  pageLoading.value = false
   if (isEdit.value) {
     await fetchTransactions()
     const { data: txns } = await api.get('/transactions')
@@ -116,7 +119,25 @@ async function handleSubmit() {
   <div class="max-w-lg">
     <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50 mb-4">{{ isEdit ? 'Edit' : 'New' }} Transaction</h2>
 
-    <form @submit.prevent="handleSubmit" class="card-elevated p-5 space-y-4">
+    <!-- Skeleton loading -->
+    <div v-if="pageLoading" class="card-elevated p-5 space-y-4">
+      <Skeleton width="120px" height="16px" class="mb-3" />
+      <Skeleton width="100%" height="40px" rounded="rounded-lg" />
+      <Skeleton width="100%" height="40px" rounded="rounded-lg" />
+      <Skeleton width="100%" height="40px" rounded="rounded-lg" />
+      <div class="grid grid-cols-2 gap-3">
+        <Skeleton width="100%" height="40px" rounded="rounded-lg" />
+        <Skeleton width="100%" height="40px" rounded="rounded-lg" />
+      </div>
+      <Skeleton width="100%" height="40px" rounded="rounded-lg" />
+      <Skeleton width="100%" height="40px" rounded="rounded-lg" />
+      <div class="flex gap-2 pt-1">
+        <Skeleton width="80px" height="36px" rounded="rounded-lg" />
+        <Skeleton width="60px" height="36px" rounded="rounded-lg" />
+      </div>
+    </div>
+
+    <form v-else @submit.prevent="handleSubmit" class="card-elevated p-5 space-y-4">
       <div>
         <label class="label-text">Date</label>
         <input v-model="form.date" type="date" required class="input-field" />
