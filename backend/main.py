@@ -44,11 +44,21 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/api/debug/env")
+def debug_env():
+    """Debug endpoint to check environment"""
+    return {
+        "VERCEL": os.environ.get("VERCEL"),
+        "DATA_DIR": os.environ.get("DATA_DIR"),
+        "PWD": os.environ.get("PWD"),
+    }
+
+
 @app.get("/api/debug/data")
 def debug_data():
     """Debug endpoint to check data file contents"""
     DATA_FILE = os.path.join(os.path.dirname(__file__), "services", "..", "data.json")
-    result = {"file_exists": os.path.exists(DATA_FILE)}
+    result = {"file_exists": os.path.exists(DATA_FILE), "data_file_path": DATA_FILE}
     if result["file_exists"]:
         try:
             with open(DATA_FILE) as f:
