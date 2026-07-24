@@ -3,11 +3,12 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useBudgets } from '../composables/useBudgets'
 import api from '../api'
 import BudgetProgressBar from '../components/BudgetProgressBar.vue'
+import Skeleton from '../components/Skeleton.vue'
 import { categoryIcons } from '../constants.js'
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
 
-const { budgetSummary, fetchBudgetSummary } = useBudgets()
+const { budgetSummary, loading, fetchBudgetSummary } = useBudgets()
 
 const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
@@ -227,7 +228,28 @@ watch(selectedMonth, (val) => {
         </div>
       </div>
 
-    <div v-if="budgetSummary" class="space-y-5">
+    <div v-if="loading" class="space-y-6">
+      <div v-for="g in 2" :key="g">
+        <Skeleton width="80px" height="10px" class="mb-3" />
+        <div class="space-y-3">
+          <div v-for="c in 2" :key="c" class="card-elevated p-4 border-l-4 border-l-mushroom-200 dark:border-l-mushroom-700">
+            <div class="flex items-center justify-between mb-2">
+              <div class="space-y-1.5">
+                <div class="flex items-center gap-2">
+                  <Skeleton width="40px" height="16px" rounded="rounded-full" />
+                  <Skeleton width="100px" height="14px" />
+                </div>
+                <Skeleton width="80px" height="10px" />
+              </div>
+              <Skeleton width="100px" height="20px" />
+            </div>
+            <Skeleton width="100%" height="8px" rounded="rounded" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else-if="budgetSummary" class="space-y-5">
       <div class="card-elevated p-6">
         <div class="flex items-center justify-between mb-4">
           <div>
@@ -331,21 +353,21 @@ watch(selectedMonth, (val) => {
         </button>
       </div>
       <p class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-4">Changes here become the default for new months. Monthly overrides are unaffected.</p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto">
-        <div v-for="cat in budgetSummary?.categories || []" :key="cat.name" class="flex items-center gap-3 p-3 bg-mushroom-50 dark:bg-mushroom-800 rounded-lg">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto">
+        <div v-for="cat in budgetSummary?.categories || []" :key="cat.name" class="flex items-center gap-3 p-3 bg-mushroom-50 dark:bg-mushroom-800 rounded-lg flex-nowrap">
           <div class="w-8 h-8 rounded-lg bg-mushroom-100 dark:bg-mushroom-700 flex items-center justify-center text-sm flex-shrink-0">
             {{ categoryIcons[cat.name] || '📋' }}
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50 truncate">{{ cat.name }}</div>
-            <div class="text-[10px] font-medium uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500">{{ cat.group }}</div>
+            <div class="text-[10px] font-medium uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500 truncate">{{ cat.group }}</div>
           </div>
           <input
             v-model.number="templateEditValues[cat.name]"
             type="number"
             step="1"
             min="0"
-            class="input-field text-sm py-1.5 px-2 w-20 text-right flex-shrink-0"
+            class="input-field text-sm py-1.5 px-2 w-24 text-right flex-shrink-0"
           />
         </div>
       </div>

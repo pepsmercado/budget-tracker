@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
 import { useToast } from '../composables/useToast.js'
+import Skeleton from '../components/Skeleton.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -27,6 +28,7 @@ const bulkError = ref('')
 
 const accounts = ref([])
 const categories = ref([])
+const loading = ref(false)
 
 const expenseCategories = computed(() => categories.value.filter(c => c.type === 'expense'))
 const groupedAccounts = computed(() => {
@@ -45,9 +47,14 @@ const flaggedCount = computed(() => {
 })
 
 async function loadAccounts() {
-  const [accRes, catRes] = await Promise.all([api.get('/accounts'), api.get('/categories')])
-  accounts.value = accRes.data
-  categories.value = catRes.data
+  loading.value = true
+  try {
+    const [accRes, catRes] = await Promise.all([api.get('/accounts'), api.get('/categories')])
+    accounts.value = accRes.data
+    categories.value = catRes.data
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(loadAccounts)
@@ -244,7 +251,62 @@ function acceptAllSuggestions(rows) {
       </button>
     </div>
 
-    <div v-if="activeTab === 'bank'" class="space-y-4">
+    <!-- Skeleton loading -->
+    <div v-if="loading" class="space-y-4">
+      <div class="card-elevated p-5 space-y-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <Skeleton width="60px" height="14px" class="mb-1" />
+            <Skeleton width="100%" height="36px" rounded="rounded" />
+          </div>
+          <div>
+            <Skeleton width="60px" height="14px" class="mb-1" />
+            <Skeleton width="100%" height="36px" rounded="rounded" />
+          </div>
+        </div>
+        <div>
+          <Skeleton width="100px" height="14px" class="mb-1" />
+          <Skeleton width="100%" height="36px" rounded="rounded" />
+        </div>
+      </div>
+      <div class="card-elevated p-5 space-y-3">
+        <Skeleton width="200px" height="20px" class="mb-3" />
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs">
+            <thead>
+              <tr>
+                <th class="text-left px-2 py-1.5">
+                  <Skeleton width="60px" height="12px" />
+                </th>
+                <th class="text-left px-2 py-1.5">
+                  <Skeleton width="80px" height="12px" />
+                </th>
+                <th class="text-left px-2 py-1.5">
+                  <Skeleton width="60px" height="12px" />
+                </th>
+                <th class="text-right px-2 py-1.5">
+                  <Skeleton width="50px" height="12px" />
+                </th>
+                <th class="text-right px-2 py-1.5">
+                  <Skeleton width="50px" height="12px" />
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="g in 3" :key="g" class="border-t border-mushroom-100 dark:border-mushroom-700/50">
+                <td class="px-2 py-1.5"><Skeleton width="70px" height="12px" /></td>
+                <td class="px-2 py-1.5"><Skeleton width="120px" height="12px" /></td>
+                <td class="px-2 py-1.5"><Skeleton width="80px" height="12px" /></td>
+                <td class="text-right px-2 py-1.5"><Skeleton width="60px" height="12px" /></td>
+                <td class="text-center px-2 py-1.5"><Skeleton width="40px" height="12px" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div v-else-if="activeTab === 'bank'" class="space-y-4">
       <div class="card-elevated p-5 space-y-3">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
