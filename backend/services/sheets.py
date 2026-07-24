@@ -587,7 +587,7 @@ class SheetsBackend(BackendService):
     _rates_cache_time = None
 
     def get_rates(self) -> RatesResponse:
-        import urllib.request
+        import httpx
         from datetime import timedelta
 
         if SheetsBackend._rates_cache and SheetsBackend._rates_cache_time:
@@ -599,11 +599,11 @@ class SheetsBackend(BackendService):
             'https://api.exchangerate-api.com/v4/latest/USD',
         ]
 
-        for api_url in apis:
-            try:
-                req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=5) as res:
-                    data = json.loads(res.read())
+        with httpx.Client(timeout=10) as client:
+            for api_url in apis:
+                try:
+                    res = client.get(api_url, headers={'User-Agent': 'Mozilla/5.0'})
+                    data = res.json()
                     rates = data.get('rates', {})
                     php_rate = rates.get("PHP")
                     if php_rate:
@@ -619,8 +619,8 @@ class SheetsBackend(BackendService):
                         SheetsBackend._rates_cache = result
                         SheetsBackend._rates_cache_time = datetime.now()
                         return result
-            except Exception:
-                continue
+                except Exception:
+                    continue
 
         if SheetsBackend._rates_cache:
             return SheetsBackend._rates_cache

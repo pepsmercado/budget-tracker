@@ -151,18 +151,18 @@ watch(selectedMonth, (val) => {
 <template>
   <div class="space-y-5">
     <div class="flex items-center justify-between">
-      <h2 class="text-lg font-medium text-mushroom-950">{{ viewLabel }} Budgets</h2>
+      <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ viewLabel }} Budgets</h2>
       <div class="flex items-center gap-2">
-        <button v-if="hiddenCount > 0" @click="showHidden = !showHidden" class="flex items-center gap-1 px-2 py-1 text-xs rounded-lg transition-colors" :class="showHidden ? 'bg-mushroom-200 text-mushroom-700' : 'text-mushroom-400 hover:text-mushroom-600 hover:bg-mushroom-100'">
+        <button v-if="hiddenCount > 0" @click="showHidden = !showHidden" class="flex items-center gap-1 px-2 py-1 text-xs rounded-lg transition-colors" :class="showHidden ? 'bg-mushroom-200 dark:bg-mushroom-700 text-mushroom-700 dark:text-mushroom-300' : 'text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 hover:bg-mushroom-100 dark:hover:bg-mushroom-700'">
           <svg v-if="!showHidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
           <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           {{ showHidden ? 'Showing hidden' : `${hiddenCount} hidden` }}
         </button>
-        <button @click="prevMonth" class="p-1.5 rounded-lg hover:bg-mushroom-100 text-mushroom-500 transition-colors">
+        <button @click="prevMonth" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
-        <span class="text-sm font-medium text-mushroom-700 min-w-[120px] text-center">{{ monthLabel }}</span>
-        <button @click="nextMonth" class="p-1.5 rounded-lg hover:bg-mushroom-100 text-mushroom-500 transition-colors">
+        <span class="text-sm font-medium text-mushroom-700 dark:text-mushroom-300 min-w-[120px] text-center">{{ monthLabel }}</span>
+        <button @click="nextMonth" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </button>
       </div>
@@ -172,18 +172,18 @@ watch(selectedMonth, (val) => {
       <div class="card-elevated p-6">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <div class="text-xs font-medium uppercase tracking-wider text-mushroom-400 mb-1">Total Budget</div>
-            <div class="text-3xl font-bold text-mushroom-950">
+            <div class="text-xs font-medium uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500 mb-1">Total Budget</div>
+            <div class="text-3xl font-bold text-mushroom-950 dark:text-mushroom-50">
               {{ formatAmount(totalSpent) }}
-              <span class="text-lg font-normal text-mushroom-400">/ {{ formatAmount(totalBudget) }}</span>
+              <span class="text-lg font-normal text-mushroom-400 dark:text-mushroom-500">/ {{ formatAmount(totalBudget) }}</span>
             </div>
           </div>
           <div class="text-right">
-            <div class="text-xs font-medium uppercase tracking-wider text-mushroom-400 mb-1">Remaining</div>
-            <div class="text-xl font-semibold" :class="totalSpent > totalBudget ? 'text-tomato-600' : 'text-kangkong-700'">
+            <div class="text-xs font-medium uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500 mb-1">Remaining</div>
+            <div class="text-xl font-semibold" :class="totalSpent > totalBudget ? 'text-tomato-600 dark:text-tomato-400' : 'text-kangkong-700 dark:text-kangkong-400'">
               {{ formatAmount(totalRemaining) }}
             </div>
-            <div class="text-xs mt-0.5" :class="totalSpent > totalBudget ? 'text-tomato-500' : 'text-mushroom-400'">
+            <div class="text-xs mt-0.5" :class="totalSpent > totalBudget ? 'text-tomato-500' : 'text-mushroom-400 dark:text-mushroom-500'">
               {{ totalPercent.toFixed(1) }}% spent
             </div>
           </div>
@@ -193,26 +193,26 @@ watch(selectedMonth, (val) => {
 
       <div v-for="group in sortedGroupKeys" :key="group">
         <div class="flex items-center gap-3 mb-3">
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-mushroom-400">{{ group }}</h3>
-          <div class="flex-1 h-px bg-mushroom-100"></div>
-          <div class="text-xs text-mushroom-400">
-            <span class="font-medium text-mushroom-600">{{ formatAmount(groupSpent(group)) }}</span> / {{ formatAmount(groupBudget(group)) }}
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500">{{ group }}</h3>
+          <div class="flex-1 h-px bg-mushroom-100 dark:bg-mushroom-800"></div>
+          <div class="text-xs text-mushroom-400 dark:text-mushroom-500">
+            <span class="font-medium text-mushroom-600 dark:text-mushroom-400">{{ formatAmount(groupSpent(group)) }}</span> / {{ formatAmount(groupBudget(group)) }}
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
           <div v-for="cat in groupedBudgetCategories[group]" :key="cat.name" class="card-elevated p-4 flex flex-col">
             <div class="flex items-start justify-between mb-3">
               <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-lg bg-mushroom-50 flex items-center justify-center text-base flex-shrink-0">
+                <div class="w-9 h-9 rounded-lg bg-mushroom-50 dark:bg-mushroom-800 flex items-center justify-center text-base flex-shrink-0">
                   {{ categoryIcons[cat.name] || '📋' }}
                 </div>
                 <div>
-                  <div class="text-sm font-medium text-mushroom-950">{{ cat.name }}</div>
-                  <div class="text-[10px] font-medium uppercase tracking-wider text-mushroom-400">{{ cat.group }}</div>
+                  <div class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50">{{ cat.name }}</div>
+                  <div class="text-[10px] font-medium uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500">{{ cat.group }}</div>
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <button @click="toggleHide(cat.name)" class="text-mushroom-300 hover:text-mushroom-600 transition-colors" :title="showHidden ? 'Unhide' : 'Hide'">
+                <button @click="toggleHide(cat.name)" class="text-mushroom-300 dark:text-mushroom-600 hover:text-mushroom-600 transition-colors" :title="showHidden ? 'Unhide' : 'Hide'">
                   <svg v-if="showHidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                   <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
@@ -232,7 +232,7 @@ watch(selectedMonth, (val) => {
                   <template v-else>
                     <span
                       @click="startEdit(cat)"
-                      class="text-lg font-semibold text-mushroom-950 cursor-pointer hover:text-kangkong-600"
+                      class="text-lg font-semibold text-mushroom-950 dark:text-mushroom-50 cursor-pointer hover:text-kangkong-600"
                     >
                       {{ formatAmount(cat.budget) }}
                     </span>
@@ -243,14 +243,14 @@ watch(selectedMonth, (val) => {
             <div class="mt-auto">
               <BudgetProgressBar :spent="cat.spent" :budget="cat.budget" />
               <div class="flex items-center justify-between mt-2 text-xs">
-                <span class="text-mushroom-500">
-                  <span class="font-medium text-mushroom-700">{{ formatAmountDecimal(cat.spent) }}</span> spent
+                <span class="text-mushroom-500 dark:text-mushroom-400">
+                  <span class="font-medium text-mushroom-700 dark:text-mushroom-300">{{ formatAmountDecimal(cat.spent) }}</span> spent
                 </span>
                 <span :class="cat.spent > cat.budget && cat.budget > 0 ? 'text-tomato-600 font-medium' : 'text-kangkong-600'">
                   {{ formatAmount(Math.max(0, cat.budget - cat.spent)) }} left
                 </span>
               </div>
-              <div class="text-right text-[10px] text-mushroom-400 mt-0.5">
+              <div class="text-right text-[10px] text-mushroom-400 dark:text-mushroom-500 mt-0.5">
                 {{ percent(cat.spent, cat.budget).toFixed(0) }}% used
               </div>
             </div>
@@ -259,6 +259,6 @@ watch(selectedMonth, (val) => {
       </div>
     </div>
 
-    <div v-else class="text-center py-12 text-mushroom-400 text-sm">Loading budget data...</div>
+    <div v-else class="text-center py-12 text-mushroom-400 dark:text-mushroom-500 text-sm">Loading budget data...</div>
   </div>
 </template>

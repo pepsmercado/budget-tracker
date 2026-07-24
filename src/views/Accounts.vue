@@ -29,10 +29,10 @@ const acctNumValue = ref('')
 const confirmingAcctNum = ref(null)
 
 const bankColors = {
-  BPI: 'bg-tomato-100 text-tomato-700',
-  BDO: 'bg-blueberry-100 text-blueberry-700',
-  Maya: 'bg-kangkong-100 text-kangkong-700',
-  'Bank of America': 'bg-blueberry-100 text-blueberry-700',
+  BPI: 'bg-tomato-100 text-tomato-700 dark:bg-tomato-500/15 dark:text-tomato-400',
+  BDO: 'bg-blueberry-100 text-blueberry-700 dark:bg-blueberry-500/15 dark:text-blueberry-400',
+  Maya: 'bg-kangkong-100 text-kangkong-700 dark:bg-kangkong-500/15 dark:text-kangkong-400',
+  'Bank of America': 'bg-blueberry-100 text-blueberry-700 dark:bg-blueberry-500/15 dark:text-blueberry-400',
 }
 
 const bankOptions = [
@@ -53,8 +53,8 @@ const accountTypeColors = {
   savings: 'border-l-kangkong-500',
   checking: 'border-l-blueberry-500',
   time_deposit: 'border-l-mango-500',
-  equity: 'border-l-ubas-500',
-  investment: 'border-l-ubas-500',
+  equity: 'border-l-purple-500',
+  investment: 'border-l-purple-500',
 }
 
 const groupedByType = computed(() => {
@@ -215,9 +215,9 @@ async function handleCreate() {
 <template>
   <div class="space-y-5">
     <div class="flex items-center justify-between">
-      <h2 class="text-lg font-medium text-mushroom-950">{{ viewLabel }} Accounts</h2>
+      <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ viewLabel }} Accounts</h2>
       <div class="flex items-center gap-3">
-        <button @click="eyeHidden = !eyeHidden" class="text-mushroom-400 hover:text-mushroom-600">
+        <button @click="eyeHidden = !eyeHidden" class="text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300">
           <svg v-if="!eyeHidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
         </button>
@@ -267,7 +267,7 @@ async function handleCreate() {
       <div v-for="g in 2" :key="g">
         <Skeleton width="80px" height="10px" class="mb-3" />
         <div class="space-y-3">
-          <div v-for="c in 2" :key="c" class="card-elevated p-4 border-l-4 border-l-mushroom-200">
+          <div v-for="c in 2" :key="c" class="card-elevated p-4 border-l-4 border-l-mushroom-200 dark:border-l-mushroom-700">
             <div class="flex items-center justify-between mb-2">
               <div class="space-y-1.5">
                 <div class="flex items-center gap-2">
@@ -285,14 +285,14 @@ async function handleCreate() {
 
     <div v-else class="space-y-6">
       <div v-for="(group, gi) in groupedByType" :key="group.type">
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-mushroom-400 mb-3 mt-4 first:mt-0">{{ group.label }}</h3>
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500 mb-3 mt-4 first:mt-0">{{ group.label }}</h3>
 
         <div class="space-y-3">
           <div v-for="acc in group.accounts" :key="acc.id" class="card-elevated p-4 border-l-4" :class="accountTypeColors[acc.type] || 'border-l-mushroom-400'">
             <div class="flex items-center justify-between mb-2">
               <div>
                 <div class="flex items-center gap-2.5 mb-1">
-                  <span v-if="acc.bank" class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium" :class="bankColors[acc.bank] || 'bg-mushroom-100 text-mushroom-600'">{{ acc.bank }}</span>
+                  <span v-if="acc.bank" class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium" :class="bankColors[acc.bank] || 'bg-mushroom-100 dark:bg-mushroom-800 text-mushroom-600 dark:text-mushroom-400'">{{ acc.bank }}</span>
                   <input
                     v-show="editingName === acc.id"
                     v-model="nameValue"
@@ -303,16 +303,16 @@ async function handleCreate() {
                   />
                   <span
                     v-show="editingName !== acc.id"
-                    class="text-sm font-medium text-mushroom-950 cursor-pointer hover:text-kangkong-600"
+                    class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50 cursor-pointer hover:text-kangkong-600 dark:hover:text-kangkong-400"
                     @click="startEditName(acc)"
                   >{{ acc.name }}</span>
                 </div>
                 <template v-if="editingAcctNum === acc.id">
                   <template v-if="confirmingAcctNum === acc.id">
                     <div class="flex items-center gap-1.5 mt-1">
-                      <span class="text-xs text-mushroom-400">Save change?</span>
+                      <span class="text-xs text-mushroom-400 dark:text-mushroom-500">Save change?</span>
                       <button @click="saveAcctNum(acc)" class="text-kangkong-600 hover:text-kangkong-800 text-xs font-medium">Yes</button>
-                      <button @click="cancelAcctNum" class="text-mushroom-400 hover:text-mushroom-600 text-xs">No</button>
+                      <button @click="cancelAcctNum" class="text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300 text-xs">No</button>
                     </div>
                   </template>
                   <template v-else>
@@ -328,12 +328,12 @@ async function handleCreate() {
                     </div>
                   </template>
                 </template>
-                <div v-else-if="acc.account_number" class="text-xs text-mushroom-400 mt-1 cursor-pointer hover:text-kangkong-600" @click="startEditAcctNum(acc)">{{ acc.account_number }}</div>
-                <div v-else class="text-xs text-mushroom-300 mt-1 cursor-pointer hover:text-kangkong-600" @click="startEditAcctNum(acc)">+ Add account number</div>
-                <div v-if="acc.dividend_type" class="text-xs text-mushroom-400 mt-1">{{ acc.dividend_type }}</div>
+                <div v-else-if="acc.account_number" class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1 cursor-pointer hover:text-kangkong-600 dark:hover:text-kangkong-400" @click="startEditAcctNum(acc)">{{ acc.account_number }}</div>
+                <div v-else class="text-xs text-mushroom-300 dark:text-mushroom-600 mt-1 cursor-pointer hover:text-kangkong-600 dark:hover:text-kangkong-400" @click="startEditAcctNum(acc)">+ Add account number</div>
+                <div v-if="acc.dividend_type" class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">{{ acc.dividend_type }}</div>
                 <template v-if="acc.type === 'time_deposit'">
                   <template v-if="editingMaturity === acc.id">
-                    <div class="flex items-center gap-2 mt-2 pt-2 border-t border-mushroom-100">
+                    <div class="flex items-center gap-2 mt-2 pt-2 border-t border-mushroom-100 dark:border-mushroom-700/50">
                       <input
                         v-model="maturityValue"
                         @keyup.enter="saveMaturity(acc)"
@@ -345,22 +345,22 @@ async function handleCreate() {
                     </div>
                   </template>
                   <template v-else>
-                    <div class="text-xs text-mushroom-400 cursor-pointer hover:text-kangkong-600 mt-2 pt-2 border-t border-mushroom-100" @click="startEditMaturity(acc)">
+                    <div class="text-xs text-mushroom-400 dark:text-mushroom-500 cursor-pointer hover:text-kangkong-600 dark:hover:text-kangkong-400 mt-2 pt-2 border-t border-mushroom-100 dark:border-mushroom-700/50" @click="startEditMaturity(acc)">
                       {{ acc.maturity_date ? 'Maturity: ' + acc.maturity_date : '+ Set maturity date' }}
                     </div>
                   </template>
                 </template>
-                <div v-else-if="acc.maturity_date" class="text-xs text-mushroom-400 mt-2 pt-2 border-t border-mushroom-100">Maturity: {{ acc.maturity_date }}</div>
+                <div v-else-if="acc.maturity_date" class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-2 pt-2 border-t border-mushroom-100 dark:border-mushroom-700/50">Maturity: {{ acc.maturity_date }}</div>
               </div>
               <div class="text-right">
-                <div class="text-xl font-semibold text-mushroom-950">{{ formatCurrency(getBalance(acc.id)) }}</div>
+                <div class="text-xl font-semibold text-mushroom-950 dark:text-mushroom-50">{{ formatCurrency(getBalance(acc.id)) }}</div>
                 <div class="flex justify-end mt-1">
                   <template v-if="confirmingDelete === acc.id">
-                    <span class="text-xs text-mushroom-400 mr-1">Delete?</span>
+                    <span class="text-xs text-mushroom-400 dark:text-mushroom-500 mr-1">Delete?</span>
                     <button @click="handleDelete(acc)" class="text-tomato-500 hover:text-tomato-700 text-xs font-medium mr-1">Yes</button>
-                    <button @click="confirmingDelete = null" class="text-mushroom-400 hover:text-mushroom-600 text-xs">No</button>
+                    <button @click="confirmingDelete = null" class="text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300 text-xs">No</button>
                   </template>
-                  <button v-else @click="confirmingDelete = acc.id" class="text-mushroom-300 hover:text-tomato-500 transition-colors" title="Delete account">
+                  <button v-else @click="confirmingDelete = acc.id" class="text-mushroom-300 dark:text-mushroom-600 hover:text-tomato-500 dark:hover:text-tomato-400 transition-colors" title="Delete account">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                   </button>
                 </div>
@@ -368,7 +368,7 @@ async function handleCreate() {
             </div>
 
             <template v-if="acc.type === 'savings' && !(acc.bank === 'BPI' && acc.name === 'Settlement')">
-              <div class="mt-3 pt-3 border-t border-mushroom-100">
+              <div class="mt-3 pt-3 border-t border-mushroom-100 dark:border-mushroom-700/50">
                 <template v-if="editingGoal === acc.id">
                   <div class="flex items-center gap-2">
                     <input
@@ -382,7 +382,7 @@ async function handleCreate() {
                       class="input-field text-xs py-0.5 px-1.5 w-24"
                       autofocus
                     />
-                    <span class="text-xs text-mushroom-400">Press Enter to save</span>
+                    <span class="text-xs text-mushroom-400 dark:text-mushroom-500">Press Enter to save</span>
                   </div>
                 </template>
                 <template v-else>
@@ -393,8 +393,8 @@ async function handleCreate() {
                     :invert="true"
                     class="mb-2"
                   />
-                  <div v-if="acc.goal_amount > 0" class="flex items-center justify-between text-xs text-mushroom-500">
-                    <span @click="startEditGoal(acc)" class="cursor-pointer hover:text-kangkong-600">
+                  <div v-if="acc.goal_amount > 0" class="flex items-center justify-between text-xs text-mushroom-500 dark:text-mushroom-400">
+                    <span @click="startEditGoal(acc)" class="cursor-pointer hover:text-kangkong-600 dark:hover:text-kangkong-400">
                       Goal: {{ formatCurrency(acc.goal_amount) }}
                     </span>
                     <span>{{ goalProgress(getBalance(acc.id), acc.goal_amount).toFixed(1) }}%</span>

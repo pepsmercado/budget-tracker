@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from models import BudgetSet
 from app_state import backend
 
@@ -17,5 +17,5 @@ def set_budget(month: str, data: BudgetSet):
 
 
 @router.get("/budgets/{month}/summary")
-def get_budget_summary(month: str):
-    return backend.get_budget_summary(month)
+def get_budget_summary(month: str, currency: str | None = Query(None)):
+    return backend.get_budget_summary(month, currency=currency)

@@ -8,15 +8,21 @@ router = APIRouter()
 @router.get("/transactions")
 def list_transactions(
     account_id: str | None = Query(None),
+    type: str | None = Query(None),
+    group: str | None = Query(None),
     category: str | None = Query(None),
     start_date: str | None = Query(None),
     end_date: str | None = Query(None),
+    currency: str | None = Query(None),
 ):
     return backend.get_transactions(
         account_id=account_id,
+        type=type,
+        group=group,
         category=category,
         start_date=start_date,
         end_date=end_date,
+        currency=currency,
     )
 
 

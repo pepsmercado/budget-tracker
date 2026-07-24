@@ -113,7 +113,7 @@ function isActive(linkTo) {
   if (linkTo === `/${currentCurrency.value}`) {
     return route.path === linkTo || route.path === linkTo + '/'
   }
-  return route.path === linkTo || route.path.startsWith(linkTo + '/')
+  return route.path === linkTo
 }
 </script>
 

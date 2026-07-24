@@ -10,6 +10,8 @@ from models import (
     Category, CategoryCreate, Budget, BudgetSet,
     Balance, AccountBalance, CategorySummary, MonthlyTotal,
     AnnualSummary, RatesResponse, SubAccount, MonthlyCategoryRow,
+    RecurringRule, RecurringRuleCreate, RecurringRunResult,
+    Transfer, TransferCreate,
 )
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "..", "data.json")
@@ -21,6 +23,8 @@ class MockBackend(BackendService):
         self.transactions: dict[str, Transaction] = {}
         self.categories: dict[str, Category] = {}
         self.budgets: dict[str, Budget] = {}
+        self.recurring_rules: dict[str, RecurringRule] = {}
+        self.transfers: dict[str, Transfer] = {}
         if not self._load():
             self._seed()
 
@@ -33,6 +37,8 @@ class MockBackend(BackendService):
             "transactions": {k: v.model_dump() for k, v in self.transactions.items()},
             "categories": {k: v.model_dump() for k, v in self.categories.items()},
             "budgets": {k: v.model_dump() for k, v in self.budgets.items()},
+            "recurring_rules": {k: v.model_dump() for k, v in self.recurring_rules.items()},
+            "transfers": {k: v.model_dump() for k, v in self.transfers.items()},
         }
         with open(DATA_FILE, "w") as f:
             json.dump(data, f, default=str)
@@ -55,6 +61,16 @@ class MockBackend(BackendService):
                 self.categories[k] = Category(**v)
             for k, v in data.get("budgets", {}).items():
                 self.budgets[k] = Budget(**v)
+            for k, v in data.get("recurring_rules", {}).items():
+                if "created_at" in v and isinstance(v["created_at"], str):
+                    v["created_at"] = datetime.fromisoformat(v["created_at"])
+                self.recurring_rules[k] = RecurringRule(**v)
+            for k, v in data.get("transfers", {}).items():
+                if "created_at" in v and isinstance(v["created_at"], str):
+                    v["created_at"] = datetime.fromisoformat(v["created_at"])
+                if "date" in v and isinstance(v["date"], str):
+                    v["date"] = date.fromisoformat(v["date"])
+                self.transfers[k] = Transfer(**v)
             return True
         except Exception:
             return False
@@ -63,26 +79,30 @@ class MockBackend(BackendService):
         random.seed(42)
 
         accounts_data = [
-            ("BPI Savings", "savings", "PHP", 125000.0),
-            ("Maya Savings", "savings", "PHP", 85000.0),
-            ("BDO Savings", "savings", "PHP", 200000.0),
-            ("Bank of America Savings", "savings", "USD", 15000.0),
-            ("BPI Settlement", "savings", "PHP", 75000.0),
-            ("Bank of America Checking", "checking", "USD", 8500.0),
-            ("Maya Time Deposit", "time_deposit", "PHP", 100000.0),
-            ("BPI Time Deposit", "time_deposit", "PHP", 250000.0),
-            ("BPI Investments", "investment", "PHP", 500000.0, [
-                SubAccount(id=self._uid(), name="Preferred Shares", balance=200000.0),
-                SubAccount(id=self._uid(), name="REIT", balance=150000.0),
-                SubAccount(id=self._uid(), name="Bonds", balance=100000.0),
-                SubAccount(id=self._uid(), name="Index Funds", balance=50000.0),
-            ]),
+            # (name, type, currency, initial_balance, bank, account_number, sub_accounts, dividend_type, maturity_date)
+            # PHP - Savings
+            ("Savings", "savings", "PHP", 125000.0, "BPI", "****4521"),
+            ("Savings", "savings", "PHP", 85000.0, "Maya", "****7893"),
+            ("Savings", "savings", "PHP", 200000.0, "BDO", "****1167"),
+            ("Settlement", "savings", "PHP", 75000.0, "BPI", "****3308"),
+            # PHP - Time Deposits
+            ("Time Deposit", "time_deposit", "PHP", 250000.0, "BPI", "****6612", [], "Monthly Dividends", ""),
+            ("Time Deposit", "time_deposit", "PHP", 100000.0, "Maya", "****9945", [], "Maturity Dividends", ""),
+            # PHP - Equity
+            ("Preferred Shares | Ayala Corporation", "equity", "PHP", 200000.0, "BPI", "****2280"),
+            ("Preferred Shares | GCash Mynt", "equity", "PHP", 150000.0, "BPI", "****5574"),
+            # USD - Checking
+            ("Checking", "checking", "USD", 8500.0, "Bank of America", "****4419"),
+            # USD - Savings
+            ("Savings", "savings", "USD", 15000.0, "Bank of America", "****8837"),
         ]
 
         for data in accounts_data:
-            name, atype, currency, balance = data[0], data[1], data[2], data[3]
-            subs = data[4] if len(data) > 4 else []
-            acc = Account(id=self._uid(), name=name, type=atype, currency=currency, initial_balance=balance, sub_accounts=subs)
+            name, atype, currency, balance, bank, acct_num = data[0], data[1], data[2], data[3], data[4], data[5]
+            subs = data[6] if len(data) > 6 else []
+            dividend_type = data[7] if len(data) > 7 else ""
+            maturity_date = data[8] if len(data) > 8 else ""
+            acc = Account(id=self._uid(), name=name, type=atype, currency=currency, bank=bank, account_number=acct_num, initial_balance=balance, sub_accounts=subs, dividend_type=dividend_type, maturity_date=maturity_date)
             self.accounts[acc.id] = acc
 
         categories_data = [
@@ -173,6 +193,25 @@ class MockBackend(BackendService):
             b = Budget(id=self._uid(), month=month_str, total_budget=random.uniform(60000, 120000), currency="PHP")
             self.budgets[b.id] = b
 
+        usd_checking = [a for a in self.accounts.values() if a.currency == "USD" and a.type == "checking"][0]
+        usd_savings = [a for a in self.accounts.values() if a.currency == "USD" and a.type == "savings"][0]
+
+        r1 = RecurringRule(
+            id=self._uid(), name="Rent", account_id=usd_checking.id, category="Rent",
+            amount=1200.0, currency="USD", frequency="monthly", day_of_month=1,
+            start_date="2026-01-01", end_date="2027-06-30", active=True,
+            next_date=f"{today.year}-{today.month:02d}-01" if today.day <= 1 else f"{today.year}-{today.month + 1:02d}-01" if today.month < 12 else f"{today.year + 1}-01-01",
+        )
+        self.recurring_rules[r1.id] = r1
+
+        r2 = RecurringRule(
+            id=self._uid(), name="Tuition", account_id=usd_savings.id, category="Tuition",
+            amount=3000.0, currency="USD", frequency="yearly", day_of_month=15,
+            start_date="2026-01-01", end_date="2030-12-31", active=True,
+            next_date=f"{today.year}-08-15",
+        )
+        self.recurring_rules[r2.id] = r2
+
     def get_accounts(self) -> list[Account]:
         return list(self.accounts.values())
 
@@ -185,7 +224,8 @@ class MockBackend(BackendService):
     def update_account(self, account_id: str, data: AccountCreate) -> Account:
         if account_id not in self.accounts:
             raise KeyError("Account not found")
-        acc = Account(id=account_id, **data.model_dump(), created_at=self.accounts[account_id].created_at)
+        old = self.accounts[account_id]
+        acc = Account(id=account_id, **data.model_dump(), goal_amount=old.goal_amount, created_at=old.created_at)
         self.accounts[account_id] = acc
         self._save()
         return acc
@@ -203,8 +243,11 @@ class MockBackend(BackendService):
         self._save()
         return self.accounts[account_id]
 
-    def get_transactions(self, account_id=None, type=None, group=None, category=None, start_date=None, end_date=None) -> list[Transaction]:
+    def get_transactions(self, account_id=None, type=None, group=None, category=None, start_date=None, end_date=None, currency=None) -> list[Transaction]:
         result = list(self.transactions.values())
+        if currency:
+            currency_account_ids = {a.id for a in self.accounts.values() if a.currency == currency}
+            result = [t for t in result if t.account_id in currency_account_ids]
         if account_id:
             result = [t for t in result if t.account_id == account_id]
         if type:
@@ -291,7 +334,7 @@ class MockBackend(BackendService):
         self._save()
         return b
 
-    def get_budget_summary(self, month: str) -> BudgetSummary:
+    def get_budget_summary(self, month: str, currency: str | None = None) -> BudgetSummary:
         from models import CategoryBudgetSummary, BudgetSummary
         year, mon = int(month.split('-')[0]), int(month.split('-')[1])
         start = date(year, mon, 1)
@@ -300,29 +343,25 @@ class MockBackend(BackendService):
         else:
             end = date(year, mon + 1, 1)
 
-        rates = self.get_rates().rates
-        php_to_usd = 1 / rates.get("PHP", 56)
-
-        def to_usd(amount, currency):
-            if currency == "USD":
-                return amount
-            if currency == "PHP":
-                return amount * php_to_usd
-            return amount
+        if currency:
+            currency_account_ids = {a.id for a in self.accounts.values() if a.currency == currency}
+        else:
+            currency_account_ids = None
 
         exp_cats = [c for c in self.categories.values() if c.type == "expense"]
         cat_spent = {c.name: 0.0 for c in exp_cats}
         for t in self.transactions.values():
             if t.type == "expense" and start <= t.date < end:
-                cat_spent[t.category] = cat_spent.get(t.category, 0) + to_usd(t.amount, t.currency)
+                if currency_account_ids is not None and t.account_id not in currency_account_ids:
+                    continue
+                cat_spent[t.category] = cat_spent.get(t.category, 0) + t.amount
 
         categories = []
         for c in exp_cats:
             if c.budget_amount > 0:
-                budget_usd = to_usd(c.budget_amount, c.budget_currency)
                 categories.append(CategoryBudgetSummary(
-                    name=c.name, group=c.group, budget=round(budget_usd, 2),
-                    currency="USD", spent=round(cat_spent.get(c.name, 0), 2),
+                    name=c.name, group=c.group, budget=round(c.budget_amount, 2),
+                    currency=c.budget_currency or "PHP", spent=round(cat_spent.get(c.name, 0), 2),
                 ))
 
         total_budget = sum(c.budget for c in categories)
@@ -333,7 +372,7 @@ class MockBackend(BackendService):
             total_spent=round(total_spent, 2), categories=categories,
         )
 
-    def get_balances(self) -> list[Balance]:
+    def get_balances(self, currency: str | None = None) -> list[Balance]:
         balances = {}
         for acc in self.accounts.values():
             balances[acc.id] = acc.initial_balance
@@ -344,39 +383,30 @@ class MockBackend(BackendService):
                 elif t.type == "expense":
                     balances[t.account_id] -= t.amount
 
-        rates = self.get_rates().rates
-        php_to_usd = 1 / rates.get("PHP", 56)
-
         result = []
         for acc in self.accounts.values():
+            if currency and acc.currency != currency:
+                continue
             bal = balances.get(acc.id, acc.initial_balance)
-            if acc.currency == "PHP":
-                bal_display = round(bal * php_to_usd, 2)
-            else:
-                bal_display = round(bal, 2)
             result.append(Balance(
                 account_id=acc.id,
                 account_name=acc.name,
                 currency=acc.currency,
                 balance=round(bal, 2),
-                balance_display=bal_display,
+                balance_display=round(bal, 2),
             ))
         return result
 
-    def get_annual_summary(self, year: int) -> AnnualSummary:
+    def get_annual_summary(self, year: int, currency: str | None = None) -> AnnualSummary:
         all_txns = [t for t in self.transactions.values() if t.date.year == year]
-        rates = self.get_rates().rates
-        php_to_usd = 1 / rates.get("PHP", 56)
+        if currency:
+            currency_account_ids = {a.id for a in self.accounts.values() if a.currency == currency}
+            all_txns = [t for t in all_txns if t.account_id in currency_account_ids]
 
-        def to_usd(amount, currency):
-            if currency == "USD":
-                return amount
-            if currency == "PHP":
-                return amount * php_to_usd
-            return amount
+        cur = currency or "USD"
 
-        total_income = sum(to_usd(t.amount, t.currency) for t in all_txns if t.type == "income")
-        total_expense = sum(to_usd(t.amount, t.currency) for t in all_txns if t.type == "expense")
+        total_income = sum(t.amount for t in all_txns if t.type == "income")
+        total_expense = sum(t.amount for t in all_txns if t.type == "expense")
 
         by_account = {}
         for t in all_txns:
@@ -385,36 +415,36 @@ class MockBackend(BackendService):
                 by_account[t.account_id] = AccountBalance(
                     account_id=t.account_id,
                     account_name=acc.name if acc else "Unknown",
-                    currency="USD",
+                    currency=cur,
                     balance=0,
                 )
             if t.type == "income":
-                by_account[t.account_id].balance += to_usd(t.amount, t.currency)
+                by_account[t.account_id].balance += t.amount
             else:
-                by_account[t.account_id].balance -= to_usd(t.amount, t.currency)
+                by_account[t.account_id].balance -= t.amount
 
         by_category = {}
         for t in all_txns:
             if t.type == "expense":
                 if t.category not in by_category:
-                    by_category[t.category] = CategorySummary(category=t.category, total=0, currency="USD")
-                by_category[t.category].total += to_usd(t.amount, t.currency)
+                    by_category[t.category] = CategorySummary(category=t.category, total=0, currency=cur)
+                by_category[t.category].total += t.amount
 
         monthly = {}
         for t in all_txns:
             m = f"{t.date.year}-{t.date.month:02d}"
             if m not in monthly:
-                monthly[m] = MonthlyTotal(month=m, income=0, expense=0, currency="USD")
+                monthly[m] = MonthlyTotal(month=m, income=0, expense=0, currency=cur)
             if t.type == "income":
-                monthly[m].income += to_usd(t.amount, t.currency)
+                monthly[m].income += t.amount
             else:
-                monthly[m].expense += to_usd(t.amount, t.currency)
+                monthly[m].expense += t.amount
 
         return AnnualSummary(
             year=year,
             total_income=round(total_income, 2),
             total_expense=round(total_expense, 2),
-            currency="USD",
+            currency=cur,
             by_account=list(by_account.values()),
             by_category=sorted(by_category.values(), key=lambda x: x.total, reverse=True),
             monthly=sorted(monthly.values(), key=lambda x: x.month),
@@ -424,9 +454,8 @@ class MockBackend(BackendService):
     _rates_cache_time = None
 
     def get_rates(self) -> RatesResponse:
-        import urllib.request
-        import json
-        from datetime import datetime, timedelta
+        import httpx
+        from datetime import timedelta
 
         # Use cache if less than 12 hours old
         if MockBackend._rates_cache and MockBackend._rates_cache_time:
@@ -439,11 +468,11 @@ class MockBackend(BackendService):
             'https://api.exchangerate-api.com/v4/latest/USD',
         ]
 
-        for api_url in apis:
-            try:
-                req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=5) as res:
-                    data = json.loads(res.read())
+        with httpx.Client(timeout=10) as client:
+            for api_url in apis:
+                try:
+                    res = client.get(api_url, headers={'User-Agent': 'Mozilla/5.0'})
+                    data = res.json()
                     rates = data.get('rates', {})
                     php_rate = rates.get("PHP")
                     if php_rate:
@@ -460,30 +489,176 @@ class MockBackend(BackendService):
                         MockBackend._rates_cache = result
                         MockBackend._rates_cache_time = datetime.now()
                         return result
-            except Exception:
-                continue
+                except Exception:
+                    continue
 
         # Return cache even if stale, or defaults
         if MockBackend._rates_cache:
             return MockBackend._rates_cache
         return RatesResponse(base="USD", rates={"USD": 1.0, "PHP": 56.0, "EUR": 0.92, "GBP": 0.79, "JPY": 149.5})
 
-    def get_monthly_category_breakdown(self, year: int) -> list[MonthlyCategoryRow]:
+    def get_monthly_category_breakdown(self, year: int, currency: str | None = None) -> list[MonthlyCategoryRow]:
         all_txns = [t for t in self.transactions.values() if t.date.year == year and t.type == "expense"]
-        rates = self.get_rates().rates
-        php_to_usd = 1 / rates.get("PHP", 56)
-
-        def to_usd(amount, currency):
-            if currency == "USD":
-                return amount
-            if currency == "PHP":
-                return amount * php_to_usd
-            return amount
+        if currency:
+            currency_account_ids = {a.id for a in self.accounts.values() if a.currency == currency}
+            all_txns = [t for t in all_txns if t.account_id in currency_account_ids]
 
         cats = {}
         for t in all_txns:
             if t.category not in cats:
-                cats[t.category] = {}
+                cat_obj = next((c for c in self.categories.values() if c.name == t.category), None)
+                group = cat_obj.group if cat_obj else "Misc"
+                cats[t.category] = {"group": group, "data": {}}
             m = f"{t.date.month:02d}"
-            cats[t.category][m] = cats[t.category].get(m, 0) + to_usd(t.amount, t.currency)
-        return [MonthlyCategoryRow(category=c, monthly=m) for c, m in sorted(cats.items())]
+            cats[t.category]["data"][m] = cats[t.category]["data"].get(m, 0) + t.amount
+        return [MonthlyCategoryRow(category=c, group=v["group"], monthly=v["data"]) for c, v in sorted(cats.items())]
+
+    def _advance_date(self, date_str: str, frequency: str) -> str:
+        y, m, d = int(date_str[:4]), int(date_str[5:7]), int(date_str[8:10])
+        if frequency == "monthly":
+            m += 1
+            if m > 12:
+                m = 1
+                y += 1
+            # clamp day to last day of month
+            import calendar
+            last_day = calendar.monthrange(y, m)[1]
+            d = min(d, last_day)
+        else:
+            y += 1
+        return f"{y}-{m:02d}-{d:02d}"
+
+    def get_recurring_rules(self, currency: str | None = None) -> list[RecurringRule]:
+        rules = list(self.recurring_rules.values())
+        if currency:
+            rules = [r for r in rules if r.currency == currency]
+        return rules
+
+    def create_recurring_rule(self, data: RecurringRuleCreate) -> RecurringRule:
+        r = RecurringRule(id=self._uid(), **data.model_dump(), next_date=data.start_date)
+        self.recurring_rules[r.id] = r
+        self._save()
+        return r
+
+    def update_recurring_rule(self, rule_id: str, data: RecurringRuleCreate) -> RecurringRule:
+        if rule_id not in self.recurring_rules:
+            raise KeyError("Rule not found")
+        old = self.recurring_rules[rule_id]
+        r = RecurringRule(id=rule_id, **data.model_dump(), active=old.active,
+                          last_generated=old.last_generated, next_date=old.next_date,
+                          created_at=old.created_at)
+        self.recurring_rules[rule_id] = r
+        self._save()
+        return r
+
+    def delete_recurring_rule(self, rule_id: str) -> None:
+        if rule_id not in self.recurring_rules:
+            raise KeyError("Rule not found")
+        del self.recurring_rules[rule_id]
+        self._save()
+
+    def toggle_recurring_rule(self, rule_id: str, active: bool) -> RecurringRule:
+        if rule_id not in self.recurring_rules:
+            raise KeyError("Rule not found")
+        self.recurring_rules[rule_id].active = active
+        self._save()
+        return self.recurring_rules[rule_id]
+
+    def run_recurring(self, currency: str | None = None) -> RecurringRunResult:
+        today = date.today()
+        generated = 0
+        for r in list(self.recurring_rules.values()):
+            if not r.active:
+                continue
+            if currency and r.currency != currency:
+                continue
+            if not r.next_date:
+                continue
+            next_d = date.fromisoformat(r.next_date)
+            if next_d > today:
+                continue
+            if r.end_date and date.fromisoformat(r.end_date) < today:
+                continue
+            t = Transaction(
+                id=self._uid(),
+                date=next_d,
+                account_id=r.account_id,
+                type="expense",
+                amount=r.amount,
+                currency=r.currency,
+                category=r.category,
+                description=f"[Recurring] {r.name}",
+            )
+            self.transactions[t.id] = t
+            r.last_generated = r.next_date
+            r.next_date = self._advance_date(r.next_date, r.frequency)
+            generated += 1
+        self._save()
+        rules = list(self.recurring_rules.values())
+        if currency:
+            rules = [r for r in rules if r.currency == currency]
+        return RecurringRunResult(generated=generated, rules=rules)
+
+    def get_transfers(self, currency: str | None = None) -> list[Transfer]:
+        transfers = list(self.transfers.values())
+        if currency:
+            transfers = [t for t in transfers if t.currency == currency]
+        return transfers
+
+    def create_transfer(self, data: TransferCreate) -> Transfer:
+        from_acc = self.accounts.get(data.from_account_id)
+        to_acc = self.accounts.get(data.to_account_id)
+        if not from_acc or not to_acc:
+            raise ValueError("Account not found")
+        if from_acc.currency != to_acc.currency:
+            raise ValueError("Cannot transfer between different currencies")
+        bal = from_acc.initial_balance
+        for t in self.transactions.values():
+            if t.account_id == data.from_account_id:
+                if t.type == "income":
+                    bal += t.amount
+                elif t.type == "expense":
+                    bal -= t.amount
+        if bal < data.amount + data.fee:
+            raise ValueError(f"Insufficient balance. Available: {bal:.2f}")
+        t = Transfer(id=self._uid(), **{k: v for k, v in data.model_dump().items() if k != "date"}, date=date.fromisoformat(data.date) if isinstance(data.date, str) else data.date)
+        self.transfers[t.id] = t
+        # Create paired transactions
+        exp_id = self._uid()
+        inc_id = self._uid()
+        exp = Transaction(
+            id=exp_id, date=t.date, account_id=data.from_account_id,
+            type="expense", amount=data.amount + data.fee, currency=from_acc.currency,
+            category="Transfer", description=f"Transfer → {to_acc.name}" + (f" (fee: {data.fee})" if data.fee else ""),
+            transfer_pair_id=inc_id,
+        )
+        inc = Transaction(
+            id=inc_id, date=t.date, account_id=data.to_account_id,
+            type="income", amount=data.amount, currency=to_acc.currency,
+            category="Transfer", description=f"Transfer ← {from_acc.name}",
+            transfer_pair_id=exp_id,
+        )
+        self.transactions[exp.id] = exp
+        self.transactions[inc.id] = inc
+        self._save()
+        return t
+
+    def delete_transfer(self, transfer_id: str) -> None:
+        if transfer_id not in self.transfers:
+            raise KeyError("Transfer not found")
+        del self.transfers[transfer_id]
+        # Remove paired transactions
+        to_remove = [tid for tid, t in self.transactions.items()
+                     if getattr(t, 'transfer_pair_id', None) and
+                     (tid == t.transfer_pair_id or t.transfer_pair_id in [tt.id for tt in self.transactions.values()])]
+        # Simpler: remove any transaction whose pair is also in the set
+        txns_to_remove = set()
+        for tid, t in self.transactions.items():
+            if t.transfer_pair_id and t.transfer_pair_id != tid:
+                # This is part of a transfer pair — both should be removed
+                txns_to_remove.add(tid)
+                txns_to_remove.add(t.transfer_pair_id)
+        for tid in list(txns_to_remove):
+            if tid in self.transactions:
+                del self.transactions[tid]
+        self._save()

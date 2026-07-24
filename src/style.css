@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-mushroom-50: #f7f8f8;
   --color-mushroom-100: #e6eaea;
@@ -56,6 +58,14 @@
   --color-blueberry-500: #2d88ff;
   --color-blueberry-600: #1679fa;
 
+  --color-purple-50: #faf5ff;
+  --color-purple-100: #f3e8ff;
+  --color-purple-200: #e9d5ff;
+  --color-purple-300: #d8b4fe;
+  --color-purple-400: #c084fc;
+  --color-purple-500: #a855f7;
+  --color-purple-600: #9333ea;
+
   --color-wintermelon-50: #ecfeff;
   --color-wintermelon-100: #cefbff;
   --color-wintermelon-200: #a3f3fe;
@@ -86,6 +96,22 @@
   --ring: #158039;
 }
 
+.dark {
+  --background: #1a1e1e;
+  --foreground: #e6eaea;
+  --card: #232828;
+  --card-foreground: #e6eaea;
+  --primary: #22c558;
+  --primary-foreground: #0a0f0f;
+  --secondary: #2a3030;
+  --secondary-foreground: #d9dede;
+  --muted: #262b2b;
+  --muted-foreground: #919f9d;
+  --border: #394141;
+  --input: #394141;
+  --ring: #22c558;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
@@ -106,8 +132,14 @@ body {
 .btn-primary:hover {
   background-color: #166531;
 }
+.dark .btn-primary:hover {
+  background-color: #17ad49;
+}
 .btn-primary:active {
   background-color: #14532b;
+}
+.dark .btn-primary:active {
+  background-color: #22c558;
 }
 
 .btn-secondary {
@@ -123,6 +155,9 @@ body {
 }
 .btn-secondary:hover {
   background-color: #e8f0e8;
+}
+.dark .btn-secondary:hover {
+  background-color: #343e3e;
 }
 
 .btn-ghost {
@@ -152,6 +187,9 @@ body {
   border: 1px solid var(--border);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
+.dark .card-elevated {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
 
 .input-field {
   width: 100%;
@@ -159,6 +197,7 @@ body {
   border-radius: 0.5rem;
   border: 1px solid var(--border);
   background-color: var(--card);
+  color: var(--foreground);
   font-size: 0.875rem;
   transition: border-color 0.15s ease;
 }
@@ -174,10 +213,11 @@ body {
   border-radius: 0.5rem;
   border: 1px solid var(--border);
   background-color: var(--card);
+  color: var(--foreground);
   font-size: 0.875rem;
   transition: border-color 0.15s ease;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235c6b61' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23919f9d' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
 }

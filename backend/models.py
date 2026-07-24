@@ -14,9 +14,13 @@ class Account(BaseModel):
     name: str
     type: str  # "savings", "checking", "time_deposit", "investment", "credit_card"
     currency: str
+    bank: str = ""
+    account_number: str = ""
     initial_balance: float = 0.0
     goal_amount: float = 0.0
     sub_accounts: list[SubAccount] = []
+    dividend_type: str = ""  # e.g. "Monthly Dividends", "Maturity Dividends"
+    maturity_date: str = ""  # e.g. "2027-06-15"
     created_at: datetime = Field(default_factory=datetime.now)
 
 
@@ -24,8 +28,12 @@ class AccountCreate(BaseModel):
     name: str
     type: str
     currency: str
+    bank: str = ""
+    account_number: str = ""
     initial_balance: float = 0.0
     sub_accounts: list[SubAccount] = []
+    dividend_type: str = ""
+    maturity_date: str = ""
 
 
 class AccountGoalUpdate(BaseModel):
@@ -162,6 +170,7 @@ class BankStatementPreview(BaseModel):
 
 class MonthlyCategoryRow(BaseModel):
     category: str
+    group: str = ""
     monthly: dict[str, float]  # "01": amount, "02": amount, ...
 
 
@@ -177,3 +186,59 @@ class BudgetSummary(BaseModel):
     total_budget: float
     total_spent: float
     categories: list[CategoryBudgetSummary]
+
+
+class RecurringRule(BaseModel):
+    id: str
+    name: str
+    account_id: str
+    category: str
+    amount: float
+    currency: str
+    frequency: str  # "monthly" or "yearly"
+    day_of_month: int  # 1-31
+    start_date: str  # "YYYY-MM-DD"
+    end_date: str = ""  # "YYYY-MM-DD" or empty for open-ended
+    active: bool = True
+    last_generated: str = ""  # "YYYY-MM-DD" or empty
+    next_date: str = ""  # "YYYY-MM-DD" computed
+    created_at: datetime = Field(default_factory=datetime.now)
+
+
+class RecurringRuleCreate(BaseModel):
+    name: str
+    account_id: str
+    category: str
+    amount: float
+    currency: str
+    frequency: str
+    day_of_month: int = 1
+    start_date: str
+    end_date: str = ""
+
+
+class RecurringRunResult(BaseModel):
+    generated: int
+    rules: list[RecurringRule]
+
+
+class Transfer(BaseModel):
+    id: str
+    from_account_id: str
+    to_account_id: str
+    amount: float
+    currency: str
+    fee: float = 0.0
+    date: date
+    note: str = ""
+    created_at: datetime = Field(default_factory=datetime.now)
+
+
+class TransferCreate(BaseModel):
+    from_account_id: str
+    to_account_id: str
+    amount: float
+    currency: str
+    fee: float = 0.0
+    date: str
+    note: str = ""

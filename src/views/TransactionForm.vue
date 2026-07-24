@@ -114,7 +114,7 @@ async function handleSubmit() {
 
 <template>
   <div class="max-w-lg">
-    <h2 class="text-lg font-medium text-mushroom-950 mb-4">{{ isEdit ? 'Edit' : 'New' }} Transaction</h2>
+    <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50 mb-4">{{ isEdit ? 'Edit' : 'New' }} Transaction</h2>
 
     <form @submit.prevent="handleSubmit" class="card-elevated p-5 space-y-4">
       <div>
@@ -157,7 +157,7 @@ async function handleSubmit() {
         </div>
         <div>
           <label class="label-text">Currency</label>
-          <input :value="currencyParam" disabled class="input-field bg-mushroom-50" />
+          <input :value="currencyParam" disabled class="input-field bg-mushroom-50 dark:bg-mushroom-800" />
         </div>
       </div>
 

@@ -3,7 +3,8 @@ from models import (
     Account, AccountCreate, Transaction, TransactionCreate,
     Category, CategoryCreate, Budget, BudgetSet,
     Balance, AnnualSummary, RatesResponse, MonthlyCategoryRow,
-    BudgetSummary,
+    BudgetSummary, RecurringRule, RecurringRuleCreate, RecurringRunResult,
+    Transfer, TransferCreate,
 )
 
 
@@ -30,7 +31,7 @@ class BackendService(ABC):
         pass
 
     @abstractmethod
-    def get_transactions(self, account_id: str | None = None, type: str | None = None, group: str | None = None, category: str | None = None, start_date: str | None = None, end_date: str | None = None) -> list[Transaction]:
+    def get_transactions(self, account_id: str | None = None, type: str | None = None, group: str | None = None, category: str | None = None, start_date: str | None = None, end_date: str | None = None, currency: str | None = None) -> list[Transaction]:
         pass
 
     @abstractmethod
@@ -74,15 +75,15 @@ class BackendService(ABC):
         pass
 
     @abstractmethod
-    def get_budget_summary(self, month: str) -> BudgetSummary:
+    def get_budget_summary(self, month: str, currency: str | None = None) -> BudgetSummary:
         pass
 
     @abstractmethod
-    def get_balances(self) -> list[Balance]:
+    def get_balances(self, currency: str | None = None) -> list[Balance]:
         pass
 
     @abstractmethod
-    def get_annual_summary(self, year: int) -> AnnualSummary:
+    def get_annual_summary(self, year: int, currency: str | None = None) -> AnnualSummary:
         pass
 
     @abstractmethod
@@ -90,5 +91,41 @@ class BackendService(ABC):
         pass
 
     @abstractmethod
-    def get_monthly_category_breakdown(self, year: int) -> list[MonthlyCategoryRow]:
+    def get_monthly_category_breakdown(self, year: int, currency: str | None = None) -> list[MonthlyCategoryRow]:
+        pass
+
+    @abstractmethod
+    def get_recurring_rules(self, currency: str | None = None) -> list[RecurringRule]:
+        pass
+
+    @abstractmethod
+    def create_recurring_rule(self, data: RecurringRuleCreate) -> RecurringRule:
+        pass
+
+    @abstractmethod
+    def update_recurring_rule(self, rule_id: str, data: RecurringRuleCreate) -> RecurringRule:
+        pass
+
+    @abstractmethod
+    def delete_recurring_rule(self, rule_id: str) -> None:
+        pass
+
+    @abstractmethod
+    def toggle_recurring_rule(self, rule_id: str, active: bool) -> RecurringRule:
+        pass
+
+    @abstractmethod
+    def run_recurring(self, currency: str | None = None) -> RecurringRunResult:
+        pass
+
+    @abstractmethod
+    def get_transfers(self, currency: str | None = None) -> list[Transfer]:
+        pass
+
+    @abstractmethod
+    def create_transfer(self, data: TransferCreate) -> Transfer:
+        pass
+
+    @abstractmethod
+    def delete_transfer(self, transfer_id: str) -> None:
         pass

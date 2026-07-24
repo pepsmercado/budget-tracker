@@ -16,7 +16,7 @@ const fabLink = computed(() => {
 </script>
 
 <template>
-  <div class="flex h-screen bg-[#fbfcfa]">
+  <div class="flex h-screen bg-[#fbfcfa] dark:bg-[#1a1e1e]">
     <!-- Mobile overlay -->
     <div
       v-if="sidebarOpen"

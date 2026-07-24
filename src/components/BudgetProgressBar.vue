@@ -24,7 +24,7 @@ const colorClass = computed(() => {
 </script>
 
 <template>
-  <div class="w-full bg-mushroom-100 rounded-full h-2">
+  <div class="w-full bg-mushroom-100 dark:bg-mushroom-800 rounded-full h-2">
     <div
       class="h-2 rounded-full transition-all duration-500 ease-out"
       :class="colorClass"

@@ -8,9 +8,12 @@ import {
 import { useSummary } from '../composables/useSummary'
 import { useAccounts } from '../composables/useAccounts'
 import { useTransactions } from '../composables/useTransactions'
+import { useTheme } from '../composables/useTheme'
 import api from '../api'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend, Filler)
+
+const { isDark } = useTheme()
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
 
@@ -228,6 +231,29 @@ function pctTooltip(context) {
   const pct = ((value / total) * 100).toFixed(1)
   return `${label}: ${pct}%`
 }
+
+const chartTickColor = computed(() => isDark.value ? '#b0b8b6' : '#5c6b61')
+const chartGridColor = computed(() => isDark.value ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)')
+const chartLegendColor = computed(() => isDark.value ? '#b0b8b6' : '#5c6b61')
+
+const trendLineOpts = computed(() => ({
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    y: { grid: { color: chartGridColor.value }, ticks: { font: { size: 10 }, color: chartTickColor.value } },
+    x: { grid: { display: false }, ticks: { font: { size: 10 }, color: chartTickColor.value } }
+  }
+}))
+
+const doughnutOpts = computed(() => ({
+  responsive: true, maintainAspectRatio: false,
+  plugins: {
+    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 8, font: { size: 10 }, color: chartLegendColor.value } },
+    tooltip: { callbacks: { label: pctTooltip } },
+    cutout: '55%'
+  },
+  onClick: () => { drilledGroup.value = null }
+}))
 
 const groupChartData = computed(() => {
   const txns = monthlyTransactions.value
@@ -553,46 +579,46 @@ function formatConverted(val) {
 <template>
   <div class="space-y-5">
     <div class="flex items-center justify-between">
-      <h2 class="text-lg font-medium text-mushroom-950">{{ viewLabel }} Dashboard</h2>
+      <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ viewLabel }} Dashboard</h2>
       <div class="flex items-center gap-3">
-        <span class="text-xs text-mushroom-400">{{ currentYear }}</span>
+        <span class="text-xs text-mushroom-400 dark:text-mushroom-500">{{ currentYear }}</span>
       </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="card-elevated p-4">
-        <div class="text-xs text-mushroom-400 mb-1">Budget Status</div>
-        <div class="text-lg font-semibold text-mushroom-950">
+        <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Budget Status</div>
+        <div class="text-lg font-semibold text-mushroom-950 dark:text-mushroom-50">
           {{ budgetProgress }}%
         </div>
-        <div class="mt-2 h-2 bg-mushroom-100 rounded-full overflow-hidden">
+        <div class="mt-2 h-2 bg-mushroom-100 dark:bg-mushroom-800 rounded-full overflow-hidden">
           <div
             class="h-full rounded-full transition-all duration-300"
             :class="budgetProgress > 100 ? 'bg-tomato-500' : budgetProgress > 80 ? 'bg-mango-500' : 'bg-kangkong-500'"
             :style="{ width: Math.min(budgetProgress, 100) + '%' }"
           ></div>
         </div>
-        <div class="text-xs text-mushroom-400 mt-1">
+        <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">
           {{ currentMonthBudget ? `${currencySymbol}${currentMonthExpense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${currencySymbol}${currentMonthBudget.total_budget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'No budget set' }}
         </div>
       </div>
 
       <div class="card-elevated p-4">
-        <div class="text-xs text-mushroom-400 mb-1">Expenses This Month</div>
+        <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Expenses This Month</div>
         <div class="text-lg font-semibold text-tomato-500">
           {{ currencySymbol }}{{ currentMonthExpense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
         </div>
-        <div class="text-xs text-mushroom-400 mt-1">
+        <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
         </div>
       </div>
 
       <div class="card-elevated p-4">
-        <div class="text-xs text-mushroom-400 mb-1">Income This Month</div>
+        <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Income This Month</div>
         <div class="text-lg font-semibold text-kangkong-500">
           {{ currencySymbol }}{{ currentMonthIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
         </div>
-        <div class="text-xs text-mushroom-400 mt-1">
+        <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
         </div>
       </div>
@@ -600,15 +626,15 @@ function formatConverted(val) {
 
     <div v-if="summary" class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div class="card-elevated p-4 -mb-2">
-        <h3 class="text-sm font-medium text-mushroom-600 mb-2">Monthly Trend</h3>
+        <h3 class="text-sm font-medium text-mushroom-600 dark:text-mushroom-400 mb-2">Monthly Trend</h3>
         <div class="h-48">
-          <Line ref="trendChartRef" :data="monthlyChartData" :options="{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#e6eaea' }, ticks: { font: { size: 10 } } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } }" />
+          <Line ref="trendChartRef" :data="monthlyChartData" :options="trendLineOpts" />
         </div>
         <div class="flex items-center justify-center gap-4 mt-2">
           <button
             @click="toggleIncome"
             class="flex items-center gap-1.5 text-xs transition-opacity"
-            :class="incomeVisible ? 'opacity-100 font-medium text-mushroom-700' : 'opacity-40 text-mushroom-500'"
+            :class="incomeVisible ? 'opacity-100 font-medium text-mushroom-700 dark:text-mushroom-300' : 'opacity-40 text-mushroom-500 dark:text-mushroom-400'"
           >
             <span class="w-2.5 h-2.5 rounded-full bg-kangkong-500"></span>
             Income
@@ -616,7 +642,7 @@ function formatConverted(val) {
           <button
             @click="toggleExpenses"
             class="flex items-center gap-1.5 text-xs transition-opacity"
-            :class="expensesVisible ? 'opacity-100 font-medium text-mushroom-700' : 'opacity-40 text-mushroom-500'"
+            :class="expensesVisible ? 'opacity-100 font-medium text-mushroom-700 dark:text-mushroom-300' : 'opacity-40 text-mushroom-500 dark:text-mushroom-400'"
           >
             <span class="w-2.5 h-2.5 rounded-full bg-tomato-500"></span>
             Expenses
@@ -626,7 +652,7 @@ function formatConverted(val) {
 
       <div class="card-elevated p-4 -mb-2">
         <div class="flex items-center justify-between mb-2">
-          <h3 class="text-sm font-medium text-mushroom-600">
+          <h3 class="text-sm font-medium text-mushroom-600 dark:text-mushroom-400">
             {{ drilledGroup ? drilledGroup : 'Expense by Group' }}
           </h3>
           <div class="flex items-center gap-2">
@@ -651,7 +677,7 @@ function formatConverted(val) {
           <Doughnut
             v-else
             :data="drilledChartData"
-            :options="{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 8, font: { size: 10 } } }, tooltip: { callbacks: { label: pctTooltip } }, cutout: '55%' }, onClick: () => { drilledGroup = null } }"
+            :options="doughnutOpts"
             :style="{ cursor: 'pointer' }"
           />
         </div>
@@ -661,17 +687,17 @@ function formatConverted(val) {
     <div class="card-elevated p-4">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-3">
-          <h3 class="text-sm font-medium text-mushroom-600">Income Breakdown</h3>
-          <div class="flex bg-mushroom-100 rounded-md p-0.5">
-            <button @click="incomeMatrixMode = 'category'" class="px-2 py-0.5 text-xs rounded" :class="incomeMatrixMode === 'category' ? 'bg-white text-mushroom-900 shadow-sm' : 'text-mushroom-500'">Categories</button>
-            <button @click="incomeMatrixMode = 'account'" class="px-2 py-0.5 text-xs rounded" :class="incomeMatrixMode === 'account' ? 'bg-white text-mushroom-900 shadow-sm' : 'text-mushroom-500'">Accounts</button>
+          <h3 class="text-sm font-medium text-mushroom-600 dark:text-mushroom-400">Income Breakdown</h3>
+          <div class="flex bg-mushroom-100 dark:bg-mushroom-800 rounded-md p-0.5">
+            <button @click="incomeMatrixMode = 'category'" class="px-2 py-0.5 text-xs rounded" :class="incomeMatrixMode === 'category' ? 'bg-white dark:bg-mushroom-900 text-mushroom-900 dark:text-mushroom-50 shadow-sm' : 'text-mushroom-500 dark:text-mushroom-400'">Categories</button>
+            <button @click="incomeMatrixMode = 'account'" class="px-2 py-0.5 text-xs rounded" :class="incomeMatrixMode === 'account' ? 'bg-white dark:bg-mushroom-900 text-mushroom-900 dark:text-mushroom-50 shadow-sm' : 'text-mushroom-500 dark:text-mushroom-400'">Accounts</button>
           </div>
         </div>
         <div class="flex items-center gap-3">
           <select v-model="selectedYear" class="select-field text-xs py-1 px-2 w-auto">
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
-          <label class="flex items-center gap-1 text-xs text-mushroom-500 cursor-pointer">
+          <label class="flex items-center gap-1 text-xs text-mushroom-500 dark:text-mushroom-400 cursor-pointer">
             <input type="checkbox" v-model="showAverages" class="rounded" />
             Show Averages
           </label>
@@ -681,27 +707,27 @@ function formatConverted(val) {
       <div v-if="incomeMatrixMode === 'category'" class="overflow-x-auto">
         <table class="w-full text-xs">
           <thead>
-            <tr class="border-b border-mushroom-200">
-              <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Category</th>
-              <th v-for="(m, i) in incomeMatrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ currencySymbol }}</th>
-              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Avg {{ currencySymbol }}</th>
+            <tr class="border-b border-mushroom-200 dark:border-mushroom-700">
+              <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900">Category</th>
+              <th v-for="(m, i) in incomeMatrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">{{ m }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Total {{ currencySymbol }}</th>
+              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Avg {{ currencySymbol }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in incomeMatrixRows" :key="row.name" class="border-b border-mushroom-100">
-              <td class="px-2 py-1 text-mushroom-600 sticky left-0 bg-white">{{ row.name }}</td>
-              <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 text-mushroom-700">{{ formatConverted(val) }}</td>
-              <td class="text-right px-2 py-1 font-medium text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
-              <td v-if="showAverages" class="text-right px-2 py-1 text-mushroom-500 border-l border-mushroom-200">{{ formatConverted(Math.round(row.data.reduce((a, b) => a + b, 0) / 12)) }}</td>
+            <tr v-for="row in incomeMatrixRows" :key="row.name" class="border-b border-mushroom-100 dark:border-mushroom-700/50">
+              <td class="px-2 py-1 text-mushroom-600 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900">{{ row.name }}</td>
+              <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 text-mushroom-700 dark:text-mushroom-300">{{ formatConverted(val) }}</td>
+              <td class="text-right px-2 py-1 font-medium text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
+              <td v-if="showAverages" class="text-right px-2 py-1 text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(Math.round(row.data.reduce((a, b) => a + b, 0) / 12)) }}</td>
             </tr>
           </tbody>
           <tfoot>
-            <tr class="border-t-2 border-mushroom-300 font-medium">
-              <td class="px-2 py-1.5 text-mushroom-950 sticky left-0 bg-white">Total</td>
-              <td v-for="(val, i) in incomeMatrixMonthlyTotals" :key="i" class="text-right px-2 py-1.5 text-mushroom-950">{{ formatConverted(val) }}</td>
-              <td class="text-right px-2 py-1.5 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(incomeMatrixGrandTotal) }}</td>
-              <td v-if="showAverages" class="text-right px-2 py-1.5 text-mushroom-600 border-l border-mushroom-200">{{ formatConverted(incomeMatrixAvg) }}</td>
+            <tr class="border-t-2 border-mushroom-300 dark:border-mushroom-600 font-medium">
+              <td class="px-2 py-1.5 text-mushroom-950 dark:text-mushroom-50 sticky left-0 bg-white dark:bg-mushroom-900">Total</td>
+              <td v-for="(val, i) in incomeMatrixMonthlyTotals" :key="i" class="text-right px-2 py-1.5 text-mushroom-950 dark:text-mushroom-50">{{ formatConverted(val) }}</td>
+              <td class="text-right px-2 py-1.5 font-semibold text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(incomeMatrixGrandTotal) }}</td>
+              <td v-if="showAverages" class="text-right px-2 py-1.5 text-mushroom-600 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(incomeMatrixAvg) }}</td>
             </tr>
           </tfoot>
         </table>
@@ -710,20 +736,20 @@ function formatConverted(val) {
       <div v-else class="overflow-x-auto">
         <table class="w-full text-xs">
           <thead>
-            <tr class="border-b border-mushroom-200">
-              <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Account</th>
-              <th v-for="(m, i) in incomeMatrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ currencySymbol }}</th>
+            <tr class="border-b border-mushroom-200 dark:border-mushroom-700">
+              <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900">Account</th>
+              <th v-for="(m, i) in incomeMatrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">{{ m }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Total {{ currencySymbol }}</th>
             </tr>
           </thead>
           <tbody>
             <template v-for="row in incomeAccountRows" :key="row.name + row.type">
               <tr
                 v-if="row.type === 'group'"
-                class="bg-mushroom-50 cursor-pointer select-none hover:bg-mushroom-100 transition-colors"
+                class="bg-mushroom-50 dark:bg-mushroom-800 cursor-pointer select-none hover:bg-mushroom-100 dark:hover:bg-mushroom-700 transition-colors"
                 @click="toggleIncomeAccountCollapse(row.name)"
               >
-                <td class="px-2 py-1 font-medium text-mushroom-700">
+                <td class="px-2 py-1 font-medium text-mushroom-700 dark:text-mushroom-300">
                   <span class="inline-flex items-center gap-1">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="transition-transform duration-200" :class="isIncomeAccountCollapsed(row.name) ? '' : 'rotate-90'">
                       <path d="M9 5l7 7-7 7"/>
@@ -732,28 +758,28 @@ function formatConverted(val) {
                   </span>
                 </td>
                 <template v-if="isIncomeAccountCollapsed(row.name)">
-                  <td v-for="(val, i) in (incomeAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
-                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(((incomeAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []).reduce((a, b) => a + b, 0)) }}</td>
+                  <td v-for="(val, i) in (incomeAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700 dark:text-mushroom-300">{{ formatConverted(val) }}</td>
+                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(((incomeAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []).reduce((a, b) => a + b, 0)) }}</td>
                 </template>
                 <td v-else :colspan="13"></td>
               </tr>
-              <tr v-else-if="row.type === 'account' && !isIncomeAccountCollapsed(row.group)" class="border-b border-mushroom-100">
-                <td class="px-2 py-1 text-mushroom-600 sticky left-0 bg-white pl-6">{{ row.name }}</td>
-                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 text-mushroom-700">{{ formatConverted(val) }}</td>
-                <td class="text-right px-2 py-1 font-medium text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
+              <tr v-else-if="row.type === 'account' && !isIncomeAccountCollapsed(row.group)" class="border-b border-mushroom-100 dark:border-mushroom-700/50">
+                <td class="px-2 py-1 text-mushroom-600 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900 pl-6">{{ row.name }}</td>
+                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 text-mushroom-700 dark:text-mushroom-300">{{ formatConverted(val) }}</td>
+                <td class="text-right px-2 py-1 font-medium text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
               </tr>
-              <tr v-else-if="row.type === 'groupTotal' && !isIncomeAccountCollapsed(row.name)" class="bg-mushroom-50 border-b border-mushroom-200">
-                <td class="px-2 py-1 font-medium text-mushroom-700 sticky left-0 bg-mushroom-50 pl-6">{{ row.name.replace('_', ' ') }} Total</td>
-                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
-                <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
+              <tr v-else-if="row.type === 'groupTotal' && !isIncomeAccountCollapsed(row.name)" class="bg-mushroom-50 dark:bg-mushroom-800 border-b border-mushroom-200 dark:border-mushroom-700">
+                <td class="px-2 py-1 font-medium text-mushroom-700 dark:text-mushroom-300 sticky left-0 bg-mushroom-50 dark:bg-mushroom-800 pl-6">{{ row.name.replace('_', ' ') }} Total</td>
+                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700 dark:text-mushroom-300">{{ formatConverted(val) }}</td>
+                <td class="text-right px-2 py-1 font-semibold text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
               </tr>
             </template>
           </tbody>
           <tfoot>
-            <tr class="border-t-2 border-mushroom-300 font-medium">
-              <td class="px-2 py-1.5 text-mushroom-950 sticky left-0 bg-white">Total</td>
-              <td v-for="(val, i) in incomeAccountMonthlyTotals" :key="i" class="text-right px-2 py-1.5 text-mushroom-950">{{ formatConverted(val) }}</td>
-              <td class="text-right px-2 py-1.5 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(incomeAccountGrandTotal) }}</td>
+            <tr class="border-t-2 border-mushroom-300 dark:border-mushroom-600 font-medium">
+              <td class="px-2 py-1.5 text-mushroom-950 dark:text-mushroom-50 sticky left-0 bg-white dark:bg-mushroom-900">Total</td>
+              <td v-for="(val, i) in incomeAccountMonthlyTotals" :key="i" class="text-right px-2 py-1.5 text-mushroom-950 dark:text-mushroom-50">{{ formatConverted(val) }}</td>
+              <td class="text-right px-2 py-1.5 font-semibold text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(incomeAccountGrandTotal) }}</td>
             </tr>
           </tfoot>
         </table>
@@ -763,17 +789,17 @@ function formatConverted(val) {
     <div class="card-elevated p-4">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-3">
-          <h3 class="text-sm font-medium text-mushroom-600">Expense Breakdown</h3>
-          <div class="flex bg-mushroom-100 rounded-md p-0.5">
-            <button @click="expenseMatrixMode = 'category'" class="px-2 py-0.5 text-xs rounded" :class="expenseMatrixMode === 'category' ? 'bg-white text-mushroom-900 shadow-sm' : 'text-mushroom-500'">Categories</button>
-            <button @click="expenseMatrixMode = 'account'" class="px-2 py-0.5 text-xs rounded" :class="expenseMatrixMode === 'account' ? 'bg-white text-mushroom-900 shadow-sm' : 'text-mushroom-500'">Accounts</button>
+          <h3 class="text-sm font-medium text-mushroom-600 dark:text-mushroom-400">Expense Breakdown</h3>
+          <div class="flex bg-mushroom-100 dark:bg-mushroom-800 rounded-md p-0.5">
+            <button @click="expenseMatrixMode = 'category'" class="px-2 py-0.5 text-xs rounded" :class="expenseMatrixMode === 'category' ? 'bg-white dark:bg-mushroom-900 text-mushroom-900 dark:text-mushroom-50 shadow-sm' : 'text-mushroom-500 dark:text-mushroom-400'">Categories</button>
+            <button @click="expenseMatrixMode = 'account'" class="px-2 py-0.5 text-xs rounded" :class="expenseMatrixMode === 'account' ? 'bg-white dark:bg-mushroom-900 text-mushroom-900 dark:text-mushroom-50 shadow-sm' : 'text-mushroom-500 dark:text-mushroom-400'">Accounts</button>
           </div>
         </div>
         <div class="flex items-center gap-3">
           <select v-model="selectedYear" class="select-field text-xs py-1 px-2 w-auto">
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
-          <label class="flex items-center gap-1 text-xs text-mushroom-500 cursor-pointer">
+          <label class="flex items-center gap-1 text-xs text-mushroom-500 dark:text-mushroom-400 cursor-pointer">
             <input type="checkbox" v-model="showAverages" class="rounded" />
             Show Averages
           </label>
@@ -783,21 +809,21 @@ function formatConverted(val) {
       <div v-if="expenseMatrixMode === 'category'" class="overflow-x-auto">
         <table class="w-full text-xs">
           <thead>
-            <tr class="border-b border-mushroom-200">
-              <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Category</th>
-              <th v-for="(m, i) in matrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ currencySymbol }}</th>
-              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Avg {{ currencySymbol }}</th>
+            <tr class="border-b border-mushroom-200 dark:border-mushroom-700">
+              <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900">Category</th>
+              <th v-for="(m, i) in matrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">{{ m }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Total {{ currencySymbol }}</th>
+              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Avg {{ currencySymbol }}</th>
             </tr>
           </thead>
           <tbody>
             <template v-for="row in matrixRows" :key="row.name + row.type">
               <tr
                 v-if="row.type === 'group'"
-                class="bg-mushroom-50 cursor-pointer select-none hover:bg-mushroom-100 transition-colors"
+                class="bg-mushroom-50 dark:bg-mushroom-800 cursor-pointer select-none hover:bg-mushroom-100 dark:hover:bg-mushroom-700 transition-colors"
                 @click="toggleGroupCollapse(row.name)"
               >
-                <td class="px-2 py-1 font-medium text-mushroom-700">
+                <td class="px-2 py-1 font-medium text-mushroom-700 dark:text-mushroom-300">
                   <span class="inline-flex items-center gap-1">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="transition-transform duration-200" :class="isGroupCollapsed(row.name) ? '' : 'rotate-90'">
                       <path d="M9 5l7 7-7 7"/>
@@ -806,32 +832,32 @@ function formatConverted(val) {
                   </span>
                 </td>
                 <template v-if="isGroupCollapsed(row.name)">
-                  <td v-for="(val, i) in (matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
-                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(((matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []).reduce((a, b) => a + b, 0)) }}</td>
-                  <td v-if="showAverages" class="text-right px-2 py-1 text-mushroom-600 border-l border-mushroom-200">{{ formatConverted(Math.round(((matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []).reduce((a, b) => a + b, 0) / 12)) }}</td>
+                  <td v-for="(val, i) in (matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700 dark:text-mushroom-300">{{ formatConverted(val) }}</td>
+                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(((matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []).reduce((a, b) => a + b, 0)) }}</td>
+                  <td v-if="showAverages" class="text-right px-2 py-1 text-mushroom-600 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(Math.round(((matrixRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []).reduce((a, b) => a + b, 0) / 12)) }}</td>
                 </template>
                 <td v-else :colspan="13"></td>
               </tr>
-              <tr v-else-if="row.type === 'category' && !isGroupCollapsed(row.group)" class="border-b border-mushroom-100">
-                <td class="px-2 py-1 text-mushroom-600 sticky left-0 bg-white pl-6">{{ row.name }}</td>
-                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 text-mushroom-700">{{ formatConverted(val) }}</td>
-                <td class="text-right px-2 py-1 font-medium text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
-                <td v-if="showAverages" class="text-right px-2 py-1 text-mushroom-500 border-l border-mushroom-200">{{ formatConverted(Math.round(row.data.reduce((a, b) => a + b, 0) / 12)) }}</td>
+              <tr v-else-if="row.type === 'category' && !isGroupCollapsed(row.group)" class="border-b border-mushroom-100 dark:border-mushroom-700/50">
+                <td class="px-2 py-1 text-mushroom-600 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900 pl-6">{{ row.name }}</td>
+                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 text-mushroom-700 dark:text-mushroom-300">{{ formatConverted(val) }}</td>
+                <td class="text-right px-2 py-1 font-medium text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
+                <td v-if="showAverages" class="text-right px-2 py-1 text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(Math.round(row.data.reduce((a, b) => a + b, 0) / 12)) }}</td>
               </tr>
-              <tr v-else-if="row.type === 'groupTotal' && !isGroupCollapsed(row.name)" class="bg-mushroom-50 border-b border-mushroom-200">
-                <td class="px-2 py-1 font-medium text-mushroom-700 sticky left-0 bg-mushroom-50 pl-6">{{ row.name }} Total</td>
-                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
-                <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
-                <td v-if="showAverages" class="text-right px-2 py-1 text-mushroom-600 border-l border-mushroom-200">{{ formatConverted(Math.round(row.data.reduce((a, b) => a + b, 0) / 12)) }}</td>
+              <tr v-else-if="row.type === 'groupTotal' && !isGroupCollapsed(row.name)" class="bg-mushroom-50 dark:bg-mushroom-800 border-b border-mushroom-200 dark:border-mushroom-700">
+                <td class="px-2 py-1 font-medium text-mushroom-700 dark:text-mushroom-300 sticky left-0 bg-mushroom-50 dark:bg-mushroom-800 pl-6">{{ row.name }} Total</td>
+                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700 dark:text-mushroom-300">{{ formatConverted(val) }}</td>
+                <td class="text-right px-2 py-1 font-semibold text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
+                <td v-if="showAverages" class="text-right px-2 py-1 text-mushroom-600 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(Math.round(row.data.reduce((a, b) => a + b, 0) / 12)) }}</td>
               </tr>
             </template>
           </tbody>
           <tfoot>
-            <tr class="border-t-2 border-mushroom-300 font-medium">
-              <td class="px-2 py-1.5 text-mushroom-950 sticky left-0 bg-white">Total</td>
-              <td v-for="(val, i) in matrixMonthlyTotals" :key="i" class="text-right px-2 py-1.5 text-mushroom-950">{{ formatConverted(val) }}</td>
-              <td class="text-right px-2 py-1.5 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(matrixGrandTotal) }}</td>
-              <td v-if="showAverages" class="text-right px-2 py-1.5 text-mushroom-600 border-l border-mushroom-200">{{ formatConverted(matrixAvg) }}</td>
+            <tr class="border-t-2 border-mushroom-300 dark:border-mushroom-600 font-medium">
+              <td class="px-2 py-1.5 text-mushroom-950 dark:text-mushroom-50 sticky left-0 bg-white dark:bg-mushroom-900">Total</td>
+              <td v-for="(val, i) in matrixMonthlyTotals" :key="i" class="text-right px-2 py-1.5 text-mushroom-950 dark:text-mushroom-50">{{ formatConverted(val) }}</td>
+              <td class="text-right px-2 py-1.5 font-semibold text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(matrixGrandTotal) }}</td>
+              <td v-if="showAverages" class="text-right px-2 py-1.5 text-mushroom-600 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(matrixAvg) }}</td>
             </tr>
           </tfoot>
         </table>
@@ -840,20 +866,20 @@ function formatConverted(val) {
       <div v-else class="overflow-x-auto">
         <table class="w-full text-xs">
           <thead>
-            <tr class="border-b border-mushroom-200">
-              <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 sticky left-0 bg-white">Account</th>
-              <th v-for="(m, i) in matrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 border-l border-mushroom-200">Total {{ currencySymbol }}</th>
+            <tr class="border-b border-mushroom-200 dark:border-mushroom-700">
+              <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900">Account</th>
+              <th v-for="(m, i) in matrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">{{ m }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Total {{ currencySymbol }}</th>
             </tr>
           </thead>
           <tbody>
             <template v-for="row in expenseAccountRows" :key="row.name + row.type">
               <tr
                 v-if="row.type === 'group'"
-                class="bg-mushroom-50 cursor-pointer select-none hover:bg-mushroom-100 transition-colors"
+                class="bg-mushroom-50 dark:bg-mushroom-800 cursor-pointer select-none hover:bg-mushroom-100 dark:hover:bg-mushroom-700 transition-colors"
                 @click="toggleExpenseAccountCollapse(row.name)"
               >
-                <td class="px-2 py-1 font-medium text-mushroom-700">
+                <td class="px-2 py-1 font-medium text-mushroom-700 dark:text-mushroom-300">
                   <span class="inline-flex items-center gap-1">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="transition-transform duration-200" :class="isExpenseAccountCollapsed(row.name) ? '' : 'rotate-90'">
                       <path d="M9 5l7 7-7 7"/>
@@ -862,28 +888,28 @@ function formatConverted(val) {
                   </span>
                 </td>
                 <template v-if="isExpenseAccountCollapsed(row.name)">
-                  <td v-for="(val, i) in (expenseAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
-                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(((expenseAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []).reduce((a, b) => a + b, 0)) }}</td>
+                  <td v-for="(val, i) in (expenseAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700 dark:text-mushroom-300">{{ formatConverted(val) }}</td>
+                  <td class="text-right px-2 py-1 font-semibold text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(((expenseAccountRows.find(r => r.type === 'groupTotal' && r.name === row.name) || {}).data || []).reduce((a, b) => a + b, 0)) }}</td>
                 </template>
                 <td v-else :colspan="13"></td>
               </tr>
-              <tr v-else-if="row.type === 'account' && !isExpenseAccountCollapsed(row.group)" class="border-b border-mushroom-100">
-                <td class="px-2 py-1 text-mushroom-600 sticky left-0 bg-white pl-6">{{ row.name }}</td>
-                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 text-mushroom-700">{{ formatConverted(val) }}</td>
-                <td class="text-right px-2 py-1 font-medium text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
+              <tr v-else-if="row.type === 'account' && !isExpenseAccountCollapsed(row.group)" class="border-b border-mushroom-100 dark:border-mushroom-700/50">
+                <td class="px-2 py-1 text-mushroom-600 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900 pl-6">{{ row.name }}</td>
+                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 text-mushroom-700 dark:text-mushroom-300">{{ formatConverted(val) }}</td>
+                <td class="text-right px-2 py-1 font-medium text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
               </tr>
-              <tr v-else-if="row.type === 'groupTotal' && !isExpenseAccountCollapsed(row.name)" class="bg-mushroom-50 border-b border-mushroom-200">
-                <td class="px-2 py-1 font-medium text-mushroom-700 sticky left-0 bg-mushroom-50 pl-6">{{ row.name.replace('_', ' ') }} Total</td>
-                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700">{{ formatConverted(val) }}</td>
-                <td class="text-right px-2 py-1 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
+              <tr v-else-if="row.type === 'groupTotal' && !isExpenseAccountCollapsed(row.name)" class="bg-mushroom-50 dark:bg-mushroom-800 border-b border-mushroom-200 dark:border-mushroom-700">
+                <td class="px-2 py-1 font-medium text-mushroom-700 dark:text-mushroom-300 sticky left-0 bg-mushroom-50 dark:bg-mushroom-800 pl-6">{{ row.name.replace('_', ' ') }} Total</td>
+                <td v-for="(val, i) in row.data" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700 dark:text-mushroom-300">{{ formatConverted(val) }}</td>
+                <td class="text-right px-2 py-1 font-semibold text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(row.data.reduce((a, b) => a + b, 0)) }}</td>
               </tr>
             </template>
           </tbody>
           <tfoot>
-            <tr class="border-t-2 border-mushroom-300 font-medium">
-              <td class="px-2 py-1.5 text-mushroom-950 sticky left-0 bg-white">Total</td>
-              <td v-for="(val, i) in expenseAccountMonthlyTotals" :key="i" class="text-right px-2 py-1.5 text-mushroom-950">{{ formatConverted(val) }}</td>
-              <td class="text-right px-2 py-1.5 font-semibold text-mushroom-950 border-l border-mushroom-200">{{ formatConverted(expenseAccountGrandTotal) }}</td>
+            <tr class="border-t-2 border-mushroom-300 dark:border-mushroom-600 font-medium">
+              <td class="px-2 py-1.5 text-mushroom-950 dark:text-mushroom-50 sticky left-0 bg-white dark:bg-mushroom-900">Total</td>
+              <td v-for="(val, i) in expenseAccountMonthlyTotals" :key="i" class="text-right px-2 py-1.5 text-mushroom-950 dark:text-mushroom-50">{{ formatConverted(val) }}</td>
+              <td class="text-right px-2 py-1.5 font-semibold text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ formatConverted(expenseAccountGrandTotal) }}</td>
             </tr>
           </tfoot>
         </table>
