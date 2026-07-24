@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import json
 
 from routers import accounts, transactions, categories, budgets, summary, upload, recurring, transfers, reports
 from routers import monthly_budgets
 from auth import router as auth_router
+from app_state import backend
 
 app = FastAPI(title="Expense Tracker API", redirect_slashes=False)
 
@@ -40,3 +42,26 @@ app.include_router(monthly_budgets.router, prefix="/api")
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/api/debug/data")
+def debug_data():
+    """Debug endpoint to check data file contents"""
+    DATA_FILE = os.path.join(os.path.dirname(__file__), "services", "..", "data.json")
+    result = {"file_exists": os.path.exists(DATA_FILE)}
+    if result["file_exists"]:
+        try:
+            with open(DATA_FILE) as f:
+                data = json.load(f)
+            result["accounts_count"] = len(data.get("accounts", {}))
+            result["transactions_count"] = len(data.get("transactions", {}))
+            result["categories_count"] = len(data.get("categories", {}))
+            result["budgets_count"] = len(data.get("budgets", {}))
+            result["recurring_rules_count"] = len(data.get("recurring_rules", {}))
+            result["transfers_count"] = len(data.get("transfers", {}))
+            # Show first few transactions
+            transactions = data.get("transactions", {})
+            result["sample_transactions"] = list(transactions.items())[:3] if transactions else []
+        except Exception as e:
+            result["error"] = str(e)
+    return result
