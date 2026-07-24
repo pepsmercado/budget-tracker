@@ -136,8 +136,8 @@ async function resetToTemplate() {
 
 function openTemplateEditor() {
   templateEditValues.value = {}
-  for (const cat of budgetSummary.value?.categories || []) {
-    templateEditValues.value[cat.name] = cat.budget
+  for (const cat of categories.value.filter(c => c.type === 'expense')) {
+    templateEditValues.value[cat.name] = cat.budget_amount || 0
   }
   showTemplateEditor.value = true
 }
@@ -354,8 +354,8 @@ watch(selectedMonth, (val) => {
       </div>
       <p class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-4">Changes here become the default for new months. Monthly overrides are unaffected.</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto">
-        <div v-for="cat in budgetSummary?.categories || []" :key="cat.name" class="flex items-center gap-3 p-3 bg-mushroom-50 dark:bg-mushroom-800 rounded-lg flex-nowrap">
-          <div class="w-8 h-8 rounded-lg bg-mushroom-100 dark:bg-mushroom-700 flex items-center justify-center text-sm flex-shrink-0">
+        <div v-for="cat in budgetSummary?.categories || []" :key="cat.name" class="flex items-center gap-2 p-2 bg-mushroom-50 dark:bg-mushroom-800 rounded-lg flex-nowrap">
+          <div class="w-7 h-7 rounded-lg bg-mushroom-100 dark:bg-mushroom-700 flex items-center justify-center text-sm flex-shrink-0">
             {{ categoryIcons[cat.name] || '📋' }}
           </div>
           <div class="flex-1 min-w-0">
@@ -367,7 +367,7 @@ watch(selectedMonth, (val) => {
             type="number"
             step="1"
             min="0"
-            class="input-field text-sm py-1.5 px-2 w-24 text-right flex-shrink-0"
+            class="input-field text-sm py-1 px-2 w-16 text-right flex-shrink-0"
           />
         </div>
       </div>
