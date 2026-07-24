@@ -72,7 +72,6 @@ class Category(BaseModel):
     type: str  # "income" or "expense"
     group: str  # "Fixed", "Essential", "Lifestyle", "Sinking", "School", "Income", "Misc"
     budget_amount: float = 0.0
-    budget_currency: str = "PHP"
 
 
 class CategoryCreate(BaseModel):
@@ -80,12 +79,10 @@ class CategoryCreate(BaseModel):
     type: str
     group: str
     budget_amount: float = 0.0
-    budget_currency: str = "PHP"
 
 
 class CategoryBudgetUpdate(BaseModel):
     budget_amount: float = Field(ge=0)
-    budget_currency: str = "PHP"
 
 
 class Budget(BaseModel):

@@ -152,7 +152,6 @@ async function saveTemplateEditor() {
     if (catObj) {
       await api.put(`/categories/${catObj.id}/budget`, {
         budget_amount: budget,
-        budget_currency: currencyParam.value,
       })
     }
   }

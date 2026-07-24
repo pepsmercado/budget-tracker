@@ -314,12 +314,11 @@ class MockBackend(BackendService):
         del self.categories[category_id]
         self._save()
 
-    def update_category_budget(self, category_id: str, budget_amount: float, budget_currency: str) -> Category:
+    def update_category_budget(self, category_id: str, budget_amount: float) -> Category:
         if category_id not in self.categories:
             raise KeyError("Category not found")
         c = self.categories[category_id]
         c.budget_amount = budget_amount
-        c.budget_currency = budget_currency
         self._save()
         return c
 
@@ -370,17 +369,13 @@ class MockBackend(BackendService):
             if c.name in overrides:
                 ov = overrides[c.name]
                 budget_val = ov["budget"]
-                bud_currency = ov.get("currency", currency or "PHP")
             else:
                 budget_val = c.budget_amount
-                bud_currency = c.budget_currency or "PHP"
 
-            # Show category if it has a budget > 0, regardless of currency match
-            # Use the budget amount as-is; currency is just for display
             if budget_val > 0:
                 categories.append(CategoryBudgetSummary(
                     name=c.name, group=c.group, budget=round(budget_val, 2),
-                    currency=bud_currency, spent=round(cat_spent.get(c.name, 0), 2),
+                    currency=currency or "PHP", spent=round(cat_spent.get(c.name, 0), 2),
                 ))
 
         total_budget = sum(c.budget for c in categories)

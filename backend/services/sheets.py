@@ -29,8 +29,7 @@ SHEET_TABS = {
     "transactions": ["id", "date", "account_id", "type", "amount", "currency",
                      "category", "description", "transfer_pair_id",
                      "sub_account_id", "created_at"],
-    "categories": ["id", "name", "type", "group", "budget_amount",
-                   "budget_currency"],
+"categories": ["id", "name", "type", "group", "budget_amount"],
     "budgets": ["id", "month", "total_budget", "currency"],
     "recurring_rules": ["id", "name", "account_id", "category", "amount",
                         "currency", "frequency", "day_of_month", "start_date",
@@ -132,9 +131,9 @@ class SheetsBackend(BackendService):
         ]
         for name, ctype, group, budget in categories_data:
             c = Category(id=_uid(), name=name, type=ctype, group=group,
-                         budget_amount=budget, budget_currency="PHP")
+                         budget_amount=budget)
             row = {"id": c.id, "name": c.name, "type": c.type, "group": c.group,
-                   "budget_amount": c.budget_amount, "budget_currency": c.budget_currency}
+                   "budget_amount": c.budget_amount}
             self._append_row("categories", row)
 
     def _get_client(self):
@@ -384,7 +383,6 @@ class SheetsBackend(BackendService):
             type=str(row.get("type", "")),
             group=str(row.get("group", "")),
             budget_amount=_parse_float(row.get("budget_amount")),
-            budget_currency=str(row.get("budget_currency", "PHP")),
         )
 
     def get_categories(self) -> list[Category]:
@@ -394,7 +392,7 @@ class SheetsBackend(BackendService):
     def create_category(self, data: CategoryCreate) -> Category:
         c = Category(id=_uid(), **data.model_dump())
         row = {"id": c.id, "name": c.name, "type": c.type, "group": c.group,
-               "budget_amount": c.budget_amount, "budget_currency": c.budget_currency}
+               "budget_amount": c.budget_amount}
         self._append_row("categories", row)
         return c
 
@@ -404,7 +402,7 @@ class SheetsBackend(BackendService):
             raise KeyError("Category not found")
         c = Category(id=category_id, **data.model_dump())
         row = {"id": c.id, "name": c.name, "type": c.type, "group": c.group,
-               "budget_amount": c.budget_amount, "budget_currency": c.budget_currency}
+               "budget_amount": c.budget_amount}
         self._write_row("categories", idx + 2, row)
         return c
 
@@ -414,15 +412,13 @@ class SheetsBackend(BackendService):
             raise KeyError("Category not found")
         self._delete_row("categories", idx)
 
-    def update_category_budget(self, category_id: str, budget_amount: float,
-                               budget_currency: str) -> Category:
+    def update_category_budget(self, category_id: str, budget_amount: float) -> Category:
         idx = self._find_row_index("categories", category_id)
         if idx is None:
             raise KeyError("Category not found")
         rows = self._read_all("categories")
         row = rows[idx]
         row["budget_amount"] = str(budget_amount)
-        row["budget_currency"] = budget_currency
         self._write_row("categories", idx + 2, self._row_to_dict("categories", row))
         return self._row_to_category(row)
 
@@ -494,16 +490,14 @@ class SheetsBackend(BackendService):
             if c.name in overrides:
                 ov = overrides[c.name]
                 budget_val = ov["budget"]
-                bud_currency = ov.get("currency", currency or "PHP")
             else:
                 budget_val = c.budget_amount
-                bud_currency = c.budget_currency or "PHP"
 
-            # Show category if it has a budget > 0, regardless of currency match
+            # Show category if it has a budget > 0, use view currency for display
             if budget_val > 0:
                 categories.append(CategoryBudgetSummary(
                     name=c.name, group=c.group, budget=round(budget_val, 2),
-                    currency=bud_currency, spent=round(cat_spent.get(c.name, 0), 2),
+                    currency=currency or "PHP", spent=round(cat_spent.get(c.name, 0), 2),
                 ))
 
         total_budget = sum(c.budget for c in categories)

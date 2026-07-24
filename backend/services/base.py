@@ -63,7 +63,7 @@ class BackendService(ABC):
         pass
 
     @abstractmethod
-    def update_category_budget(self, category_id: str, budget_amount: float, budget_currency: str) -> Category:
+    def update_category_budget(self, category_id: str, budget_amount: float) -> Category:
         pass
 
     @abstractmethod

@@ -27,7 +27,7 @@ def update_category(category_id: str, data: CategoryCreate, _auth: None = Depend
 @router.put("/categories/{category_id}/budget")
 def update_category_budget(category_id: str, data: CategoryBudgetUpdate, _auth: None = Depends(require_auth)):
     try:
-        return backend.update_category_budget(category_id, data.budget_amount, data.budget_currency)
+        return backend.update_category_budget(category_id, data.budget_amount)
     except KeyError:
         raise HTTPException(status_code=404, detail="Category not found")
 
