@@ -57,7 +57,13 @@ def debug_env():
 @app.get("/api/debug/data")
 def debug_data():
     """Debug endpoint to check data file contents"""
-    DATA_FILE = os.path.join(os.path.dirname(__file__), "services", "..", "data.json")
+    # Use same DATA_DIR logic as MockBackend
+    if os.environ.get("VERCEL"):
+        DATA_DIR = "/tmp"
+    else:
+        DATA_DIR = os.path.join(os.path.dirname(__file__), "services", "..")
+    DATA_FILE = os.path.join(DATA_DIR, "data.json")
+    
     result = {"file_exists": os.path.exists(DATA_FILE), "data_file_path": DATA_FILE}
     if result["file_exists"]:
         try:
