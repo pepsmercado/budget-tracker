@@ -27,7 +27,7 @@ class MockBackend(BackendService):
         self.recurring_rules: dict[str, RecurringRule] = {}
         self.transfers: dict[str, Transfer] = {}
         self.monthly_budgets: dict[str, dict[str, dict]] = {}
-        if not self._load():
+        if not self._load() or not self.accounts:
             self._seed()
 
     def _uid(self) -> str:
