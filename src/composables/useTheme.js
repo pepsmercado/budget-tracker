@@ -1,11 +1,8 @@
 import { ref, computed, watchEffect } from 'vue'
 
-const isServer = typeof localStorage === 'undefined'
-
-const theme = ref(isServer ? 'system' : localStorage.getItem('theme') || 'system')
+const theme = ref(localStorage.getItem('theme') || 'system')
 
 function getSystemTheme() {
-  if (typeof window === 'undefined' || !window.matchMedia) return 'light'
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
@@ -16,20 +13,17 @@ function getEffectiveTheme() {
 const isDark = computed(() => getEffectiveTheme() === 'dark')
 
 function applyTheme() {
-  if (typeof document === 'undefined') return
   document.documentElement.classList.toggle('dark', isDark.value)
 }
 
 applyTheme()
 
-if (!isServer && typeof window !== 'undefined' && window.matchMedia && theme.value === 'system') {
+if (theme.value === 'system') {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme)
 }
 
 watchEffect(() => {
-  if (!isServer) {
-    localStorage.setItem('theme', theme.value)
-  }
+  localStorage.setItem('theme', theme.value)
   applyTheme()
 })
 

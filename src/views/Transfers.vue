@@ -57,10 +57,14 @@ async function submitForm() {
 }
 
 async function handleDelete(t) {
-  await deleteTransfer(t.id)
-  confirmingDelete.value = null
-  await fetchTransfers(currencyParam.value)
-  toast.success('Transfer reversed')
+  try {
+    await deleteTransfer(t.id)
+    confirmingDelete.value = null
+    await fetchTransfers(currencyParam.value)
+    toast.success('Transfer reversed')
+  } catch (e) {
+    console.error('Failed to delete transfer:', e)
+  }
 }
 
 async function loadAll() {

@@ -4,11 +4,13 @@ import { useAccounts } from '../composables/useAccounts'
 import { useSummary } from '../composables/useSummary'
 import BudgetProgressBar from '../components/BudgetProgressBar.vue'
 import Skeleton from '../components/Skeleton.vue'
+import { useToast } from '../composables/useToast.js'
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
 
 const { accounts, loading, fetchAccounts, createAccount, deleteAccount, updateAccount, updateAccountGoal } = useAccounts()
 const { balances, fetchBalances } = useSummary()
+const toast = useToast()
 
 const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
@@ -190,9 +192,13 @@ function cancelAcctNum() {
 }
 
 async function handleDelete(acc) {
-  await deleteAccount(acc.id)
-  confirmingDelete.value = null
-  await fetchBalances(currencyParam.value)
+  try {
+    await deleteAccount(acc.id)
+    confirmingDelete.value = null
+    await fetchBalances(currencyParam.value)
+  } catch (e) {
+    console.error('Failed to delete account:', e)
+  }
 }
 
 async function loadAll() {
@@ -214,7 +220,7 @@ async function handleCreate() {
     await fetchBalances(currencyParam.value)
   } catch (e) {
     console.error('Create account failed:', e)
-    alert(e.response?.data?.detail || 'Failed to create account')
+    toast.error(e.response?.data?.detail || 'Failed to create account')
   } finally {
     creating.value = false
   }

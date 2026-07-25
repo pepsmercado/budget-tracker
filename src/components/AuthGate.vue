@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useAuth } from '../composables/useAuth'
 
 const { isVerified, isEnabled, error, loading, checkStatus, verify } = useAuth()
@@ -8,10 +8,6 @@ const pin = ref('')
 const showPin = ref(false)
 
 onMounted(checkStatus)
-
-const maskedPin = computed(() => {
-  return pin.value.replace(/./g, showPin.value ? '•' : '•')
-})
 
 async function handleSubmit() {
   if (pin.value.length < 4) return

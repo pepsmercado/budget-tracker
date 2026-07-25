@@ -38,3 +38,4 @@ reference files/
 *.njsproj
 *.sln
 *.sw?
+__pycache__/

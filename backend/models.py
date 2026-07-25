@@ -97,12 +97,6 @@ class BudgetSet(BaseModel):
     currency: str = "PHP"
 
 
-class MonthlyBudget(BaseModel):
-    month: str  # "YYYY-MM"
-    total_budget: float
-    currency: str = "PHP"
-
-
 class MonthlyBudgetOverride(BaseModel):
     category: str
     budget: float

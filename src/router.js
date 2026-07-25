@@ -1,13 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Dashboard from './views/Dashboard.vue'
-import Transactions from './views/Transactions.vue'
-import TransactionForm from './views/TransactionForm.vue'
-import Budgets from './views/Budgets.vue'
-import Accounts from './views/Accounts.vue'
-import Upload from './views/Upload.vue'
-import Recurring from './views/Recurring.vue'
-import Transfers from './views/Transfers.vue'
-import Reports from './views/Reports.vue'
+
+const Dashboard = () => import('./views/Dashboard.vue')
+const Transactions = () => import('./views/Transactions.vue')
+const TransactionForm = () => import('./views/TransactionForm.vue')
+const Budgets = () => import('./views/Budgets.vue')
+const Accounts = () => import('./views/Accounts.vue')
+const Upload = () => import('./views/Upload.vue')
+const Recurring = () => import('./views/Recurring.vue')
+const Transfers = () => import('./views/Transfers.vue')
+const Reports = () => import('./views/Reports.vue')
 
 const currencyRoutes = (currency) => [
   { path: `/${currency}`, name: `${currency}-Dashboard`, component: Dashboard, props: { currency } },
@@ -25,7 +26,7 @@ const currencyRoutes = (currency) => [
 const routes = [
   ...currencyRoutes('php'),
   ...currencyRoutes('usd'),
-  { path: '/', redirect: '/php' },
+  { path: '/', redirect: '/usd' },
 ]
 
 export default createRouter({

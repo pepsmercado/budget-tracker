@@ -702,18 +702,16 @@ class MockBackend(BackendService):
     def delete_transfer(self, transfer_id: str) -> None:
         if transfer_id not in self.transfers:
             raise KeyError("Transfer not found")
+        transfer = self.transfers[transfer_id]
         del self.transfers[transfer_id]
-        # Remove paired transactions
-        to_remove = [tid for tid, t in self.transactions.items()
-                     if getattr(t, 'transfer_pair_id', None) and
-                     (tid == t.transfer_pair_id or t.transfer_pair_id in [tt.id for tt in self.transactions.values()])]
-        # Simpler: remove any transaction whose pair is also in the set
+        # Remove only the 2 transactions belonging to this transfer
         txns_to_remove = set()
         for tid, t in self.transactions.items():
-            if t.transfer_pair_id and t.transfer_pair_id != tid:
-                # This is part of a transfer pair — both should be removed
-                txns_to_remove.add(tid)
-                txns_to_remove.add(t.transfer_pair_id)
+            if t.transfer_pair_id and t.category == "Transfer":
+                if (t.account_id == transfer.from_account_id and t.type == "expense") or \
+                   (t.account_id == transfer.to_account_id and t.type == "income"):
+                    txns_to_remove.add(tid)
+                    txns_to_remove.add(t.transfer_pair_id)
         for tid in list(txns_to_remove):
             if tid in self.transactions:
                 del self.transactions[tid]

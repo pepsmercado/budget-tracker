@@ -4,7 +4,6 @@ import api from '../api'
 export function useSummary() {
   const summary = ref(null)
   const balances = ref([])
-  const rates = ref(null)
   const loading = ref(false)
 
   async function fetchSummary(year, currency) {
@@ -26,10 +25,5 @@ export function useSummary() {
     balances.value = data
   }
 
-  async function fetchRates() {
-    const { data } = await api.get('/rates')
-    rates.value = data
-  }
-
-  return { summary, balances, rates, loading, fetchSummary, fetchBalances, fetchRates }
+  return { summary, balances, loading, fetchSummary, fetchBalances }
 }

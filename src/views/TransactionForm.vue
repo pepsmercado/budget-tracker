@@ -10,11 +10,10 @@ const props = defineProps({ currency: { type: String, default: 'php' } })
 
 const route = useRoute()
 const router = useRouter()
-const { createTransaction, updateTransaction, fetchTransactions } = useTransactions()
+const { createTransaction, updateTransaction } = useTransactions()
 const { accounts, fetchAccounts } = useAccounts()
 
 const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
-const currencyUrl = computed(() => props.currency)
 
 const categories = ref([])
 const isEdit = computed(() => !!route.params.id)
@@ -76,7 +75,6 @@ onMounted(async () => {
   await Promise.all([fetchAccounts(), fetchCategories()])
   pageLoading.value = false
   if (isEdit.value) {
-    await fetchTransactions()
     const { data: txns } = await api.get('/transactions')
     const t = txns.find(x => x.id === route.params.id)
     if (t) {
@@ -108,7 +106,9 @@ async function handleSubmit() {
     } else {
       await createTransaction(payload)
     }
-    router.push(`/${currencyUrl.value}/transactions`)
+    router.push(`/${props.currency}/transactions`)
+  } catch (e) {
+    console.error('Failed to save transaction:', e)
   } finally {
     loading.value = false
   }
@@ -203,7 +203,7 @@ async function handleSubmit() {
         <button type="submit" :disabled="loading" class="btn-primary disabled:opacity-50">
           {{ loading ? 'Saving...' : 'Save' }}
         </button>
-        <router-link :to="`/${currencyUrl}/transactions`" class="btn-ghost">Cancel</router-link>
+        <router-link :to="`/${props.currency}/transactions`" class="btn-ghost">Cancel</router-link>
       </div>
     </form>
   </div>

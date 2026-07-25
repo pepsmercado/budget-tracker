@@ -1,18 +1,9 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { Bar, Doughnut, Line } from 'vue-chartjs'
-import {
-  Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement,
-  PointElement, ArcElement, Tooltip, Legend, Filler
-} from 'chart.js'
 import Skeleton from '../components/Skeleton.vue'
 import { useTheme } from '../composables/useTheme'
 import api from '../api'
-
-ChartJS.register(
-  CategoryScale, LinearScale, BarElement, LineElement,
-  PointElement, ArcElement, Tooltip, Legend, Filler
-)
 
 const { isDark } = useTheme()
 

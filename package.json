@@ -11,18 +11,18 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.3.3",
     "axios": "^1.18.1",
     "chart.js": "^4.5.1",
-    "tailwindcss": "^4.3.3",
     "vue": "^3.5.39",
     "vue-chartjs": "^5.3.4",
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/test-utils": "^2.4.11",
     "jsdom": "^29.1.1",
+    "tailwindcss": "^4.3.3",
     "vite": "^8.1.1",
     "vitest": "^4.1.10"
   }

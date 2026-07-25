@@ -9,6 +9,7 @@ import { useToast } from '../composables/useToast.js'
 import api from '../api'
 
 const loadingPage = ref(true)
+const confirmingDelete = ref(null)
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
 
@@ -26,11 +27,15 @@ const categories = ref([])
 
 async function loadAll() {
   await Promise.all([fetchTransactions({ currency: currencyParam.value }), fetchAccounts(), fetchCategories()])
+  loadingPage.value = false
 }
 
 onMounted(loadAll)
 
-watch(currencyParam, loadAll)
+watch(currencyParam, () => {
+  filters.value = { account_id: '', type: '', group: '', category: '', start_date: '', end_date: '' }
+  loadAll()
+})
 
 async function fetchCategories() {
   const { data } = await api.get('/categories')
@@ -124,8 +129,13 @@ async function applyFilters() {
 }
 
 async function handleDelete(id) {
-  await deleteTransaction(id)
-  toast.success('Transaction deleted')
+  try {
+    await deleteTransaction(id)
+    confirmingDelete.value = null
+    toast.success('Transaction deleted')
+  } catch (e) {
+    console.error('Failed to delete transaction:', e)
+  }
 }
 
 function groupedByDate(txns) {
@@ -276,9 +286,14 @@ function exportCSV() {
             <span class="text-sm font-medium w-28 text-right" :class="t.type === 'income' ? 'text-kangkong-700 dark:text-kangkong-400' : 'text-tomato-600 dark:text-tomato-400'">
               {{ t.type === 'income' ? '+' : '-' }}{{ currencySymbol }}{{ t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
             </span>
-            <div class="w-16 text-right">
+            <div class="w-20 text-right">
               <router-link :to="`/${currency}/transactions/${t.id}/edit`" class="text-xs text-mushroom-400 dark:text-mushroom-500 hover:text-kangkong-600 dark:hover:text-kangkong-400">Edit</router-link>
-              <button @click="handleDelete(t.id)" class="text-xs text-mushroom-400 dark:text-mushroom-500 hover:text-tomato-600 dark:hover:text-tomato-400 ml-2">Del</button>
+              <template v-if="confirmingDelete === t.id">
+                <span class="text-xs text-mushroom-400 dark:text-mushroom-500 mx-1">|</span>
+                <button @click="handleDelete(t.id)" class="text-xs text-tomato-500 hover:text-tomato-700 font-medium">Yes</button>
+                <button @click="confirmingDelete = null" class="text-xs text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300 ml-1">No</button>
+              </template>
+              <button v-else @click="confirmingDelete = t.id" class="text-xs text-mushroom-400 dark:text-mushroom-500 hover:text-tomato-600 dark:hover:text-tomato-400 ml-2">Del</button>
             </div>
           </div>
         </div>

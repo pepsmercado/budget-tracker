@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
-import json
 
 from routers import accounts, transactions, categories, budgets, summary, upload, recurring, transfers, reports
 from routers import monthly_budgets
@@ -42,65 +41,3 @@ app.include_router(monthly_budgets.router, prefix="/api")
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
-
-
-@app.get("/api/debug/backend")
-def debug_backend():
-    from app_state import backend
-    return {
-        "accounts": len(backend.accounts),
-        "transactions": len(backend.transactions),
-        "categories": len(backend.categories),
-        "backend_type": type(backend).__name__,
-    }
-
-
-@app.get("/api/debug/env")
-def debug_env():
-    """Debug endpoint to check environment"""
-    return {
-        "VERCEL": os.environ.get("VERCEL"),
-        "DATA_DIR": os.environ.get("DATA_DIR"),
-        "PWD": os.environ.get("PWD"),
-    }
-
-
-@app.get("/api/debug/data")
-def debug_data():
-    """Debug endpoint to check data file contents"""
-    # Use same DATA_DIR logic as MockBackend
-    if os.environ.get("VERCEL"):
-        DATA_DIR = "/tmp"
-    else:
-        DATA_DIR = os.path.join(os.path.dirname(__file__), "services", "..")
-    DATA_FILE = os.path.join(DATA_DIR, "data.json")
-    
-    result = {"file_exists": os.path.exists(DATA_FILE), "data_file_path": DATA_FILE}
-    if result["file_exists"]:
-        try:
-            with open(DATA_FILE) as f:
-                data = json.load(f)
-            result["accounts_count"] = len(data.get("accounts", {}))
-            result["transactions_count"] = len(data.get("transactions", {}))
-            result["categories_count"] = len(data.get("categories", {}))
-            result["budgets_count"] = len(data.get("budgets", {}))
-            result["recurring_rules_count"] = len(data.get("recurring_rules", {}))
-            result["transfers_count"] = len(data.get("transfers", {}))
-            # Show first few transactions
-            transactions = data.get("transactions", {})
-            result["sample_transactions"] = list(transactions.items())[:3] if transactions else []
-        except Exception as e:
-            result["error"] = str(e)
-    return result
-
-
-@app.get("/api/debug/backend")
-def debug_backend():
-    """Debug endpoint to check backend state"""
-    from app_state import backend
-    return {
-        "backend_type": type(backend).__name__,
-        "accounts_count": len(backend.accounts) if hasattr(backend, 'accounts') else 0,
-        "transactions_count": len(backend.transactions) if hasattr(backend, 'transactions') else 0,
-        "categories_count": len(backend.categories) if hasattr(backend, 'categories') else 0,
-    }

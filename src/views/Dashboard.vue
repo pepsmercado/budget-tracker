@@ -1,10 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { Line, Doughnut } from 'vue-chartjs'
-import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement,
-  ArcElement, Title, Tooltip, Legend, Filler
-} from 'chart.js'
 import { useSummary } from '../composables/useSummary'
 import { useAccounts } from '../composables/useAccounts'
 import { useTransactions } from '../composables/useTransactions'
@@ -12,13 +8,10 @@ import { useTheme } from '../composables/useTheme'
 import api from '../api'
 import Skeleton from '../components/Skeleton.vue'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend, Filler)
-
 const { isDark } = useTheme()
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
 
-const loading = ref(true)
 const { summary, balances, fetchSummary, fetchBalances } = useSummary()
 const { accounts, fetchAccounts } = useAccounts()
 const { transactions, fetchTransactions } = useTransactions()
@@ -362,7 +355,9 @@ async function fetchMatrixData() {
   for (const row of rows) {
     if (row.type === 'group') allGroups.add(row.name)
   }
-  collapsedGroups.value = allGroups
+  if (collapsedGroups.value.size === 0) {
+    collapsedGroups.value = allGroups
+  }
 }
 
 const collapsedGroups = ref(new Set())
@@ -453,7 +448,9 @@ async function fetchExpenseAccountMatrix() {
   for (const row of rows) {
     if (row.type === 'group') allTypes.add(row.name)
   }
-  expenseAccountCollapsed.value = allTypes
+  if (expenseAccountCollapsed.value.size === 0) {
+    expenseAccountCollapsed.value = allTypes
+  }
 }
 
 const incomeMatrixRows = ref([])
@@ -571,7 +568,9 @@ async function fetchIncomeAccountMatrix() {
   for (const row of rows) {
     if (row.type === 'group') allTypes.add(row.name)
   }
-  incomeAccountCollapsed.value = allTypes
+  if (incomeAccountCollapsed.value.size === 0) {
+    incomeAccountCollapsed.value = allTypes
+  }
 }
 
 function formatConverted(val) {

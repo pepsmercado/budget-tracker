@@ -893,16 +893,30 @@ class SheetsBackend(BackendService):
         idx = self._find_row_index("transfers", transfer_id)
         if idx is None:
             raise KeyError("Transfer not found")
+
+        # Get transfer data before deleting it
+        rows = self._read_all("transfers")
+        transfer_row = rows[idx]
+        from_account = transfer_row.get("from_account_id", "")
+        to_account = transfer_row.get("to_account_id", "")
+
         self._delete_row("transfers", idx)
 
-        txn_ids = set()
+        # Remove only the 2 transactions belonging to this transfer
+        txn_ids_to_delete = set()
         for txn_row in self._read_all("transactions"):
-            pair_id = txn_row.get("transfer_pair_id", "")
-            if pair_id:
-                txn_ids.add(str(txn_row.get("id", "")))
-                txn_ids.add(str(pair_id))
+            tid = str(txn_row.get("id", ""))
+            pair_id = str(txn_row.get("transfer_pair_id", ""))
+            txn_account = txn_row.get("account_id", "")
+            txn_type = txn_row.get("type", "")
+            cat = txn_row.get("category", "")
+            if pair_id and cat == "Transfer":
+                if (txn_account == from_account and txn_type == "expense") or \
+                   (txn_account == to_account and txn_type == "income"):
+                    txn_ids_to_delete.add(tid)
+                    txn_ids_to_delete.add(pair_id)
 
-        for txn_id in list(txn_ids):
+        for txn_id in txn_ids_to_delete:
             txn_idx = self._find_row_index("transactions", txn_id)
             if txn_idx is not None:
                 self._delete_row("transactions", txn_idx)

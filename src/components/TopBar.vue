@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, inject, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, inject, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSummary } from '../composables/useSummary'
 import { useExchangeRate } from '../composables/useExchangeRate'
@@ -15,6 +15,16 @@ const { isVerified, logout } = useAuth()
 
 const showNetWorthTooltip = ref(false)
 const showRateTooltip = ref(false)
+
+function toggleNetWorthTooltip() {
+  showNetWorthTooltip.value = !showNetWorthTooltip.value
+  showRateTooltip.value = false
+}
+
+function toggleRateTooltip() {
+  showRateTooltip.value = !showRateTooltip.value
+  showNetWorthTooltip.value = false
+}
 
 const currentCurrency = computed(() => {
   if (route.path.startsWith('/usd')) return 'USD'
@@ -52,7 +62,20 @@ const effectiveTheme = computed(() => {
 onMounted(() => {
   fetchBalances()
   fetchExchangeRate()
+  document.addEventListener('click', handleDocumentClick)
 })
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
+})
+
+function handleDocumentClick(e) {
+  const header = e.target.closest('header')
+  if (!header) {
+    showNetWorthTooltip.value = false
+    showRateTooltip.value = false
+  }
+}
 
 watch(() => route.path, () => {
   fetchBalances()
@@ -102,6 +125,7 @@ function formatBal(val, currency) {
         class="relative hidden sm:block"
         @mouseenter="showRateTooltip = true"
         @mouseleave="showRateTooltip = false"
+        @click="toggleRateTooltip"
       >
         <span
           class="text-xs text-mushroom-500 dark:text-mushroom-400 cursor-pointer hover:text-kangkong-600 dark:hover:text-kangkong-400 transition-colors"
@@ -133,17 +157,18 @@ function formatBal(val, currency) {
         class="relative group"
         @mouseenter="showNetWorthTooltip = true"
         @mouseleave="showNetWorthTooltip = false"
+        @click="toggleNetWorthTooltip"
       >
         <div class="flex items-center gap-1.5 cursor-default">
           <span class="text-xs text-mushroom-400 dark:text-mushroom-500">
             {{ currentCurrency === 'USD' ? '🇺🇸' : '🇵🇭' }} Net Worth
           </span>
-          <span class="text-sm font-semibold" :class="currentCurrency === 'USD' ? 'text-kangkong-700 dark:text-kangkong-400' : 'text-kangkong-700 dark:text-kangkong-400'">{{ totalNetWorth }}</span>
+          <span class="text-sm font-semibold text-kangkong-700 dark:text-kangkong-400">{{ totalNetWorth }}</span>
         </div>
 
         <div
           v-if="showNetWorthTooltip"
-          class="absolute right-0 top-full mt-2 w-72 card-elevated shadow-lg p-4 z-50"
+          class="absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] card-elevated shadow-lg p-4 z-50"
         >
           <div class="text-xs font-medium text-mushroom-700 dark:text-mushroom-300 mb-3">
             {{ currentCurrency === 'USD' ? '🇺🇸 US Accounts' : '🇵🇭 Philippine Accounts' }}

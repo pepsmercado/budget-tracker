@@ -1,8 +1,9 @@
 <script setup>
 import { ref, computed, inject } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
+const router = useRouter()
 const collapsed = ref(localStorage.getItem('sidebar-collapsed') === 'true')
 const sidebarOpen = inject('sidebarOpen')
 
@@ -15,26 +16,17 @@ function toggle() {
   localStorage.setItem('sidebar-collapsed', collapsed.value)
 }
 
-const currentCurrency = computed(() => {
+const activeCurrency = computed(() => {
   if (route.path.startsWith('/usd')) return 'usd'
   return 'php'
 })
 
-// Flatten all links for active state checking
-const allLinks = computed(() => {
-  const links = []
-  for (const currency of ['php', 'usd']) {
-    for (const item of menuFor(currency)) {
-      if (item.to) links.push(item.to)
-      if (item.children) {
-        for (const child of item.children) links.push(child.to)
-      }
-    }
-  }
-  return links
-})
+function switchCurrency(c) {
+  const newPath = route.path.replace(/^\/(usd|php)/, `/${c}`)
+  router.push(newPath)
+  closeMobile()
+}
 
-// Expanded groups state — stored per currency
 const expanded = ref({
   php: JSON.parse(localStorage.getItem('sidebar-expanded-php') || '[]'),
   usd: JSON.parse(localStorage.getItem('sidebar-expanded-usd') || '[]'),
@@ -54,19 +46,6 @@ function toggleGroup(currency, key) {
 
 function isExpanded(currency, key) {
   return expanded.value[currency]?.includes(key)
-}
-
-// Auto-expand group when a child route is active
-function autoExpand(currency, item) {
-  if (!item.children) return false
-  const wasExpanded = isExpanded(currency, item.key)
-  const shouldExpand = item.children.some(c => isActive(c.to))
-  if (shouldExpand && !wasExpanded) {
-    expanded.value[currency].push(item.key)
-    saveExpanded(currency)
-    return true
-  }
-  return wasExpanded
 }
 
 const iconDashboard = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`
@@ -110,7 +89,7 @@ function menuFor(currency) {
 }
 
 function isActive(linkTo) {
-  if (linkTo === `/${currentCurrency.value}`) {
+  if (linkTo === `/${activeCurrency.value}`) {
     return route.path === linkTo || route.path === linkTo + '/'
   }
   return route.path === linkTo
@@ -131,69 +110,80 @@ function isActive(linkTo) {
       </div>
     </div>
 
-    <nav class="flex-1 p-2 overflow-y-auto space-y-3">
-      <div v-for="currency in ['php', 'usd']" :key="currency">
-        <div v-if="!collapsed" class="px-2 pt-1 pb-1">
-          <span class="text-[10px] uppercase tracking-wider font-medium" :class="currentCurrency === currency ? 'text-kangkong-400' : 'text-white/30'">
-            {{ currency === 'php' ? '🇵🇭 PHP' : '🇺🇸 USD' }}
-          </span>
-        </div>
-        <div v-if="collapsed" class="border-t border-white/10 my-1"></div>
+    <nav class="flex-1 p-2 overflow-y-auto">
+      <!-- Currency tabs -->
+      <div v-if="!collapsed" class="flex mb-3 rounded-lg bg-white/5 p-0.5">
+        <button
+          v-for="c in ['usd', 'php']"
+          :key="c"
+          @click="switchCurrency(c)"
+          class="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-colors"
+          :class="activeCurrency === c ? 'bg-kangkong-600 text-white' : 'text-white/50 hover:text-white/80'"
+        >
+          <span>{{ c === 'usd' ? '🇺🇸' : '🇵🇭' }}</span>
+          <span>{{ c.toUpperCase() }}</span>
+        </button>
+      </div>
+      <button
+        v-if="collapsed"
+        @click="switchCurrency(activeCurrency === 'usd' ? 'php' : 'usd')"
+        class="w-full flex items-center justify-center py-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors mb-2"
+        :title="activeCurrency === 'usd' ? 'Switch to PHP' : 'Switch to USD'"
+      >
+        <span class="text-lg">{{ activeCurrency === 'usd' ? '🇺🇸' : '🇵🇭' }}</span>
+      </button>
 
-        <template v-for="item in menuFor(currency)" :key="item.label">
-          <!-- Top-level link (no children) -->
-          <router-link
-            v-if="!item.children"
-            :to="item.to"
-            class="sidebar-link"
-            :class="isActive(item.to) ? 'active' : ''"
+      <template v-for="item in menuFor(activeCurrency)" :key="item.label">
+        <!-- Top-level link -->
+        <router-link
+          v-if="!item.children"
+          :to="item.to"
+          class="sidebar-link"
+          :class="isActive(item.to) ? 'active' : ''"
+          :title="collapsed ? item.label : ''"
+          @click="closeMobile"
+        >
+          <span v-html="item.icon" class="flex-shrink-0"></span>
+          <span v-if="!collapsed" class="whitespace-nowrap overflow-hidden text-ellipsis">{{ item.label }}</span>
+        </router-link>
+
+        <!-- Group with children -->
+        <template v-else>
+          <button
+            @click="collapsed ? null : toggleGroup(activeCurrency, item.key)"
+            class="sidebar-link w-full"
+            :class="[
+              item.children.some(c => isActive(c.to)) ? 'active' : '',
+              collapsed ? 'justify-center cursor-default' : ''
+            ]"
             :title="collapsed ? item.label : ''"
-            @click="closeMobile"
           >
             <span v-html="item.icon" class="flex-shrink-0"></span>
-            <span v-if="!collapsed" class="whitespace-nowrap overflow-hidden text-ellipsis">{{ item.label }}</span>
-          </router-link>
+            <template v-if="!collapsed">
+              <span class="whitespace-nowrap overflow-hidden text-ellipsis flex-1 text-left">{{ item.label }}</span>
+              <span
+                v-html="iconChevron"
+                class="flex-shrink-0 transition-transform duration-150"
+                :class="isExpanded(activeCurrency, item.key) ? 'rotate-90' : ''"
+              />
+            </template>
+          </button>
 
-          <!-- Group with children -->
-          <template v-else>
-            <!-- Group header -->
-            <button
-              @click="collapsed ? null : toggleGroup(currency, item.key)"
-              class="sidebar-link w-full"
-              :class="[
-                item.children.some(c => isActive(c.to)) ? 'active' : '',
-                collapsed ? 'justify-center cursor-default' : ''
-              ]"
-              :title="collapsed ? item.label : ''"
+          <div v-if="!collapsed && isExpanded(activeCurrency, item.key)" class="ml-3 space-y-0.5">
+            <router-link
+              v-for="child in item.children"
+              :key="child.to"
+              :to="child.to"
+              class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
+              :class="isActive(child.to) ? 'text-kangkong-400 bg-white/5 font-medium' : 'text-white/60 hover:text-white hover:bg-white/5'"
+              @click="closeMobile"
             >
-              <span v-html="item.icon" class="flex-shrink-0"></span>
-              <template v-if="!collapsed">
-                <span class="whitespace-nowrap overflow-hidden text-ellipsis flex-1 text-left">{{ item.label }}</span>
-                <span
-                  v-html="iconChevron"
-                  class="flex-shrink-0 transition-transform duration-150"
-                  :class="isExpanded(currency, item.key) ? 'rotate-90' : ''"
-                />
-              </template>
-            </button>
-
-            <!-- Children -->
-            <div v-if="!collapsed && isExpanded(currency, item.key)" class="ml-3 space-y-0.5">
-              <router-link
-                v-for="child in item.children"
-                :key="child.to"
-                :to="child.to"
-                class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
-                :class="isActive(child.to) ? 'text-kangkong-400 bg-white/5 font-medium' : 'text-white/60 hover:text-white hover:bg-white/5'"
-                @click="closeMobile"
-              >
-                <span v-html="child.icon" class="flex-shrink-0 opacity-60"></span>
-                <span class="whitespace-nowrap overflow-hidden text-ellipsis">{{ child.label }}</span>
-              </router-link>
-            </div>
-          </template>
+              <span v-html="child.icon" class="flex-shrink-0 opacity-60"></span>
+              <span class="whitespace-nowrap overflow-hidden text-ellipsis">{{ child.label }}</span>
+            </router-link>
+          </div>
         </template>
-      </div>
+      </template>
     </nav>
 
     <div class="p-2 border-t border-white/10">

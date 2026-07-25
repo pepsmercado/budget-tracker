@@ -17,6 +17,7 @@ def get_token(pin: str) -> str:
 
 def require_auth(authorization: str | None = Header(None)):
     access_pin = get_access_pin()
+    # Only require auth if ACCESS_PIN is explicitly set (Vercel deployment)
     if not access_pin:
         return
     if not authorization or not authorization.startswith("Bearer "):

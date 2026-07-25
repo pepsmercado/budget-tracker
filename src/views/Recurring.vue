@@ -18,6 +18,7 @@ const viewLabel = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 
 const showForm = ref(false)
 const editingRule = ref(null)
+const confirmingDelete = ref(null)
 
 const form = ref(emptyForm())
 
@@ -79,30 +80,51 @@ function cancelForm() {
 }
 
 async function submitForm() {
-  if (editingRule.value) {
-    await updateRule(editingRule.value, form.value)
-  } else {
-    await createRule(form.value)
+  try {
+    if (editingRule.value) {
+      await updateRule(editingRule.value, form.value)
+    } else {
+      await createRule(form.value)
+    }
+    showForm.value = false
+    editingRule.value = null
+    form.value = emptyForm()
+    await fetchRules(currencyParam.value)
+  } catch (e) {
+    console.error('Failed to save rule:', e)
+    toast.error('Failed to save rule: ' + (e.response?.data?.detail || e.message))
   }
-  showForm.value = false
-  editingRule.value = null
-  form.value = emptyForm()
-  await fetchRules(currencyParam.value)
 }
 
 async function handleDelete(r) {
-  await deleteRule(r.id)
+  try {
+    await deleteRule(r.id)
+    confirmingDelete.value = null
+  } catch (e) {
+    console.error('Failed to delete rule:', e)
+    toast.error('Failed to delete rule: ' + (e.response?.data?.detail || e.message))
+  }
 }
 
 async function handleToggle(r) {
-  await toggleRule(r.id, !r.active)
+  try {
+    await toggleRule(r.id, !r.active)
+  } catch (e) {
+    console.error('Failed to toggle rule:', e)
+    toast.error('Failed to toggle rule: ' + (e.response?.data?.detail || e.message))
+  }
 }
 
 async function handleRun() {
-  const result = await runNow(currencyParam.value)
-  const msg = result.generated === 0 ? 'No transactions generated' : `Generated ${result.generated} transaction${result.generated > 1 ? 's' : ''}`
-  toast.success(msg)
-  await fetchRules(currencyParam.value)
+  try {
+    const result = await runNow(currencyParam.value)
+    const msg = result.generated === 0 ? 'No transactions generated' : `Generated ${result.generated} transaction${result.generated > 1 ? 's' : ''}`
+    toast.success(msg)
+    await fetchRules(currencyParam.value)
+  } catch (e) {
+    console.error('Failed to run rules:', e)
+    toast.error('Failed to run rules: ' + (e.response?.data?.detail || e.message))
+  }
 }
 
 async function loadAll() {
@@ -252,7 +274,12 @@ watch(currencyParam, loadAll)
             <button @click="startEdit(r)" class="text-mushroom-300 dark:text-mushroom-600 hover:text-blueberry-500 dark:hover:text-blueberry-400 transition-colors" title="Edit">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
-            <button @click="handleDelete(r)" class="text-mushroom-300 dark:text-mushroom-600 hover:text-tomato-500 dark:hover:text-tomato-400 transition-colors" title="Delete">
+            <template v-if="confirmingDelete === r.id">
+              <span class="text-xs text-mushroom-400 dark:text-mushroom-500 mr-1">Delete?</span>
+              <button @click="handleDelete(r)" class="text-tomato-500 hover:text-tomato-700 text-xs font-medium">Yes</button>
+              <button @click="confirmingDelete = null" class="text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300 text-xs">No</button>
+            </template>
+            <button v-else @click="confirmingDelete = r.id" class="text-mushroom-300 dark:text-mushroom-600 hover:text-tomato-500 dark:hover:text-tomato-400 transition-colors" title="Delete">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
             </button>
           </div>

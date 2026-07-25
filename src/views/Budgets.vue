@@ -5,10 +5,12 @@ import api from '../api'
 import BudgetProgressBar from '../components/BudgetProgressBar.vue'
 import Skeleton from '../components/Skeleton.vue'
 import { categoryIcons } from '../constants.js'
+import { useToast } from '../composables/useToast.js'
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
 
 const { budgetSummary, loading, fetchBudgetSummary } = useBudgets()
+const toast = useToast()
 
 const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
@@ -47,11 +49,6 @@ function toggleHide(catName) {
 const hiddenCount = computed(() => {
   if (!budgetSummary.value?.categories) return 0
   return budgetSummary.value.categories.filter(c => hiddenCategories.value.has(c.name)).length
-})
-
-const monthLabel = computed(() => {
-  const [y, m] = selectedMonth.value.split('-')
-  return new Date(parseInt(y), parseInt(m) - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })
 })
 
 const budgetCategories = computed(() => {
@@ -104,14 +101,19 @@ function startEdit(cat) {
 }
 
 async function saveEdit(cat) {
-  await api.put(`/monthly-budgets/${selectedMonth.value}`, {
-    category: cat.name,
-    budget: editValue.value,
-    currency: currencyParam.value,
-  })
-  editingCategory.value = null
-  await fetchBudgetSummary(selectedMonth.value, currencyParam.value)
-  await fetchMonthlyOverrides()
+  try {
+    await api.put(`/monthly-budgets/${selectedMonth.value}`, {
+      category: cat.name,
+      budget: editValue.value,
+      currency: currencyParam.value,
+    })
+    editingCategory.value = null
+    await fetchBudgetSummary(selectedMonth.value, currencyParam.value)
+    await fetchMonthlyOverrides()
+  } catch (e) {
+    console.error('Failed to save budget:', e)
+    toast.error('Failed to save budget: ' + (e.response?.data?.detail || e.message))
+  }
 }
 
 async function fetchMonthlyOverrides() {
@@ -120,43 +122,50 @@ async function fetchMonthlyOverrides() {
 }
 
 async function saveAsTemplate() {
-  const overrides = budgetSummary.value.categories.map(c => ({
-    category: c.name,
-    budget: c.budget,
-    currency: currencyParam.value,
-  }))
-  await api.post(`/monthly-budgets/${selectedMonth.value}/bulk`, { overrides })
-  await fetchBudgetSummary(selectedMonth.value, currencyParam.value)
-  await fetchMonthlyOverrides()
+  try {
+    const overrides = budgetSummary.value.categories.map(c => ({
+      category: c.name,
+      budget: c.budget,
+      currency: currencyParam.value,
+    }))
+    await api.post(`/monthly-budgets/${selectedMonth.value}/bulk`, { overrides })
+    await fetchBudgetSummary(selectedMonth.value, currencyParam.value)
+    await fetchMonthlyOverrides()
+  } catch (e) {
+    console.error('Failed to save template:', e)
+    toast.error('Failed to save template: ' + (e.response?.data?.detail || e.message))
+  }
 }
 
 async function resetToTemplate() {
-  await api.delete(`/monthly-budgets/${selectedMonth.value}`, { params: { currency: currencyParam.value } })
-  await fetchBudgetSummary(selectedMonth.value, currencyParam.value)
-  await fetchMonthlyOverrides()
+  try {
+    await api.delete(`/monthly-budgets/${selectedMonth.value}`, { params: { currency: currencyParam.value } })
+    await fetchBudgetSummary(selectedMonth.value, currencyParam.value)
+    await fetchMonthlyOverrides()
+  } catch (e) {
+    console.error('Failed to reset template:', e)
+    toast.error('Failed to reset template: ' + (e.response?.data?.detail || e.message))
+  }
 }
 
-function openTemplateEditor() {
+async function openTemplateEditor() {
   templateEditValues.value = {}
-
-  async function loadAndOpen() {
-    templateEditorLoading.value = true
-    try {
-      // Only load categories if not already loaded
-      if (!categories.value || categories.value.length === 0) {
-        await loadAll()
-      }
-      const expenseCategories = categories.value?.filter(c => c.type === 'expense') || []
-      for (const cat of expenseCategories) {
-        templateEditValues.value[cat.name] = cat.budget_amount || 0
-      }
-      showTemplateEditor.value = true
-    } finally {
-      templateEditorLoading.value = false
+  templateEditorLoading.value = true
+  try {
+    if (!categories.value || categories.value.length === 0) {
+      await loadAll()
     }
+    const expenseCategories = categories.value?.filter(c => c.type === 'expense') || []
+    for (const cat of expenseCategories) {
+      templateEditValues.value[cat.name] = cat.budget_amount || 0
+    }
+    showTemplateEditor.value = true
+  } catch (e) {
+    console.error('Failed to load template editor:', e)
+    toast.error('Failed to load template editor: ' + (e.response?.data?.detail || e.message))
+  } finally {
+    templateEditorLoading.value = false
   }
-
-  loadAndOpen()
 }
 
 async function saveTemplateEditor() {
@@ -173,7 +182,7 @@ async function saveTemplateEditor() {
         })
       } catch (e) {
         console.error('Failed to save template for', name, e)
-        alert(`Failed to save ${name}: ${e.response?.data?.detail || e.message}`)
+        toast.error(`Failed to save ${name}: ${e.response?.data?.detail || e.message}`)
       }
     }
   }
@@ -230,29 +239,29 @@ watch(selectedMonth, (val) => {
 
 <template>
   <div class="space-y-5">
-<div class="flex items-center justify-between">
-        <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ viewLabel }} Budgets</h2>
-        <div class="flex items-center gap-2">
-          <button v-if="hiddenCount > 0" @click="showHidden = !showHidden" class="flex items-center gap-1 px-2 py-1 text-xs rounded-lg transition-colors" :class="showHidden ? 'bg-mushroom-200 dark:bg-mushroom-700 text-mushroom-700 dark:text-mushroom-300' : 'text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 hover:bg-mushroom-100 dark:hover:bg-mushroom-700'">
-            <svg v-if="!showHidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            {{ showHidden ? 'Showing hidden' : `${hiddenCount} hidden` }}
-          </button>
-          <button @click="openTemplateEditor" :disabled="categoriesLoading" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="Edit Template">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          </button>
-          <button v-if="Object.keys(monthlyOverrides).length > 0" @click="resetToTemplate" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors" title="Reset to Template">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          </button>
-          <button @click="prevMonth" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <span class="text-sm font-medium text-mushroom-700 dark:text-mushroom-300 min-w-[120px] text-center">{{ monthLabel }}</span>
-          <button @click="nextMonth" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
-        </div>
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ viewLabel }} Budgets</h2>
+      <div class="flex items-center gap-2">
+        <button v-if="hiddenCount > 0" @click="showHidden = !showHidden" class="flex items-center gap-1 px-2 py-1 text-xs rounded-lg transition-colors" :class="showHidden ? 'bg-mushroom-200 dark:bg-mushroom-700 text-mushroom-700 dark:text-mushroom-300' : 'text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 hover:bg-mushroom-100 dark:hover:bg-mushroom-700'">
+          <svg v-if="!showHidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          {{ showHidden ? 'Showing hidden' : `${hiddenCount} hidden` }}
+        </button>
+        <button @click="openTemplateEditor" :disabled="categoriesLoading" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="Edit Template">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button v-if="Object.keys(monthlyOverrides).length > 0" @click="resetToTemplate" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors" title="Reset to Template">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        </button>
+        <button @click="prevMonth" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <span class="text-sm font-medium text-mushroom-700 dark:text-mushroom-300 min-w-[120px] text-center">{{ selectedMonth }}</span>
+        <button @click="nextMonth" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
       </div>
+    </div>
 
     <div v-if="loading" class="space-y-6">
       <div v-for="g in 2" :key="g">
@@ -380,7 +389,7 @@ watch(selectedMonth, (val) => {
       </div>
       <p class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-4">Changes here become the default for new months. Monthly overrides are unaffected.</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto">
-        <template v-if="templateEditorLoading || (!categories.value || categories.value.length === 0)">
+        <template v-if="templateEditorLoading || (!categories || categories.length === 0)">
           <div v-for="g in 6" :key="g" class="flex items-center gap-2 p-2 bg-mushroom-50 dark:bg-mushroom-800 rounded-lg flex-nowrap">
             <Skeleton width="28px" height="28px" rounded="rounded-lg" />
             <div class="flex-1 space-y-1.5">
@@ -391,20 +400,20 @@ watch(selectedMonth, (val) => {
           </div>
         </template>
         <template v-else>
-          <div v-for="cat in (categories.value || []).filter(c => c.type === 'expense')" :key="cat.name" class="flex items-center gap-2 p-2 bg-mushroom-50 dark:bg-mushroom-800 rounded-lg flex-nowrap">
+          <div v-for="cat in (categories || []).filter(c => c.type === 'expense')" :key="cat.name" class="flex items-center gap-2 p-2 bg-mushroom-50 dark:bg-mushroom-800 rounded-lg overflow-hidden">
             <div class="w-7 h-7 rounded-lg bg-mushroom-100 dark:bg-mushroom-700 flex items-center justify-center text-sm flex-shrink-0">
               {{ categoryIcons[cat.name] || '📋' }}
             </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50 truncate">{{ cat.name }}</div>
-              <div class="text-[10px] font-medium uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500 truncate">{{ cat.group }}</div>
+            <div class="flex-1 min-w-0 flex items-center gap-1.5">
+              <span class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50 truncate">{{ cat.name }}</span>
+              <span class="text-[10px] font-medium uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500 truncate">{{ cat.group }}</span>
             </div>
             <input
               v-model.number="templateEditValues[cat.name]"
               type="number"
               step="1"
               min="0"
-              class="input-field text-sm py-1 px-2 w-16 text-right flex-shrink-0"
+              class="w-24 shrink-0 rounded-lg border border-mushroom-200 dark:border-mushroom-700 bg-white dark:bg-mushroom-900 text-sm py-1 px-2 text-right focus:outline-none focus:ring-1 focus:ring-kangkong-500"
             />
           </div>
         </template>
