@@ -151,7 +151,7 @@ function isActive(linkTo) {
         <template v-else>
           <button
             @click="collapsed ? null : toggleGroup(activeCurrency, item.key)"
-            class="sidebar-link w-full"
+            class="sidebar-link sidebar-link-parent w-full"
             :class="[
               item.children.some(c => isActive(c.to)) ? 'active' : '',
               collapsed ? 'justify-center cursor-default' : ''
@@ -160,7 +160,7 @@ function isActive(linkTo) {
           >
             <span v-html="item.icon" class="flex-shrink-0"></span>
             <template v-if="!collapsed">
-              <span class="whitespace-nowrap overflow-hidden text-ellipsis flex-1 text-left">{{ item.label }}</span>
+              <span class="whitespace-nowrap overflow-hidden text-ellipsis flex-1 text-left uppercase tracking-wider text-[0.65rem]">{{ item.label }}</span>
               <span
                 v-html="iconChevron"
                 class="flex-shrink-0 transition-transform duration-150"
