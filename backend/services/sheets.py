@@ -256,10 +256,10 @@ class SheetsBackend(BackendService):
         return acc
 
     def update_account(self, account_id: str, data: AccountCreate) -> Account:
+        rows = self._read_all("accounts")
         idx = self._find_row_index("accounts", account_id)
         if idx is None:
             raise KeyError("Account not found")
-        rows = self._read_all("accounts")
         old = rows[idx]
         acc = Account(
             id=account_id, **data.model_dump(),
@@ -287,10 +287,10 @@ class SheetsBackend(BackendService):
         self._delete_row("accounts", idx)
 
     def update_account_goal(self, account_id: str, goal_amount: float) -> Account:
+        rows = self._read_all("accounts")
         idx = self._find_row_index("accounts", account_id)
         if idx is None:
             raise KeyError("Account not found")
-        rows = self._read_all("accounts")
         row = rows[idx]
         row["goal_amount"] = str(goal_amount)
         self._write_row("accounts", idx + 2, self._row_to_dict("accounts", row))
@@ -785,6 +785,8 @@ class SheetsBackend(BackendService):
         generated = 0
 
         rules = self.get_recurring_rules(currency)
+        rules_to_update: list[tuple[int, dict]] = []
+
         for r in rules:
             if not r.active:
                 continue
@@ -807,11 +809,15 @@ class SheetsBackend(BackendService):
             idx = self._find_row_index("recurring_rules", r.id)
             if idx is not None:
                 rows = self._read_all("recurring_rules")
-                rows[idx]["last_generated"] = r.next_date
-                rows[idx]["next_date"] = self._advance_date(r.next_date, r.frequency)
-                self._write_row("recurring_rules", idx + 2,
-                                self._row_to_dict("recurring_rules", rows[idx]))
+                row_data = self._row_to_dict("recurring_rules", rows[idx])
+                row_data["last_generated"] = r.next_date
+                row_data["next_date"] = self._advance_date(r.next_date, r.frequency)
+                rules_to_update.append((idx, row_data))
             generated += 1
+
+        # Batch-write all rule updates in reverse order to avoid index shifts
+        for idx, row_data in sorted(rules_to_update, key=lambda x: x[0], reverse=True):
+            self._write_row("recurring_rules", idx + 2, row_data)
 
         rules = self.get_recurring_rules(currency)
         return RecurringRunResult(generated=generated, rules=rules)
@@ -894,18 +900,15 @@ class SheetsBackend(BackendService):
         if idx is None:
             raise KeyError("Transfer not found")
 
-        # Get transfer data before deleting it
         rows = self._read_all("transfers")
         transfer_row = rows[idx]
         from_account = transfer_row.get("from_account_id", "")
         to_account = transfer_row.get("to_account_id", "")
 
-        self._delete_row("transfers", idx)
-
-        # Remove only the 2 transactions belonging to this transfer
-        txn_ids_to_delete = set()
-        for txn_row in self._read_all("transactions"):
-            tid = str(txn_row.get("id", ""))
+        # Find transaction indices in one pass, delete in reverse order
+        txn_rows = self._read_all("transactions")
+        txn_indices: list[int] = []
+        for i, txn_row in enumerate(txn_rows):
             pair_id = str(txn_row.get("transfer_pair_id", ""))
             txn_account = txn_row.get("account_id", "")
             txn_type = txn_row.get("type", "")
@@ -913,10 +916,8 @@ class SheetsBackend(BackendService):
             if pair_id and cat == "Transfer":
                 if (txn_account == from_account and txn_type == "expense") or \
                    (txn_account == to_account and txn_type == "income"):
-                    txn_ids_to_delete.add(tid)
-                    txn_ids_to_delete.add(pair_id)
+                    txn_indices.append(i)
 
-        for txn_id in txn_ids_to_delete:
-            txn_idx = self._find_row_index("transactions", txn_id)
-            if txn_idx is not None:
-                self._delete_row("transactions", txn_idx)
+        self._delete_row("transfers", idx)
+        for txn_idx in sorted(txn_indices, reverse=True):
+            self._delete_row("transactions", txn_idx)
