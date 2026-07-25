@@ -223,7 +223,7 @@ class SheetsBackend(BackendService):
 
     def _delete_row(self, tab_name: str, row_num: int):
         sheet = self._get_sheet(tab_name)
-        sheet.delete_rows(row_num + 1)  # gspread is 1-indexed, +1 for header
+        sheet.delete_rows(row_num + 2)  # gspread is 1-indexed, +1 for header
         if tab_name in self._sheets_cache:
             del self._sheets_cache[tab_name]
 
