@@ -41,7 +41,7 @@ const groupedCategories = computed(() => {
     if (!groups[group]) groups[group] = []
     groups[group].push(c)
   }
-  const order = ['Fixed', 'Essential', 'Lifestyle', 'School', 'Misc', 'Sinking']
+  const order = ['Income', 'Fixed', 'Essential', 'Lifestyle', 'School', 'Misc', 'Sinking']
   const sorted = {}
   for (const g of order) {
     if (groups[g]) sorted[g] = groups[g]
