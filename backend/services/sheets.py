@@ -1,6 +1,7 @@
 import uuid
 import json
 import os
+import time
 import gspread
 from datetime import date, datetime
 from google.oauth2.service_account import Credentials
@@ -94,9 +95,13 @@ def _parse_datetime(val):
 
 
 class SheetsBackend(BackendService):
+    CACHE_TTL = 10  # seconds — fast enough to feel fresh, short enough to limit staleness
+
     def __init__(self):
         self._client = None
         self._spreadsheet = None
+        self._sheets_cache: dict[str, list[dict]] = {}
+        self._cache_times: dict[str, float] = {}
 
     def _seed_categories_if_empty(self):
         rows = self._read_all("categories")
@@ -166,9 +171,43 @@ class SheetsBackend(BackendService):
                 sheet.update("A1", [headers])
             return sheet
 
+    def _warm_cache(self, tab_names: list[str]):
+        now = time.time()
+        to_fetch = [t for t in tab_names if t not in self._sheets_cache or (now - self._cache_times.get(t, 0)) >= self.CACHE_TTL]
+        if not to_fetch:
+            return
+        try:
+            spreadsheet = self._get_spreadsheet()
+            ranges = [f"'{t}'" for t in to_fetch]
+            resp = spreadsheet.values_batch_get(ranges)
+            for tab_name, item in zip(to_fetch, resp.get("valueRanges", [])):
+                values = item.get("values", [])
+                if not values:
+                    continue
+                headers = [str(h).strip() for h in values[0]]
+                rows = []
+                for row in values[1:]:
+                    if all(v == "" for v in row):
+                        continue
+                    rows.append({h: (row[i] if i < len(row) else "") for i, h in enumerate(headers)})
+                if rows:
+                    self._sheets_cache[tab_name] = rows
+                    self._cache_times[tab_name] = now
+        except Exception:
+            pass
+
     def _read_all(self, tab_name: str) -> list[dict]:
+        now = time.time()
+        if tab_name in self._sheets_cache:
+            if (now - self._cache_times.get(tab_name, 0)) < self.CACHE_TTL:
+                return self._sheets_cache[tab_name]
+            del self._sheets_cache[tab_name]
+            self._cache_times.pop(tab_name, None)
         sheet = self._get_sheet(tab_name)
-        return sheet.get_all_records()
+        rows = sheet.get_all_records()
+        self._sheets_cache[tab_name] = rows
+        self._cache_times[tab_name] = now
+        return rows
 
     def _find_row_index(self, tab_name: str, record_id: str) -> int | None:
         rows = self._read_all(tab_name)
@@ -177,21 +216,28 @@ class SheetsBackend(BackendService):
                 return i
         return None
 
+    def _invalidate(self, tab_name: str):
+        self._sheets_cache.pop(tab_name, None)
+        self._cache_times.pop(tab_name, None)
+
     def _write_row(self, tab_name: str, row_num: int, data: dict):
         sheet = self._get_sheet(tab_name)
         headers = SHEET_TABS.get(tab_name, [])
         values = [str(data.get(h, "")) for h in headers]
         sheet.update(f"A{row_num}", [values])
+        self._invalidate(tab_name)
 
     def _append_row(self, tab_name: str, data: dict):
         sheet = self._get_sheet(tab_name)
         headers = SHEET_TABS.get(tab_name, [])
         values = [str(data.get(h, "")) for h in headers]
         sheet.append_row(values, value_input_option="USER_ENTERED")
+        self._invalidate(tab_name)
 
     def _delete_row(self, tab_name: str, row_num: int):
         sheet = self._get_sheet(tab_name)
         sheet.delete_rows(row_num + 2)  # gspread is 1-indexed, +1 for header
+        self._invalidate(tab_name)
 
     def _row_to_dict(self, tab_name: str, row: dict) -> dict:
         headers = SHEET_TABS.get(tab_name, [])
@@ -306,6 +352,12 @@ class SheetsBackend(BackendService):
     def get_transactions(self, account_id=None, type=None, group=None,
                          category=None, start_date=None, end_date=None,
                          currency=None) -> list[Transaction]:
+        tabs = ["transactions"]
+        if currency:
+            tabs.append("accounts")
+        if group:
+            tabs.append("categories")
+        self._warm_cache(tabs)
         result = [self._row_to_transaction(r) for r in self._read_all("transactions")]
         if currency:
             acc_ids = {a.id for a in self.get_accounts() if a.currency == currency}
@@ -425,6 +477,7 @@ class SheetsBackend(BackendService):
                 batch_data.append({"range": f"A{i + 2}", "values": [values]})
         if batch_data:
             sheet.batch_update(batch_data, value_input_option="USER_ENTERED")
+            self._invalidate("categories")
         return [self._row_to_category(r) for r in rows]
 
     # ===================== BUDGETS =====================
@@ -467,6 +520,7 @@ class SheetsBackend(BackendService):
         return b
 
     def get_budget_summary(self, month: str, currency: str | None = None) -> BudgetSummary:
+        self._warm_cache(["accounts", "categories", "transactions"])
         year, mon = int(month.split("-")[0]), int(month.split("-")[1])
         start = date(year, mon, 1)
         if mon == 12:
@@ -568,6 +622,7 @@ class SheetsBackend(BackendService):
     # ===================== BALANCES / SUMMARY =====================
 
     def get_balances(self, currency: str | None = None) -> list[Balance]:
+        self._warm_cache(["accounts", "transactions"])
         accounts = self.get_accounts()
         transactions = self.get_transactions()
 
@@ -594,6 +649,7 @@ class SheetsBackend(BackendService):
         return result
 
     def get_annual_summary(self, year: int, currency: str | None = None) -> AnnualSummary:
+        self._warm_cache(["accounts", "transactions"])
         all_txns = [t for t in self.get_transactions() if t.date.year == year]
         if currency:
             currency_account_ids = {a.id for a in self.get_accounts() if a.currency == currency}
@@ -688,6 +744,7 @@ class SheetsBackend(BackendService):
         return RatesResponse(base="USD", rates={"USD": 1.0, "PHP": 56.0, "EUR": 0.92, "GBP": 0.79, "JPY": 149.5})
 
     def get_monthly_category_breakdown(self, year: int, currency: str | None = None) -> list[MonthlyCategoryRow]:
+        self._warm_cache(["accounts", "transactions", "categories"])
         all_txns = [t for t in self.get_transactions() if t.date.year == year and t.type == "expense"]
         if currency:
             currency_account_ids = {a.id for a in self.get_accounts() if a.currency == currency}
