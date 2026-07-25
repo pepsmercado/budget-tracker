@@ -147,12 +147,12 @@ async function fetchCurrentMonthSummary() {
   const m = String(now.getMonth() + 1).padStart(2, '0')
   const monthKey = `${y}-${m}`
 
-  const [budgetRes, txnsRes] = await Promise.all([
-    api.get(`/budgets/${monthKey}`).catch(() => null),
+  const [summaryRes, txnsRes] = await Promise.all([
+    api.get(`/budgets/${monthKey}/summary`, { params: { currency: currencyParam.value } }).catch(() => null),
     api.get(`/transactions`, { params: { currency: currencyParam.value, start_date: `${y}-${m}-01`, end_date: `${y}-${m}-${new Date(y, parseInt(m), 0).getDate()}` } })
   ])
 
-  if (budgetRes?.data) currentMonthBudget.value = budgetRes.data
+  if (summaryRes?.data) currentMonthBudget.value = summaryRes.data
 
   const txns = txnsRes.data || []
   currentMonthIncome.value = txns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
