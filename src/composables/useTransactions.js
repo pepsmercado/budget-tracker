@@ -4,8 +4,10 @@ import api from '../api'
 export function useTransactions() {
   const transactions = ref([])
   const loading = ref(false)
+  let lastFilters = {}
 
   async function fetchTransactions(filters = {}) {
+    lastFilters = filters
     loading.value = true
     try {
       const params = {}
@@ -25,20 +27,19 @@ export function useTransactions() {
 
   async function createTransaction(payload) {
     const { data } = await api.post('/transactions', payload)
-    transactions.value.unshift(data)
+    await fetchTransactions(lastFilters)
     return data
   }
 
   async function updateTransaction(id, payload) {
     const { data } = await api.put(`/transactions/${id}`, payload)
-    const idx = transactions.value.findIndex(t => t.id === id)
-    if (idx !== -1) transactions.value[idx] = data
+    await fetchTransactions(lastFilters)
     return data
   }
 
   async function deleteTransaction(id) {
     await api.delete(`/transactions/${id}`)
-    transactions.value = transactions.value.filter(t => t.id !== id)
+    await fetchTransactions(lastFilters)
   }
 
   return { transactions, loading, fetchTransactions, createTransaction, updateTransaction, deleteTransaction }

@@ -5,8 +5,10 @@ export function useRecurring() {
   const rules = ref([])
   const loading = ref(false)
   const runResult = ref(null)
+  let lastCurrency = null
 
   async function fetchRules(currency) {
+    lastCurrency = currency
     loading.value = true
     try {
       const params = {}
@@ -20,26 +22,24 @@ export function useRecurring() {
 
   async function createRule(payload) {
     const { data } = await api.post('/recurring', payload)
-    rules.value.push(data)
+    await fetchRules(lastCurrency)
     return data
   }
 
   async function updateRule(ruleId, payload) {
     const { data } = await api.put(`/recurring/${ruleId}`, payload)
-    const idx = rules.value.findIndex(r => r.id === ruleId)
-    if (idx >= 0) rules.value[idx] = data
+    await fetchRules(lastCurrency)
     return data
   }
 
   async function deleteRule(ruleId) {
     await api.delete(`/recurring/${ruleId}`)
-    rules.value = rules.value.filter(r => r.id !== ruleId)
+    await fetchRules(lastCurrency)
   }
 
   async function toggleRule(ruleId, active) {
     const { data } = await api.put(`/recurring/${ruleId}/toggle`, { active })
-    const idx = rules.value.findIndex(r => r.id === ruleId)
-    if (idx >= 0) rules.value[idx] = data
+    await fetchRules(lastCurrency)
     return data
   }
 

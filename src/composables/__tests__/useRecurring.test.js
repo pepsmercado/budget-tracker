@@ -34,34 +34,39 @@ describe('useRecurring', () => {
     expect(api.get).toHaveBeenCalledWith('/recurring', { params: {} })
   })
 
-  it('createRule adds to list', async () => {
+  it('createRule re-fetches list', async () => {
     const newRule = { id: '3', name: 'Internet' }
     api.post.mockResolvedValue({ data: newRule })
+    api.get.mockResolvedValue({ data: [newRule] })
     const result = await composable.createRule({ name: 'Internet' })
     expect(result).toEqual(newRule)
+    expect(api.get).toHaveBeenCalled()
     expect(composable.rules.value).toContainEqual(newRule)
   })
 
-  it('updateRule updates in list', async () => {
-    composable.rules.value = [{ id: '1', name: 'Old' }]
+  it('updateRule re-fetches list', async () => {
     const updated = { id: '1', name: 'New' }
     api.put.mockResolvedValue({ data: updated })
+    api.get.mockResolvedValue({ data: [updated] })
     await composable.updateRule('1', { name: 'New' })
+    expect(api.get).toHaveBeenCalled()
     expect(composable.rules.value[0].name).toBe('New')
   })
 
-  it('deleteRule removes from list', async () => {
-    composable.rules.value = [{ id: '1' }, { id: '2' }]
+  it('deleteRule re-fetches list', async () => {
     api.delete.mockResolvedValue({})
+    api.get.mockResolvedValue({ data: [{ id: '2' }] })
     await composable.deleteRule('1')
+    expect(api.get).toHaveBeenCalled()
     expect(composable.rules.value.length).toBe(1)
   })
 
-  it('toggleRule updates active state', async () => {
-    composable.rules.value = [{ id: '1', active: true }]
+  it('toggleRule re-fetches list', async () => {
     const toggled = { id: '1', active: false }
     api.put.mockResolvedValue({ data: toggled })
+    api.get.mockResolvedValue({ data: [toggled] })
     await composable.toggleRule('1', false)
+    expect(api.get).toHaveBeenCalled()
     expect(composable.rules.value[0].active).toBe(false)
   })
 

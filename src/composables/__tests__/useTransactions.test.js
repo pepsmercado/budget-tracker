@@ -41,28 +41,30 @@ describe('useTransactions', () => {
     expect(api.get).toHaveBeenCalledWith('/transactions', { params: {} })
   })
 
-  it('createTransaction prepends to list', async () => {
-    composable.transactions.value = [{ id: '1' }]
+  it('createTransaction re-fetches list', async () => {
     const newTxn = { id: '2', amount: 100 }
     api.post.mockResolvedValue({ data: newTxn })
+    api.get.mockResolvedValue({ data: [newTxn] })
     const result = await composable.createTransaction(newTxn)
     expect(result).toEqual(newTxn)
-    expect(composable.transactions.value[0]).toEqual(newTxn)
-    expect(composable.transactions.value.length).toBe(2)
+    expect(api.get).toHaveBeenCalled()
+    expect(composable.transactions.value).toContainEqual(newTxn)
   })
 
-  it('updateTransaction updates in list', async () => {
-    composable.transactions.value = [{ id: '1', amount: 500 }]
+  it('updateTransaction re-fetches list', async () => {
     const updated = { id: '1', amount: 999 }
     api.put.mockResolvedValue({ data: updated })
+    api.get.mockResolvedValue({ data: [updated] })
     await composable.updateTransaction('1', updated)
+    expect(api.get).toHaveBeenCalled()
     expect(composable.transactions.value[0].amount).toBe(999)
   })
 
-  it('deleteTransaction removes from list', async () => {
-    composable.transactions.value = [{ id: '1' }, { id: '2' }]
+  it('deleteTransaction re-fetches list', async () => {
     api.delete.mockResolvedValue({})
+    api.get.mockResolvedValue({ data: [{ id: '2' }] })
     await composable.deleteTransaction('1')
+    expect(api.get).toHaveBeenCalled()
     expect(composable.transactions.value.length).toBe(1)
     expect(composable.transactions.value[0].id).toBe('2')
   })

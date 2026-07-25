@@ -170,21 +170,24 @@ class SheetsBackend(BackendService):
         to_fetch = [t for t in tab_names if t not in self._sheets_cache]
         if not to_fetch:
             return
-        spreadsheet = self._get_spreadsheet()
-        ranges = [f"'{t}'" for t in to_fetch]
-        resp = spreadsheet.values_batch_get(ranges)
-        for tab_name, item in zip(to_fetch, resp.get("valueRanges", [])):
-            values = item.get("values", [])
-            if not values:
-                self._sheets_cache[tab_name] = []
-                continue
-            headers = [str(h).strip() for h in values[0]]
-            rows = []
-            for row in values[1:]:
-                if all(v == "" for v in row):
+        try:
+            spreadsheet = self._get_spreadsheet()
+            ranges = [f"'{t}'" for t in to_fetch]
+            resp = spreadsheet.values_batch_get(ranges)
+            for tab_name, item in zip(to_fetch, resp.get("valueRanges", [])):
+                values = item.get("values", [])
+                if not values:
                     continue
-                rows.append({h: (row[i] if i < len(row) else "") for i, h in enumerate(headers)})
-            self._sheets_cache[tab_name] = rows
+                headers = [str(h).strip() for h in values[0]]
+                rows = []
+                for row in values[1:]:
+                    if all(v == "" for v in row):
+                        continue
+                    rows.append({h: (row[i] if i < len(row) else "") for i, h in enumerate(headers)})
+                if rows:
+                    self._sheets_cache[tab_name] = rows
+        except Exception:
+            pass
 
     def _read_all(self, tab_name: str) -> list[dict]:
         if tab_name in self._sheets_cache:
