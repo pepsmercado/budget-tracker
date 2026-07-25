@@ -1,6 +1,7 @@
 import uuid
 import json
 import os
+import time
 import gspread
 from datetime import date, datetime
 from google.oauth2.service_account import Credentials
@@ -94,10 +95,13 @@ def _parse_datetime(val):
 
 
 class SheetsBackend(BackendService):
+    CACHE_TTL = 30  # seconds before cache expires (cross-container safety)
+
     def __init__(self):
         self._client = None
         self._spreadsheet = None
         self._sheets_cache: dict[str, list[dict]] = {}
+        self._cache_times: dict[str, float] = {}
 
     def _seed_categories_if_empty(self):
         rows = self._read_all("categories")
@@ -168,7 +172,8 @@ class SheetsBackend(BackendService):
             return sheet
 
     def _warm_cache(self, tab_names: list[str]):
-        to_fetch = [t for t in tab_names if t not in self._sheets_cache]
+        now = time.time()
+        to_fetch = [t for t in tab_names if t not in self._sheets_cache or (now - self._cache_times.get(t, 0)) >= self.CACHE_TTL]
         if not to_fetch:
             return
         try:
@@ -187,15 +192,22 @@ class SheetsBackend(BackendService):
                     rows.append({h: (row[i] if i < len(row) else "") for i, h in enumerate(headers)})
                 if rows:
                     self._sheets_cache[tab_name] = rows
+                    self._cache_times[tab_name] = time.time()
         except Exception:
             pass
 
     def _read_all(self, tab_name: str) -> list[dict]:
+        now = time.time()
         if tab_name in self._sheets_cache:
-            return self._sheets_cache[tab_name]
+            cached_at = self._cache_times.get(tab_name, 0)
+            if now - cached_at < self.CACHE_TTL:
+                return self._sheets_cache[tab_name]
+            del self._sheets_cache[tab_name]
+            self._cache_times.pop(tab_name, None)
         sheet = self._get_sheet(tab_name)
         rows = sheet.get_all_records()
         self._sheets_cache[tab_name] = rows
+        self._cache_times[tab_name] = now
         return rows
 
     def _find_row_index(self, tab_name: str, record_id: str) -> int | None:
@@ -210,22 +222,22 @@ class SheetsBackend(BackendService):
         headers = SHEET_TABS.get(tab_name, [])
         values = [str(data.get(h, "")) for h in headers]
         sheet.update(f"A{row_num}", [values])
-        if tab_name in self._sheets_cache:
-            del self._sheets_cache[tab_name]
+        self._sheets_cache.pop(tab_name, None)
+        self._cache_times.pop(tab_name, None)
 
     def _append_row(self, tab_name: str, data: dict):
         sheet = self._get_sheet(tab_name)
         headers = SHEET_TABS.get(tab_name, [])
         values = [str(data.get(h, "")) for h in headers]
         sheet.append_row(values, value_input_option="USER_ENTERED")
-        if tab_name in self._sheets_cache:
-            del self._sheets_cache[tab_name]
+        self._sheets_cache.pop(tab_name, None)
+        self._cache_times.pop(tab_name, None)
 
     def _delete_row(self, tab_name: str, row_num: int):
         sheet = self._get_sheet(tab_name)
         sheet.delete_rows(row_num + 2)  # gspread is 1-indexed, +1 for header
-        if tab_name in self._sheets_cache:
-            del self._sheets_cache[tab_name]
+        self._sheets_cache.pop(tab_name, None)
+        self._cache_times.pop(tab_name, None)
 
     def _row_to_dict(self, tab_name: str, row: dict) -> dict:
         headers = SHEET_TABS.get(tab_name, [])
@@ -465,8 +477,8 @@ class SheetsBackend(BackendService):
                 batch_data.append({"range": f"A{i + 2}", "values": [values]})
         if batch_data:
             sheet.batch_update(batch_data, value_input_option="USER_ENTERED")
-            if "categories" in self._sheets_cache:
-                del self._sheets_cache["categories"]
+            self._sheets_cache.pop("categories", None)
+            self._cache_times.pop("categories", None)
         return [self._row_to_category(r) for r in rows]
 
     # ===================== BUDGETS =====================
