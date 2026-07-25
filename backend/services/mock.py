@@ -336,7 +336,7 @@ class MockBackend(BackendService):
         self._save()
         return c
 
-    def get_budget(self, month: str) -> Budget | None:
+    def get_budget(self, month: str, currency: str | None = None) -> Budget | None:
         for b in self.budgets.values():
             if b.month == month:
                 return b

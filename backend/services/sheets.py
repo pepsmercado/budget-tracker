@@ -479,11 +479,9 @@ class SheetsBackend(BackendService):
             currency=str(row.get("currency", "PHP")),
         )
 
-    def get_budget(self, month: str, currency: str | None = None) -> Budget | None:
+    def get_budget(self, month: str) -> Budget | None:
         for row in self._read_all("budgets"):
             if str(row.get("month", "")).strip() == month:
-                if currency and str(row.get("currency", "")).strip() != currency:
-                    continue
                 return self._row_to_budget(row)
         return None
 

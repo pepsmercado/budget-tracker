@@ -17,6 +17,7 @@ def backend():
     b.budgets = {}
     b.recurring_rules = {}
     b.transfers = {}
+    b.monthly_budgets = {}
     b._seed()
     with patch.object(b, "_save"):
         yield b

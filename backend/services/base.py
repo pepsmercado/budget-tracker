@@ -67,7 +67,7 @@ class BackendService(ABC):
         pass
 
     @abstractmethod
-    def get_budget(self, month: str) -> Budget | None:
+    def get_budget(self, month: str, currency: str | None = None) -> Budget | None:
         pass
 
     @abstractmethod
