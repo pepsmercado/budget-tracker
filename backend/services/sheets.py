@@ -166,6 +166,26 @@ class SheetsBackend(BackendService):
                 sheet.update("A1", [headers])
             return sheet
 
+    def _warm_cache(self, tab_names: list[str]):
+        to_fetch = [t for t in tab_names if t not in self._sheets_cache]
+        if not to_fetch:
+            return
+        spreadsheet = self._get_spreadsheet()
+        ranges = [f"'{t}'" for t in to_fetch]
+        resp = spreadsheet.values_batch_get(ranges)
+        for tab_name, item in zip(to_fetch, resp.get("valueRanges", [])):
+            values = item.get("values", [])
+            if not values:
+                self._sheets_cache[tab_name] = []
+                continue
+            headers = [str(h).strip() for h in values[0]]
+            rows = []
+            for row in values[1:]:
+                if all(v == "" for v in row):
+                    continue
+                rows.append({h: (row[i] if i < len(row) else "") for i, h in enumerate(headers)})
+            self._sheets_cache[tab_name] = rows
+
     def _read_all(self, tab_name: str) -> list[dict]:
         if tab_name in self._sheets_cache:
             return self._sheets_cache[tab_name]
@@ -316,6 +336,12 @@ class SheetsBackend(BackendService):
     def get_transactions(self, account_id=None, type=None, group=None,
                          category=None, start_date=None, end_date=None,
                          currency=None) -> list[Transaction]:
+        tabs = ["transactions"]
+        if currency:
+            tabs.append("accounts")
+        if group:
+            tabs.append("categories")
+        self._warm_cache(tabs)
         result = [self._row_to_transaction(r) for r in self._read_all("transactions")]
         if currency:
             acc_ids = {a.id for a in self.get_accounts() if a.currency == currency}
@@ -462,6 +488,7 @@ class SheetsBackend(BackendService):
         return b
 
     def get_budget_summary(self, month: str, currency: str | None = None) -> BudgetSummary:
+        self._warm_cache(["accounts", "categories", "transactions"])
         year, mon = int(month.split("-")[0]), int(month.split("-")[1])
         start = date(year, mon, 1)
         if mon == 12:
@@ -557,6 +584,7 @@ class SheetsBackend(BackendService):
     # ===================== BALANCES / SUMMARY =====================
 
     def get_balances(self, currency: str | None = None) -> list[Balance]:
+        self._warm_cache(["accounts", "transactions"])
         accounts = self.get_accounts()
         transactions = self.get_transactions()
 
@@ -583,6 +611,7 @@ class SheetsBackend(BackendService):
         return result
 
     def get_annual_summary(self, year: int, currency: str | None = None) -> AnnualSummary:
+        self._warm_cache(["accounts", "transactions"])
         all_txns = [t for t in self.get_transactions() if t.date.year == year]
         if currency:
             currency_account_ids = {a.id for a in self.get_accounts() if a.currency == currency}
@@ -677,6 +706,7 @@ class SheetsBackend(BackendService):
         return RatesResponse(base="USD", rates={"USD": 1.0, "PHP": 56.0, "EUR": 0.92, "GBP": 0.79, "JPY": 149.5})
 
     def get_monthly_category_breakdown(self, year: int, currency: str | None = None) -> list[MonthlyCategoryRow]:
+        self._warm_cache(["accounts", "transactions", "categories"])
         all_txns = [t for t in self.get_transactions() if t.date.year == year and t.type == "expense"]
         if currency:
             currency_account_ids = {a.id for a in self.get_accounts() if a.currency == currency}

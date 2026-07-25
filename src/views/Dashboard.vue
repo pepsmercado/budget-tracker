@@ -27,6 +27,7 @@ const selectedYear = ref(currentYear)
 const pieYear = ref(currentYear)
 const pieMonths = ref([])
 
+const loading = ref(true)
 const trendChartRef = ref(null)
 const incomeVisible = ref(true)
 const expensesVisible = ref(true)
@@ -587,6 +588,44 @@ function formatConverted(val) {
       </div>
     </div>
 
+    <template v-if="loading">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div v-for="i in 3" :key="i" class="card-elevated p-4 space-y-2">
+          <Skeleton width="40%" height="0.75rem" />
+          <Skeleton width="30%" height="1.25rem" />
+          <Skeleton width="100%" height="0.5rem" />
+          <Skeleton width="60%" height="0.625rem" />
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card-elevated p-4 space-y-2">
+          <Skeleton width="35%" height="0.875rem" />
+          <Skeleton height="12rem" />
+          <div class="flex justify-center gap-4">
+            <Skeleton width="3rem" height="0.625rem" />
+            <Skeleton width="3rem" height="0.625rem" />
+          </div>
+        </div>
+        <div class="card-elevated p-4 space-y-2">
+          <Skeleton width="40%" height="0.875rem" />
+          <Skeleton height="12rem" />
+        </div>
+      </div>
+      <div class="card-elevated p-4 space-y-3">
+        <Skeleton width="30%" height="0.875rem" />
+        <div class="space-y-2">
+          <Skeleton v-for="i in 4" :key="i" height="2rem" />
+        </div>
+      </div>
+      <div class="card-elevated p-4 space-y-3">
+        <Skeleton width="35%" height="0.875rem" />
+        <div class="space-y-2">
+          <Skeleton v-for="i in 4" :key="i" height="2rem" />
+        </div>
+      </div>
+    </template>
+
+    <template v-else>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="card-elevated p-4">
         <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Budget Status</div>
@@ -917,5 +956,6 @@ function formatConverted(val) {
         </table>
       </div>
     </div>
+    </template>
   </div>
 </template>
