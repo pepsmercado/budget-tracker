@@ -7,9 +7,9 @@ router = APIRouter()
 
 
 @router.get("/budgets/{month}")
-def get_budget(month: str):
-    budget = backend.get_budget(month)
-    return budget if budget else {"month": month, "total_budget": 0, "currency": "USD"}
+def get_budget(month: str, currency: str | None = Query(None)):
+    budget = backend.get_budget(month, currency=currency)
+    return budget if budget else {"month": month, "total_budget": 0, "currency": currency or "USD"}
 
 
 @router.put("/budgets/{month}")

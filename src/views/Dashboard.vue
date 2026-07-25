@@ -148,7 +148,7 @@ async function fetchCurrentMonthSummary() {
   const monthKey = `${y}-${m}`
 
   const [budgetRes, txnsRes] = await Promise.all([
-    api.get(`/budgets/${monthKey}`).catch(() => null),
+    api.get(`/budgets/${monthKey}`, { params: { currency: currencyParam.value } }).catch(() => null),
     api.get(`/transactions`, { params: { currency: currencyParam.value, start_date: `${y}-${m}-01`, end_date: `${y}-${m}-${new Date(y, parseInt(m), 0).getDate()}` } })
   ])
 
