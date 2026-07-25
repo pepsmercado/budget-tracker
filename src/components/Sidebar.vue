@@ -138,7 +138,7 @@ function isActive(linkTo) {
         <router-link
           v-if="!item.children"
           :to="item.to"
-          class="sidebar-link"
+          class="sidebar-link sidebar-link-parent"
           :class="isActive(item.to) ? 'active' : ''"
           :title="collapsed ? item.label : ''"
           @click="closeMobile"
