@@ -31,7 +31,6 @@ const loading = ref(true)
 const trendChartRef = ref(null)
 const incomeVisible = ref(true)
 const expensesVisible = ref(true)
-const budgetSummary = ref(null)
 
 const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
@@ -85,11 +84,10 @@ const months = computed(() => {
   })
 })
 
-async function fetchPieMonths() {
-  const { data } = await api.get(`/summary/${pieYear.value}`, { params: { currency: currencyParam.value } })
+function buildPieMonths(monthlyData) {
   pieMonths.value = [
     { value: 'full-year', label: 'Full Year' },
-    ...data.monthly.map(m => {
+    ...monthlyData.map(m => {
       const [y, mo] = m.month.split('-')
       const date = new Date(y, parseInt(mo) - 1)
       return { value: m.month, label: date.toLocaleString('en-US', { month: 'short' }) }
@@ -98,6 +96,11 @@ async function fetchPieMonths() {
   if (!pieMonths.value.find(m => m.value === selectedMonth.value)) {
     selectedMonth.value = pieMonths.value[pieMonths.value.length - 1].value
   }
+}
+
+async function fetchPieMonths() {
+  const { data } = await api.get(`/summary/${pieYear.value}`, { params: { currency: currencyParam.value } })
+  buildPieMonths(data.monthly)
 }
 
 async function fetchCategories() {
@@ -122,14 +125,12 @@ function groupSortKey(name) {
 }
 
 async function loadDashboard() {
-  await fetchCategories()
-  await Promise.all([fetchSummary(currentYear, currencyParam.value), fetchBalances(currencyParam.value), fetchAccounts(), fetchMatrixData(), fetchPieMonths(), fetchCurrentMonthSummary()])
-  await Promise.all([fetchExpenseAccountMatrix(), fetchIncomeMatrixData(), fetchIncomeAccountMatrix()])
+  await Promise.all([fetchCategories(), fetchSummary(currentYear, currencyParam.value), fetchBalances(currencyParam.value), fetchAccounts(), fetchMatrixData(), fetchCurrentMonthSummary()])
+  buildPieMonths(summary.value.monthly)
+  await Promise.all([fetchExpenseAccountMatrix(), fetchIncomeData()])
   if (months.value.length > 0) {
     selectedMonth.value = months.value[months.value.length - 1].value
   }
-  const { data: summary } = await api.get(`/budgets/${currentMonth.value}/summary`, { params: { currency: currencyParam.value } }).catch(() => ({ data: null }))
-  budgetSummary.value = summary
   loading.value = false
 }
 
@@ -300,7 +301,7 @@ const drilledChartData = computed(() => {
 })
 
 watch(selectedYear, async () => {
-  await Promise.all([fetchMatrixData(), fetchExpenseAccountMatrix(), fetchIncomeMatrixData(), fetchIncomeAccountMatrix()])
+  await Promise.all([fetchMatrixData(), fetchExpenseAccountMatrix(), fetchIncomeData()])
 })
 
 const matrixRows = ref([])
@@ -460,7 +461,7 @@ const incomeMatrixMonthlyTotals = ref([])
 const incomeMatrixGrandTotal = ref(0)
 const incomeMatrixAvg = ref(0)
 
-async function fetchIncomeMatrixData() {
+async function fetchIncomeData() {
   const { data } = await api.get(`/transactions`, { params: { currency: currencyParam.value, start_date: `${selectedYear.value}-01-01`, end_date: `${selectedYear.value}-12-31`, type: 'income' } })
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   incomeMatrixMonths.value = monthNames
@@ -496,31 +497,9 @@ async function fetchIncomeMatrixData() {
   incomeMatrixMonthlyTotals.value = monthlyTotals
   incomeMatrixGrandTotal.value = grandTotal
   incomeMatrixAvg.value = Math.round(grandTotal / 12)
-}
-
-const incomeAccountRows = ref([])
-const incomeAccountMonthlyTotals = ref([])
-const incomeAccountGrandTotal = ref(0)
-const incomeAccountCollapsed = ref(new Set())
-
-function toggleIncomeAccountCollapse(typeName) {
-  if (incomeAccountCollapsed.value.has(typeName)) {
-    incomeAccountCollapsed.value.delete(typeName)
-  } else {
-    incomeAccountCollapsed.value.add(typeName)
-  }
-  incomeAccountCollapsed.value = new Set(incomeAccountCollapsed.value)
-}
-
-function isIncomeAccountCollapsed(typeName) {
-  return incomeAccountCollapsed.value.has(typeName)
-}
-
-async function fetchIncomeAccountMatrix() {
-  const { data: txnsData } = await api.get(`/transactions`, { params: { currency: currencyParam.value, start_date: `${selectedYear.value}-01-01`, end_date: `${selectedYear.value}-12-31`, type: 'income' } })
 
   const grouped = {}
-  for (const t of txnsData) {
+  for (const t of data) {
     const acc = accounts.value.find(a => a.id === t.account_id)
     const accType = acc ? acc.type : 'other'
     if (accType === 'checking') continue
@@ -538,13 +517,13 @@ async function fetchIncomeAccountMatrix() {
     return (ai >= 0 ? ai : 99) - (bi >= 0 ? bi : 99)
   })
 
-  const rows = []
-  const monthlyTotals = new Array(12).fill(0)
-  let grandTotal = 0
+  const acctRows = []
+  const acctMonthlyTotals = new Array(12).fill(0)
+  let acctGrandTotal = 0
 
   for (const type of sortedTypes) {
     const accs = grouped[type]
-    rows.push({ type: 'group', name: type })
+    acctRows.push({ type: 'group', name: type })
     const typeTotals = new Array(12).fill(0)
     const sortedAccs = Object.entries(accs).sort((a, b) => b[1].reduce((s, v) => s + v, 0) - a[1].reduce((s, v) => s + v, 0))
     for (const [accName, accData] of sortedAccs) {
@@ -552,21 +531,21 @@ async function fetchIncomeAccountMatrix() {
       let accTotal = 0
       for (let i = 0; i < 12; i++) {
         typeTotals[i] += rowData[i]
-        monthlyTotals[i] += rowData[i]
+        acctMonthlyTotals[i] += rowData[i]
         accTotal += rowData[i]
       }
-      rows.push({ type: 'account', name: accName, data: rowData, group: type })
-      grandTotal += accTotal
+      acctRows.push({ type: 'account', name: accName, data: rowData, group: type })
+      acctGrandTotal += accTotal
     }
-    rows.push({ type: 'groupTotal', name: type, data: typeTotals })
+    acctRows.push({ type: 'groupTotal', name: type, data: typeTotals })
   }
 
-  incomeAccountRows.value = rows
-  incomeAccountMonthlyTotals.value = monthlyTotals
-  incomeAccountGrandTotal.value = grandTotal
+  incomeAccountRows.value = acctRows
+  incomeAccountMonthlyTotals.value = acctMonthlyTotals
+  incomeAccountGrandTotal.value = acctGrandTotal
 
   const allTypes = new Set()
-  for (const row of rows) {
+  for (const row of acctRows) {
     if (row.type === 'group') allTypes.add(row.name)
   }
   if (incomeAccountCollapsed.value.size === 0) {
