@@ -85,6 +85,15 @@ class CategoryBudgetUpdate(BaseModel):
     budget_amount: float = Field(ge=0)
 
 
+class CategoryBudgetBulkItem(BaseModel):
+    name: str
+    budget_amount: float = Field(ge=0)
+
+
+class CategoryBudgetBulkUpdate(BaseModel):
+    updates: list[CategoryBudgetBulkItem]
+
+
 class Budget(BaseModel):
     id: str
     month: str  # "YYYY-MM"

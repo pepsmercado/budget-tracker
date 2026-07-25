@@ -27,6 +27,7 @@ const monthlyOverrides = ref({})
 const showTemplateEditor = ref(false)
 const templateEditValues = ref({})
 const templateEditorLoading = ref(false)
+const templateEditorSaving = ref(false)
 
 const hiddenStorageKey = computed(() => `budgets-hidden-${currencyParam.value}-${selectedMonth.value}`)
 const hiddenCategories = ref(new Set(JSON.parse(localStorage.getItem(hiddenStorageKey.value) || '[]')))
@@ -169,26 +170,23 @@ async function openTemplateEditor() {
 }
 
 async function saveTemplateEditor() {
-  const catMap = {}
-  for (const cat of categories.value) {
-    catMap[cat.name] = cat
+  templateEditorSaving.value = true
+  try {
+    const updates = Object.entries(templateEditValues.value).map(([name, budget]) => ({
+      name,
+      budget_amount: budget,
+    }))
+    await api.put('/categories/bulk-budget', { updates })
+    showTemplateEditor.value = false
+    await fetchBudgetSummary(selectedMonth.value, currencyParam.value)
+    await fetchMonthlyOverrides()
+    toast.success('Template saved')
+  } catch (e) {
+    console.error('Failed to save template:', e)
+    toast.error('Failed to save template: ' + (e.response?.data?.detail || e.message))
+  } finally {
+    templateEditorSaving.value = false
   }
-  for (const [name, budget] of Object.entries(templateEditValues.value)) {
-    const catObj = catMap[name]
-    if (catObj) {
-      try {
-        await api.put(`/categories/${catObj.id}/budget`, {
-          budget_amount: budget,
-        })
-      } catch (e) {
-        console.error('Failed to save template for', name, e)
-        toast.error(`Failed to save ${name}: ${e.response?.data?.detail || e.message}`)
-      }
-    }
-  }
-  showTemplateEditor.value = false
-  await fetchBudgetSummary(selectedMonth.value, currencyParam.value)
-  await fetchMonthlyOverrides()
 }
 
 function cancelEdit() {
@@ -420,7 +418,13 @@ watch(selectedMonth, (val) => {
       </div>
       <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-mushroom-200 dark:border-mushroom-700">
         <button @click="showTemplateEditor = false" class="btn-ghost text-sm">Cancel</button>
-        <button @click="saveTemplateEditor" class="btn-primary text-sm" :disabled="Object.keys(templateEditValues).length === 0">Save Template</button>
+        <button @click="saveTemplateEditor" class="btn-primary text-sm" :disabled="templateEditorSaving || Object.keys(templateEditValues).length === 0">
+          <span v-if="templateEditorSaving" class="inline-flex items-center gap-1.5">
+            <svg class="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            Saving...
+          </span>
+          <span v-else>Save Template</span>
+        </button>
       </div>
     </div>
   </div>

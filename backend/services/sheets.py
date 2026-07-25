@@ -37,6 +37,7 @@ SHEET_TABS = {
                         "created_at"],
     "transfers": ["id", "from_account_id", "to_account_id", "amount",
                   "currency", "fee", "date", "note", "created_at"],
+    "monthly_budgets": ["month", "category", "budget", "currency"],
 }
 
 
@@ -451,6 +452,23 @@ class SheetsBackend(BackendService):
         self._write_row("categories", idx + 2, self._row_to_dict("categories", row))
         return self._row_to_category(row)
 
+    def bulk_update_category_budgets(self, updates: dict[str, float]) -> list[Category]:
+        rows = self._read_all("categories")
+        sheet = self._get_sheet("categories")
+        headers = SHEET_TABS["categories"]
+        batch_data = []
+        for i, row in enumerate(rows):
+            name = str(row.get("name", ""))
+            if name in updates:
+                row["budget_amount"] = str(updates[name])
+                values = [str(row.get(h, "")) for h in headers]
+                batch_data.append({"range": f"A{i + 2}", "values": [values]})
+        if batch_data:
+            sheet.batch_update(batch_data, value_input_option="USER_ENTERED")
+            if "categories" in self._sheets_cache:
+                del self._sheets_cache["categories"]
+        return [self._row_to_category(r) for r in rows]
+
     # ===================== BUDGETS =====================
 
     def _row_to_budget(self, row: dict) -> Budget:
@@ -539,18 +557,39 @@ class SheetsBackend(BackendService):
         )
 
     def _load_monthly_budgets(self) -> dict:
-        import json as _json
-        f = os.path.join(os.path.dirname(__file__), "..", "monthly_budgets.json")
-        if os.path.exists(f):
-            with open(f) as fh:
-                return _json.load(fh)
-        return {}
+        rows = self._read_all("monthly_budgets")
+        result: dict[str, dict] = {}
+        for row in rows:
+            month = str(row.get("month", "")).strip()
+            category = str(row.get("category", "")).strip()
+            if not month or not category:
+                continue
+            if month not in result:
+                result[month] = {}
+            result[month][category] = {
+                "budget": _parse_float(row.get("budget")),
+                "currency": str(row.get("currency", "PHP")),
+            }
+        return result
 
-    def _save_monthly_budgets(self, data: dict):
-        import json as _json
-        f = os.path.join(os.path.dirname(__file__), "..", "monthly_budgets.json")
-        with open(f, "w") as fh:
-            _json.dump(data, fh, default=str)
+    def _save_monthly_budget(self, month: str, category: str, budget: float, currency: str = "PHP"):
+        rows = self._read_all("monthly_budgets")
+        for i, row in enumerate(rows):
+            if str(row.get("month", "")).strip() == month and str(row.get("category", "")).strip() == category:
+                self._write_row("monthly_budgets", i + 2, {"month": month, "category": category, "budget": str(budget), "currency": currency})
+                return
+        self._append_row("monthly_budgets", {"month": month, "category": category, "budget": str(budget), "currency": currency})
+
+    def _delete_monthly_budgets_for_month(self, month: str, currency: str | None = None):
+        rows = self._read_all("monthly_budgets")
+        indices_to_delete = []
+        for i, row in enumerate(rows):
+            if str(row.get("month", "")).strip() == month:
+                if currency and str(row.get("currency", "PHP")) != currency:
+                    continue
+                indices_to_delete.append(i)
+        for idx in sorted(indices_to_delete, reverse=True):
+            self._delete_row("monthly_budgets", idx)
 
     def get_monthly_budgets(self, month: str, currency: str | None = None) -> dict:
         all_mb = self._load_monthly_budgets()
@@ -560,29 +599,14 @@ class SheetsBackend(BackendService):
         return overrides
 
     def set_monthly_budget(self, month: str, category: str, budget: float, currency: str = "PHP"):
-        all_mb = self._load_monthly_budgets()
-        if month not in all_mb:
-            all_mb[month] = {}
-        all_mb[month][category] = {"budget": budget, "currency": currency}
-        self._save_monthly_budgets(all_mb)
+        self._save_monthly_budget(month, category, budget, currency)
 
     def bulk_set_monthly_budget(self, month: str, overrides: list[dict], currency: str = "PHP"):
-        all_mb = self._load_monthly_budgets()
-        if month not in all_mb:
-            all_mb[month] = {}
         for ov in overrides:
-            all_mb[month][ov["category"]] = {"budget": ov["budget"], "currency": currency}
-        self._save_monthly_budgets(all_mb)
+            self._save_monthly_budget(month, ov["category"], ov["budget"], currency)
 
     def clear_monthly_budgets(self, month: str, currency: str | None = None):
-        all_mb = self._load_monthly_budgets()
-        if month not in all_mb:
-            return
-        if currency:
-            all_mb[month] = {k: v for k, v in all_mb[month].items() if v.get("currency") != currency}
-        else:
-            del all_mb[month]
-        self._save_monthly_budgets(all_mb)
+        self._delete_monthly_budgets_for_month(month, currency)
 
     # ===================== BALANCES / SUMMARY =====================
 
