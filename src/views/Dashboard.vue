@@ -125,13 +125,15 @@ function groupSortKey(name) {
 }
 
 async function loadDashboard() {
-  await Promise.all([fetchCategories(), fetchSummary(currentYear, currencyParam.value), fetchBalances(currencyParam.value), fetchAccounts(), fetchMatrixData(), fetchCurrentMonthSummary()])
+  loading.value = true
+  await fetchCurrentMonthSummary()
+  loading.value = false
+  await Promise.all([fetchCategories(), fetchSummary(currentYear, currencyParam.value), fetchBalances(currencyParam.value), fetchAccounts(), fetchMatrixData()])
   buildPieMonths(summary.value.monthly)
   await Promise.all([fetchExpenseAccountMatrix(), fetchIncomeData()])
   if (months.value.length > 0) {
     selectedMonth.value = months.value[months.value.length - 1].value
   }
-  loading.value = false
 }
 
 onMounted(loadDashboard)
@@ -704,7 +706,7 @@ function formatConverted(val) {
       </div>
     </div>
 
-    <div class="card-elevated p-4">
+    <div v-if="incomeMatrixRows.length" class="card-elevated p-4">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-3">
           <h3 class="text-sm font-medium text-mushroom-600 dark:text-mushroom-400">Income Breakdown</h3>
@@ -806,7 +808,7 @@ function formatConverted(val) {
       </div>
     </div>
 
-    <div class="card-elevated p-4">
+    <div v-if="matrixRows.length" class="card-elevated p-4">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-3">
           <h3 class="text-sm font-medium text-mushroom-600 dark:text-mushroom-400">Expense Breakdown</h3>
