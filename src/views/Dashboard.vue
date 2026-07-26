@@ -7,8 +7,11 @@ import { useTransactions } from '../composables/useTransactions'
 import { useTheme } from '../composables/useTheme'
 import api from '../api'
 import Skeleton from '../components/Skeleton.vue'
+import { getWeeklyQuote } from '../data/quotes'
 
 const { isDark } = useTheme()
+
+const weeklyQuote = getWeeklyQuote()
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
 
@@ -643,6 +646,14 @@ function formatConverted(val) {
         <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
         </div>
+      </div>
+    </div>
+
+    <div class="card-elevated px-4 py-3 flex items-start gap-3 border-l-4 border-kangkong-400 dark:border-kangkong-500">
+      <span class="text-lg mt-0.5 shrink-0">💡</span>
+      <div class="text-sm text-mushroom-600 dark:text-mushroom-400 leading-relaxed">
+        <span class="italic">"{{ weeklyQuote.text }}"</span>
+        <span v-if="weeklyQuote.author" class="ml-1 text-mushroom-400 dark:text-mushroom-500 not-italic">— {{ weeklyQuote.author }}</span>
       </div>
     </div>
 
