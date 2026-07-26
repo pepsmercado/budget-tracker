@@ -103,8 +103,8 @@ function isActive(linkTo) {
   >
     <div class="p-4 border-b border-white/10">
       <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-lg bg-kangkong-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-          P
+        <div class="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
+          <img src="/favicon.png" alt="Logo" class="w-full h-full object-cover" />
         </div>
         <h1 v-if="!collapsed" class="font-semibold text-sm whitespace-nowrap">Expense Tracker</h1>
       </div>
