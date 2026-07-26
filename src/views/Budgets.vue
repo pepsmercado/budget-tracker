@@ -15,6 +15,10 @@ const toast = useToast()
 const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
 const viewLabel = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
+const currentMonth = computed(() => {
+  const n = new Date()
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`
+})
 
 const now = new Date()
 const selectedMonth = ref(localStorage.getItem(`budgets-month-${currencyParam.value}`) || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`)
@@ -94,6 +98,11 @@ function nextMonth() {
   const [y, m] = selectedMonth.value.split('-').map(Number)
   const d = new Date(y, m, 1)
   selectedMonth.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function goToCurrentMonth() {
+  const now = new Date()
+  selectedMonth.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
 function startEdit(cat) {
@@ -268,14 +277,28 @@ watch(selectedMonth, (val) => {
         <button @click="nextMonth" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </button>
+        <button v-if="selectedMonth !== currentMonth" @click="goToCurrentMonth" class="ml-2 px-2.5 py-1 text-xs font-medium rounded-lg bg-blueberry-500/10 dark:bg-blueberry-500/15 text-blueberry-600 dark:text-blueberry-400 hover:bg-blueberry-500/20 dark:hover:bg-blueberry-500/25 transition-colors border border-blueberry-200 dark:border-blueberry-500/20">
+          This Month
+        </button>
       </div>
     </div>
 
     <div v-if="loading" class="space-y-6">
+      <div class="card-elevated p-6 space-y-4">
+        <div class="space-y-2">
+          <Skeleton width="100px" height="10px" />
+          <Skeleton width="160px" height="32px" />
+        </div>
+        <Skeleton width="100%" height="8px" rounded="rounded" />
+        <div class="flex justify-between">
+          <Skeleton width="80px" height="10px" />
+          <Skeleton width="80px" height="10px" />
+        </div>
+      </div>
       <div v-for="g in 2" :key="g">
         <Skeleton width="80px" height="10px" class="mb-3" />
-        <div class="space-y-3">
-          <div v-for="c in 2" :key="c" class="card-elevated p-4 border-l-4 border-l-mushroom-200 dark:border-l-mushroom-700">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div v-for="c in 3" :key="c" class="card-elevated p-4 border-l-4 border-l-mushroom-200 dark:border-l-mushroom-700">
             <div class="flex items-center justify-between mb-2">
               <div class="space-y-1.5">
                 <div class="flex items-center gap-2">
@@ -287,6 +310,10 @@ watch(selectedMonth, (val) => {
               <Skeleton width="100px" height="20px" />
             </div>
             <Skeleton width="100%" height="8px" rounded="rounded" />
+            <div class="flex justify-between mt-2">
+              <Skeleton width="60px" height="10px" />
+              <Skeleton width="40px" height="10px" />
+            </div>
           </div>
         </div>
       </div>

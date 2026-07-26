@@ -97,19 +97,19 @@
 }
 
 .dark {
-  --background: #1a1e1e;
-  --foreground: #e6eaea;
-  --card: #232828;
-  --card-foreground: #e6eaea;
-  --primary: #22c558;
-  --primary-foreground: #0a0f0f;
-  --secondary: #2a3030;
-  --secondary-foreground: #d9dede;
-  --muted: #262b2b;
-  --muted-foreground: #919f9d;
-  --border: #394141;
-  --input: #394141;
-  --ring: #22c558;
+  --background: #161822;
+  --foreground: #e4e8f1;
+  --card: #1c2030;
+  --card-foreground: #e4e8f1;
+  --primary: #549eff;
+  --primary-foreground: #0a0f1a;
+  --secondary: #252a3e;
+  --secondary-foreground: #cdd4e0;
+  --muted: #1f2434;
+  --muted-foreground: #8891a5;
+  --border: #2c3348;
+  --input: #2c3348;
+  --ring: #549eff;
 }
 
 body {
@@ -133,13 +133,13 @@ body {
   background-color: #166531;
 }
 .dark .btn-primary:hover {
-  background-color: #17ad49;
+  background-color: #3d8cf7;
 }
 .btn-primary:active {
   background-color: #14532b;
 }
 .dark .btn-primary:active {
-  background-color: #22c558;
+  background-color: #6aabff;
 }
 
 .btn-secondary {
@@ -157,7 +157,7 @@ body {
   background-color: #e8f0e8;
 }
 .dark .btn-secondary:hover {
-  background-color: #343e3e;
+  background-color: #2c3348;
 }
 
 .btn-ghost {
@@ -204,7 +204,7 @@ body {
 .input-field:focus {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px rgba(21, 128, 57, 0.1);
+  box-shadow: 0 0 0 2px rgba(84, 158, 255, 0.1);
 }
 
 .select-field {
@@ -224,7 +224,7 @@ body {
 .select-field:focus {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px rgba(21, 128, 57, 0.1);
+  box-shadow: 0 0 0 2px rgba(84, 158, 255, 0.1);
 }
 
 .label-text {
@@ -256,10 +256,10 @@ body {
   color: var(--primary-foreground);
 }
 .sidebar-link-parent {
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: rgba(84, 158, 255, 0.06);
 }
 .sidebar-link-parent:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(84, 158, 255, 0.10);
 }
 .sidebar-link-parent.active {
   background-color: var(--primary);
@@ -277,8 +277,8 @@ body {
   transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 .dark .quote-banner {
-  background: linear-gradient(135deg, #1e2424, #222026);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: linear-gradient(135deg, #181c2e, #1e1a2a);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .quote-banner:hover {

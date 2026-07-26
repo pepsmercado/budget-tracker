@@ -118,7 +118,7 @@ function isActive(linkTo) {
           :key="c"
           @click="switchCurrency(c)"
           class="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-colors"
-          :class="activeCurrency === c ? 'bg-kangkong-600 text-white' : 'text-white/50 hover:text-white/80'"
+          :class="activeCurrency === c ? 'bg-blueberry-500 text-white' : 'text-white/50 hover:text-white/80'"
         >
           <span>{{ c === 'usd' ? '🇺🇸' : '🇵🇭' }}</span>
           <span>{{ c.toUpperCase() }}</span>
@@ -175,7 +175,7 @@ function isActive(linkTo) {
               :key="child.to"
               :to="child.to"
               class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
-              :class="isActive(child.to) ? 'text-kangkong-400 bg-white/5 font-medium' : 'text-white/60 hover:text-white hover:bg-white/5'"
+              :class="isActive(child.to) ? 'text-blueberry-400 bg-white/5 font-medium' : 'text-white/60 hover:text-white hover:bg-white/5'"
               @click="closeMobile"
             >
               <span v-html="child.icon" class="flex-shrink-0 opacity-60"></span>

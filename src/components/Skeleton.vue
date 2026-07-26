@@ -8,7 +8,7 @@ defineProps({
 
 <template>
   <div
-    class="bg-mushroom-100 dark:bg-mushroom-800 animate-pulse"
+    class="bg-mushroom-100 dark:bg-[#262c40] animate-pulse"
     :class="rounded"
     :style="{ width, height }"
   />

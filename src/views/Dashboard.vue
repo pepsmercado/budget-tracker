@@ -580,6 +580,16 @@ function formatConverted(val) {
     </div>
 
     <template v-if="loading">
+      <div class="quote-banner rounded-xl px-5 py-4 flex items-center gap-4">
+        <div class="shrink-0 w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+          <Skeleton width="1.25rem" height="1.25rem" rounded="rounded-full" />
+        </div>
+        <div class="flex-1 space-y-1.5">
+          <Skeleton width="80%" height="0.875rem" />
+          <Skeleton width="30%" height="0.625rem" />
+        </div>
+        <Skeleton width="1.75rem" height="1.75rem" rounded="rounded-full" />
+      </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div v-for="i in 3" :key="i" class="card-elevated p-4 space-y-2">
           <Skeleton width="40%" height="0.75rem" />
@@ -704,7 +714,7 @@ function formatConverted(val) {
             {{ drilledGroup ? drilledGroup : 'Expense by Group' }}
           </h3>
           <div class="flex items-center gap-2">
-            <button v-if="drilledGroup" @click="drilledGroup = null" class="text-xs text-kangkong-600 hover:text-kangkong-700 font-medium whitespace-nowrap">
+            <button v-if="drilledGroup" @click="drilledGroup = null" class="text-xs text-kangkong-600 dark:text-blueberry-400 hover:text-kangkong-700 dark:hover:text-blueberry-300 font-medium whitespace-nowrap">
               ← Back
             </button>
             <select v-model="selectedMonth" class="select-field text-xs py-1 px-2 min-w-[70px]">

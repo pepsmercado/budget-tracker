@@ -560,8 +560,8 @@ function monthName(ms) {
         <div class="card-elevated p-4">
           <h3 class="text-xs font-medium text-mushroom-500 dark:text-mushroom-400 mb-3">Month Highlights</h3>
           <div class="space-y-4">
-            <div v-if="bestMonth" class="p-3 rounded-lg bg-kangkong-50 dark:bg-kangkong-500/10 border border-kangkong-100 dark:border-kangkong-500/20">
-              <div class="text-[10px] font-medium text-kangkong-600 uppercase tracking-wider mb-1">Best Month</div>
+            <div v-if="bestMonth" class="p-3 rounded-lg bg-kangkong-50 dark:bg-blueberry-500/10 border border-kangkong-100 dark:border-blueberry-500/20">
+              <div class="text-[10px] font-medium text-kangkong-600 dark:text-blueberry-400 uppercase tracking-wider mb-1">Best Month</div>
               <div class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50">{{ monthName(bestMonth.month) }}</div>
               <div class="text-xs text-mushroom-500 dark:text-mushroom-400 mt-0.5">Net: <span class="text-kangkong-600 font-medium">{{ fmt(bestMonth.total_budget - bestMonth.total_spent) }} under budget</span></div>
             </div>

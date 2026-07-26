@@ -295,6 +295,14 @@ async function handleCreate() {
               </div>
               <Skeleton width="100px" height="20px" />
             </div>
+            <div class="mt-3 pt-3 border-t border-mushroom-100 dark:border-mushroom-700/50 space-y-2">
+              <Skeleton width="60px" height="10px" />
+              <Skeleton width="100%" height="8px" rounded="rounded" />
+              <div class="flex justify-between">
+                <Skeleton width="50px" height="10px" />
+                <Skeleton width="40px" height="10px" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
