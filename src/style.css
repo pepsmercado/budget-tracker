@@ -257,16 +257,16 @@ body {
   font-weight: 500;
   font-size: 0.875rem;
   transition: all 0.15s ease;
-  color: var(--muted-foreground);
+  color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
 }
 .sidebar-link:hover {
-  background-color: var(--muted);
-  color: var(--foreground);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 .sidebar-link.active {
   background-color: var(--primary);
-  color: var(--primary-foreground);
+  color: #ffffff;
 }
 .sidebar-link-parent {
   background-color: rgba(91, 163, 255, 0.08);
