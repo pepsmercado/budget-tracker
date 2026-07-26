@@ -339,12 +339,14 @@ class MockBackend(BackendService):
     def get_budget(self, month: str, currency: str | None = None) -> Budget | None:
         for b in self.budgets.values():
             if b.month == month:
+                if currency and b.currency != currency:
+                    continue
                 return b
         return None
 
     def set_budget(self, month: str, data: BudgetSet) -> Budget:
         for b in self.budgets.values():
-            if b.month == month:
+            if b.month == month and b.currency == data.currency:
                 b.total_budget = data.total_budget
                 b.currency = data.currency
                 self._save()
@@ -376,13 +378,26 @@ class MockBackend(BackendService):
                     continue
                 cat_spent[t.category] = cat_spent.get(t.category, 0) + t.amount
 
-        overrides = self.monthly_budgets.get(month, {})
+        all_overrides = self.monthly_budgets.get(month, {})
+        overrides = {}
+        for k, v in all_overrides.items():
+            if v.get("currency", "PHP") == (currency or "PHP"):
+                cat_name = v.get("category", k.split("||")[0] if "||" in k else k)
+                overrides[cat_name] = v
+
+        template_key = f"template-{currency or 'PHP'}"
+        template_all = self.monthly_budgets.get(template_key, {})
+        template_filtered = {}
+        for k, v in template_all.items():
+            if v.get("currency", "PHP") == (currency or "PHP"):
+                cat_name = v.get("category", k.split("||")[0] if "||" in k else k)
+                template_filtered[cat_name] = v
+        merged = {**template_filtered, **overrides}
 
         categories = []
         for c in exp_cats:
-            if c.name in overrides:
-                ov = overrides[c.name]
-                budget_val = ov["budget"]
+            if c.name in merged:
+                budget_val = merged[c.name]["budget"]
             else:
                 budget_val = c.budget_amount
 
@@ -402,21 +417,27 @@ class MockBackend(BackendService):
 
     def get_monthly_budgets(self, month: str, currency: str | None = None) -> dict:
         overrides = self.monthly_budgets.get(month, {})
-        if currency:
-            return {k: v for k, v in overrides.items() if v.get("currency", "PHP") == currency}
-        return overrides
+        result = {}
+        for k, v in overrides.items():
+            if currency and v.get("currency", "PHP") != currency:
+                continue
+            cat_name = v.get("category", k.split("||")[0] if "||" in k else k)
+            result[cat_name] = v
+        return result
 
     def set_monthly_budget(self, month: str, category: str, budget: float, currency: str = "PHP"):
         if month not in self.monthly_budgets:
             self.monthly_budgets[month] = {}
-        self.monthly_budgets[month][category] = {"budget": budget, "currency": currency}
+        key = f"{category}||{currency}"
+        self.monthly_budgets[month][key] = {"budget": budget, "currency": currency, "category": category}
         self._save()
 
     def bulk_set_monthly_budget(self, month: str, overrides: list[dict], currency: str = "PHP"):
         if month not in self.monthly_budgets:
             self.monthly_budgets[month] = {}
         for ov in overrides:
-            self.monthly_budgets[month][ov["category"]] = {"budget": ov["budget"], "currency": currency}
+            key = f"{ov['category']}||{currency}"
+            self.monthly_budgets[month][key] = {"budget": ov["budget"], "currency": currency, "category": ov["category"]}
         self._save()
 
     def clear_monthly_budgets(self, month: str, currency: str | None = None):

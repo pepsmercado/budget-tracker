@@ -156,12 +156,20 @@ async function openTemplateEditor() {
   templateEditValues.value = {}
   templateEditorLoading.value = true
   try {
-    if (!categories.value || categories.value.length === 0) {
-      await loadAll()
-    }
-    const expenseCategories = categories.value?.filter(c => c.type === 'expense') || []
-    for (const cat of expenseCategories) {
-      templateEditValues.value[cat.name] = cat.budget_amount || 0
+    const templateMonth = `template-${currencyParam.value}`
+    const { data } = await api.get(`/monthly-budgets/${templateMonth}`, { params: { currency: currencyParam.value } })
+    if (data && Object.keys(data).length > 0) {
+      for (const [name, ov] of Object.entries(data)) {
+        templateEditValues.value[name] = ov.budget
+      }
+    } else {
+      if (!categories.value || categories.value.length === 0) {
+        await loadAll()
+      }
+      const expenseCategories = categories.value?.filter(c => c.type === 'expense') || []
+      for (const cat of expenseCategories) {
+        templateEditValues.value[cat.name] = cat.budget_amount || 0
+      }
     }
     showTemplateEditor.value = true
   } catch (e) {
@@ -175,13 +183,13 @@ async function openTemplateEditor() {
 async function saveTemplateEditor() {
   templateEditorSaving.value = true
   try {
-    const updates = Object.entries(templateEditValues.value).map(([name, budget]) => ({
-      name,
-      budget_amount: budget,
+    const templateMonth = `template-${currencyParam.value}`
+    const overrides = Object.entries(templateEditValues.value).map(([category, budget]) => ({
+      category,
+      budget,
+      currency: currencyParam.value,
     }))
-    await api.put('/categories/bulk-budget', { updates })
-    const totalBudget = updates.reduce((sum, u) => sum + u.budget_amount, 0)
-    await api.put(`/budgets/${selectedMonth.value}`, { total_budget: totalBudget, currency: currencyParam.value })
+    await api.post(`/monthly-budgets/${templateMonth}/bulk`, { overrides })
     showTemplateEditor.value = false
     await fetchBudgetSummary(selectedMonth.value, currencyParam.value)
     await fetchMonthlyOverrides()

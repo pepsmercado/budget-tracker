@@ -490,9 +490,11 @@ class SheetsBackend(BackendService):
             currency=str(row.get("currency", "PHP")),
         )
 
-    def get_budget(self, month: str) -> Budget | None:
+    def get_budget(self, month: str, currency: str | None = None) -> Budget | None:
         for row in self._read_all("budgets"):
             if str(row.get("month", "")).strip() == month:
+                if currency and str(row.get("currency", "")).strip() != currency:
+                    continue
                 return self._row_to_budget(row)
         return None
 
@@ -500,7 +502,7 @@ class SheetsBackend(BackendService):
         idx = None
         rows = self._read_all("budgets")
         for i, row in enumerate(rows):
-            if str(row.get("month", "")).strip() == month:
+            if str(row.get("month", "")).strip() == month and str(row.get("currency", "")).strip() == data.currency:
                 idx = i
                 break
 
@@ -542,13 +544,18 @@ class SheetsBackend(BackendService):
                     continue
                 cat_spent[t.category] = cat_spent.get(t.category, 0) + t.amount
 
-        overrides = self._load_monthly_budgets().get(month, {})
+        all_overrides = self._load_monthly_budgets().get(month, {})
+        overrides = {k: v for k, v in all_overrides.items() if v.get("currency", "PHP") == (currency or "PHP")}
+
+        template_key = f"template-{currency or 'PHP'}"
+        template_all = self._load_monthly_budgets().get(template_key, {})
+        template_filtered = {k: v for k, v in template_all.items() if v.get("currency", "PHP") == (currency or "PHP")}
+        merged = {**template_filtered, **overrides}
 
         categories = []
         for c in exp_cats:
-            if c.name in overrides:
-                ov = overrides[c.name]
-                budget_val = ov["budget"]
+            if c.name in merged:
+                budget_val = merged[c.name]["budget"]
             else:
                 budget_val = c.budget_amount
 
@@ -586,7 +593,7 @@ class SheetsBackend(BackendService):
     def _save_monthly_budget(self, month: str, category: str, budget: float, currency: str = "PHP"):
         rows = self._read_all("monthly_budgets")
         for i, row in enumerate(rows):
-            if str(row.get("month", "")).strip() == month and str(row.get("category", "")).strip() == category:
+            if str(row.get("month", "")).strip() == month and str(row.get("category", "")).strip() == category and str(row.get("currency", "")).strip() == currency:
                 self._write_row("monthly_budgets", i + 2, {"month": month, "category": category, "budget": str(budget), "currency": currency})
                 return
         self._append_row("monthly_budgets", {"month": month, "category": category, "budget": str(budget), "currency": currency})
