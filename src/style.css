@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=DM+Serif+Display:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -266,11 +266,6 @@ body {
 }
 
 /* Weekly quote banner */
-.quote-text {
-  font-family: 'DM Serif Display', Georgia, serif;
-  letter-spacing: 0.01em;
-}
-
 .quote-banner {
   position: relative;
   overflow: hidden;
