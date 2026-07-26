@@ -81,18 +81,18 @@
 }
 
 :root {
-  --background: #fbfcfa;
-  --foreground: #262b2b;
-  --card: #ffffff;
-  --card-foreground: #262b2b;
+  --background: #f0eeea;
+  --foreground: #2a2825;
+  --card: #f8f7f4;
+  --card-foreground: #2a2825;
   --primary: #158039;
   --primary-foreground: #ffffff;
-  --secondary: #f4f8f4;
-  --secondary-foreground: #244536;
-  --muted: #f5f8f5;
-  --muted-foreground: #5c6b61;
-  --border: #d9dede;
-  --input: #e1e9e2;
+  --secondary: #eae8e3;
+  --secondary-foreground: #3a4a3d;
+  --muted: #eae8e3;
+  --muted-foreground: #5e6b62;
+  --border: #d5d2cb;
+  --input: #d8d5ce;
   --ring: #158039;
 }
 
@@ -167,7 +167,7 @@ body {
   transition: all 0.15s ease;
 }
 .btn-secondary:hover {
-  background-color: #e8f0e8;
+  background-color: #ddd9d2;
 }
 .dark .btn-secondary:hover {
   background-color: #222a36;
