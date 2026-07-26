@@ -153,7 +153,7 @@ function onCollapsedItemClick(item) {
         <div class="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
           <img src="/favicon.png" alt="Logo" class="w-full h-full object-cover" />
         </div>
-        <h1 v-if="!collapsed" class="font-semibold text-sm whitespace-nowrap">Expense Tracker</h1>
+        <h1 v-if="!collapsed" class="font-semibold text-sm whitespace-nowrap">Peps Budget Tracker</h1>
       </div>
     </div>
 
