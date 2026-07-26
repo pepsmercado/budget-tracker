@@ -624,7 +624,7 @@ function formatConverted(val) {
       </div>
       <Transition name="quote-fade" mode="out-in">
         <div :key="quoteKey" class="relative z-10 min-w-0 flex-1">
-          <p class="text-sm font-medium leading-relaxed italic text-mushroom-800 dark:text-white/95">"{{ weeklyQuote.text }}"</p>
+          <p class="text-sm font-medium leading-relaxed text-mushroom-800 dark:text-white/95">"{{ weeklyQuote.text }}"</p>
           <p v-if="weeklyQuote.author" class="text-xs mt-1.5 not-italic tracking-wide uppercase text-mushroom-500 dark:text-white/50" style="font-family: 'Geist', sans-serif; font-size: 0.65rem;">— {{ weeklyQuote.author }}</p>
         </div>
       </Transition>
