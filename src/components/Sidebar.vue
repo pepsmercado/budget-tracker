@@ -98,7 +98,7 @@ function isActive(linkTo) {
 
 <template>
   <aside
-    class="bg-mushroom-950 text-white flex flex-col transition-all duration-200 ease-in-out h-full"
+    class="bg-[#111a30] text-white flex flex-col transition-all duration-200 ease-in-out h-full"
     :class="collapsed ? 'w-14' : 'w-56'"
   >
     <div class="p-4 border-b border-white/10">
