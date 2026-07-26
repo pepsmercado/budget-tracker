@@ -98,7 +98,7 @@ function isActive(linkTo) {
 
 <template>
   <aside
-    class="bg-[#111a30] text-white flex flex-col transition-all duration-200 ease-in-out h-full"
+    class="bg-[#11161e] text-white flex flex-col transition-all duration-200 ease-in-out h-full"
     :class="collapsed ? 'w-14' : 'w-56'"
   >
     <div class="p-4 border-b border-white/10">
@@ -118,7 +118,7 @@ function isActive(linkTo) {
           :key="c"
           @click="switchCurrency(c)"
           class="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-colors"
-          :class="activeCurrency === c ? 'bg-blueberry-500 text-white' : 'text-white/70 hover:text-white'"
+          :class="activeCurrency === c ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white'"
         >
           <span>{{ c === 'usd' ? '🇺🇸' : '🇵🇭' }}</span>
           <span>{{ c.toUpperCase() }}</span>
@@ -175,7 +175,7 @@ function isActive(linkTo) {
               :key="child.to"
               :to="child.to"
               class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
-              :class="isActive(child.to) ? 'text-white font-medium bg-white/10' : 'text-white/80 hover:text-white hover:bg-white/5'"
+              :class="isActive(child.to) ? 'text-white font-medium bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'"
               @click="closeMobile"
             >
               <span v-html="child.icon" class="flex-shrink-0 opacity-60"></span>
