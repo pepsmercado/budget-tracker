@@ -472,6 +472,23 @@ const incomeMatrixMonths = ref([])
 const incomeMatrixMonthlyTotals = ref([])
 const incomeMatrixGrandTotal = ref(0)
 const incomeMatrixAvg = ref(0)
+const incomeAccountRows = ref([])
+const incomeAccountMonthlyTotals = ref([])
+const incomeAccountGrandTotal = ref(0)
+const incomeAccountCollapsed = ref(new Set())
+
+function toggleIncomeAccountCollapse(typeName) {
+  if (incomeAccountCollapsed.value.has(typeName)) {
+    incomeAccountCollapsed.value.delete(typeName)
+  } else {
+    incomeAccountCollapsed.value.add(typeName)
+  }
+  incomeAccountCollapsed.value = new Set(incomeAccountCollapsed.value)
+}
+
+function isIncomeAccountCollapsed(typeName) {
+  return incomeAccountCollapsed.value.has(typeName)
+}
 
 async function fetchIncomeData() {
   const { data } = await api.get(`/transactions`, { params: { currency: currencyParam.value, start_date: `${selectedYear.value}-01-01`, end_date: `${selectedYear.value}-12-31`, type: 'income' } })
