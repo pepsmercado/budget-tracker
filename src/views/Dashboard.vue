@@ -617,6 +617,22 @@ function formatConverted(val) {
     </template>
 
     <template v-else>
+    <div class="quote-banner rounded-xl px-5 py-4 flex items-center gap-4 cursor-pointer select-none" @click="nextQuote">
+      <div class="quote-shimmer"></div>
+      <div class="relative z-10 shrink-0 w-9 h-9 rounded-full bg-black/5 dark:bg-white/10 backdrop-blur-sm flex items-center justify-center text-base">
+        ✨
+      </div>
+      <Transition name="quote-fade" mode="out-in">
+        <div :key="quoteKey" class="relative z-10 min-w-0 flex-1">
+          <p class="quote-text text-sm font-medium leading-relaxed italic text-mushroom-800 dark:text-white/95">"{{ weeklyQuote.text }}"</p>
+          <p v-if="weeklyQuote.author" class="text-xs mt-1.5 not-italic tracking-wide uppercase text-mushroom-500 dark:text-white/50" style="font-family: 'Geist', sans-serif; font-size: 0.65rem;">— {{ weeklyQuote.author }}</p>
+        </div>
+      </Transition>
+      <div class="relative z-10 shrink-0 w-7 h-7 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors" title="Next quote">
+        <svg class="w-3.5 h-3.5 text-mushroom-700 dark:text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="card-elevated p-4">
         <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Budget Status</div>
@@ -653,22 +669,6 @@ function formatConverted(val) {
         <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
         </div>
-      </div>
-    </div>
-
-    <div class="quote-banner rounded-xl px-5 py-4 flex items-center gap-4 cursor-pointer select-none" @click="nextQuote">
-      <div class="quote-shimmer"></div>
-      <div class="relative z-10 shrink-0 w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-base">
-        ✨
-      </div>
-      <Transition name="quote-fade" mode="out-in">
-        <div :key="quoteKey" class="relative z-10 min-w-0 flex-1">
-          <p class="quote-text text-sm font-medium text-white/95 leading-relaxed italic">"{{ weeklyQuote.text }}"</p>
-          <p v-if="weeklyQuote.author" class="text-xs text-white/50 mt-1.5 not-italic tracking-wide uppercase" style="font-family: 'Geist', sans-serif; font-size: 0.65rem;">— {{ weeklyQuote.author }}</p>
-        </div>
-      </Transition>
-      <div class="relative z-10 shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors" title="Next quote">
-        <svg class="w-3.5 h-3.5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
       </div>
     </div>
 
