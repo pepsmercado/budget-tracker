@@ -163,7 +163,7 @@ function formatBal(val, currency) {
           <span class="text-xs text-mushroom-400 dark:text-mushroom-500">
             {{ currentCurrency === 'USD' ? '🇺🇸' : '🇵🇭' }} Net Worth
           </span>
-          <span class="text-sm font-semibold text-kangkong-700 dark:text-blueberry-400">{{ totalNetWorth }}</span>
+          <span class="text-sm font-semibold text-kangkong-700 dark:text-mushroom-100">{{ totalNetWorth }}</span>
         </div>
 
         <div
@@ -182,7 +182,7 @@ function formatBal(val, currency) {
           <div class="border-t border-mushroom-100 dark:border-mushroom-700 pt-2 mt-2">
             <div class="flex items-center justify-between text-xs">
               <span class="text-mushroom-500 dark:text-mushroom-400">Total ({{ currentCurrency }})</span>
-              <span class="font-semibold text-kangkong-700 dark:text-blueberry-400">{{ totalNetWorth }}</span>
+              <span class="font-semibold text-kangkong-700 dark:text-mushroom-100">{{ totalNetWorth }}</span>
             </div>
           </div>
         </div>
