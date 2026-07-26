@@ -658,7 +658,7 @@ function formatConverted(val) {
 
     <div class="quote-banner rounded-xl px-5 py-4 flex items-center gap-4 cursor-pointer select-none" @click="nextQuote">
       <div class="quote-shimmer"></div>
-      <div class="relative z-10 shrink-0 w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-lg">
+      <div class="relative z-10 shrink-0 w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-base">
         ✨
       </div>
       <Transition name="quote-fade" mode="out-in">
@@ -667,7 +667,7 @@ function formatConverted(val) {
           <p v-if="weeklyQuote.author" class="text-xs text-white/60 mt-1 not-italic">— {{ weeklyQuote.author }}</p>
         </div>
       </Transition>
-      <div class="relative z-10 shrink-0 w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-sm flex items-center justify-center transition-colors" title="Next quote">
+      <div class="relative z-10 shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors" title="Next quote">
         <svg class="w-3.5 h-3.5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
       </div>
     </div>
