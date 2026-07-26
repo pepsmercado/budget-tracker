@@ -30,7 +30,7 @@ SHEET_TABS = {
     "transactions": ["id", "date", "account_id", "type", "amount", "currency",
                      "category", "description", "transfer_pair_id",
                      "sub_account_id", "created_at"],
-"categories": ["id", "name", "type", "group", "budget_amount"],
+    "categories": ["id", "name", "type", "group", "budget_amount"],
     "budgets": ["id", "month", "total_budget", "currency"],
     "recurring_rules": ["id", "name", "account_id", "category", "amount",
                         "currency", "frequency", "day_of_month", "start_date",
