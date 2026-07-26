@@ -620,8 +620,36 @@ class SheetsBackend(BackendService):
         self._save_monthly_budget(month, category, budget, currency)
 
     def bulk_set_monthly_budget(self, month: str, overrides: list[dict], currency: str = "PHP"):
-        for ov in overrides:
-            self._save_monthly_budget(month, ov["category"], ov["budget"], currency)
+        rows = self._read_all("monthly_budgets")
+        headers = SHEET_TABS["monthly_budgets"]
+        update_map = {ov["category"]: ov["budget"] for ov in overrides}
+
+        existing_indices = {}
+        for i, row in enumerate(rows):
+            if (str(row.get("month", "")).strip() == month
+                    and str(row.get("currency", "")).strip() == currency):
+                cat = str(row.get("category", "")).strip()
+                if cat in update_map:
+                    existing_indices[cat] = i
+
+        batch_data = []
+        new_rows = []
+        for cat, budget in update_map.items():
+            if cat in existing_indices:
+                idx = existing_indices[cat]
+                row_data = {"month": month, "category": cat, "budget": str(budget), "currency": currency}
+                values = [str(row_data.get(h, "")) for h in headers]
+                batch_data.append({"range": f"A{idx + 2}", "values": [values]})
+            else:
+                new_rows.append({"month": month, "category": cat, "budget": str(budget), "currency": currency})
+
+        sheet = self._get_sheet("monthly_budgets")
+        if batch_data:
+            sheet.batch_update(batch_data, value_input_option="USER_ENTERED")
+        for nr in new_rows:
+            values = [str(nr.get(h, "")) for h in headers]
+            sheet.append_row(values, value_input_option="USER_ENTERED")
+        self._invalidate("monthly_budgets")
 
     def clear_monthly_budgets(self, month: str, currency: str | None = None):
         self._delete_monthly_budgets_for_month(month, currency)
