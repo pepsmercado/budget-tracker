@@ -18,6 +18,7 @@ backend/__pycache__/
 backend/**/__pycache__/
 backend/.pytest_cache/
 backend/venv2/
+backend/google-key.json
 
 # Environment
 .env
