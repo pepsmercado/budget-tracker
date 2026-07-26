@@ -113,6 +113,10 @@ function onGroupEnter(key, event, item) {
   hoveredGroup.value = key
 }
 
+function onFlyoutEnter() {
+  clearTimeout(hoverTimeout)
+}
+
 function onGroupLeave() {
   hoverTimeout = setTimeout(() => {
     hoveredGroup.value = null
@@ -259,7 +263,7 @@ function onCollapsedItemClick(item) {
       v-if="collapsed && hoveredGroup"
       :style="flyoutStyle"
       class="w-50 py-1 bg-[#1a202c] border border-white/10 rounded-lg shadow-xl z-[9999]"
-      @mouseenter="onGroupEnter(hoveredGroup, $event, { children: flyoutItems, label: flyoutLabel })"
+      @mouseenter="onFlyoutEnter()"
       @mouseleave="onGroupLeave()"
       style="margin-left: -2px; padding-left: 2px;"
     >
