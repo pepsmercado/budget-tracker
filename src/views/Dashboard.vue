@@ -7,11 +7,18 @@ import { useTransactions } from '../composables/useTransactions'
 import { useTheme } from '../composables/useTheme'
 import api from '../api'
 import Skeleton from '../components/Skeleton.vue'
-import { getWeeklyQuote } from '../data/quotes'
+import { getWeeklyIndex, getQuoteAt, QUOTE_COUNT } from '../data/quotes'
 
 const { isDark } = useTheme()
 
-const weeklyQuote = getWeeklyQuote()
+const quoteIndex = ref(getWeeklyIndex())
+const quoteKey = ref(0)
+const weeklyQuote = computed(() => getQuoteAt(quoteIndex.value))
+
+function nextQuote() {
+  quoteIndex.value = (quoteIndex.value + 1) % QUOTE_COUNT
+  quoteKey.value++
+}
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
 
@@ -649,11 +656,19 @@ function formatConverted(val) {
       </div>
     </div>
 
-    <div class="card-elevated px-4 py-3 flex items-start gap-3 border-l-4 border-kangkong-400 dark:border-kangkong-500">
-      <span class="text-lg mt-0.5 shrink-0">💡</span>
-      <div class="text-sm text-mushroom-600 dark:text-mushroom-400 leading-relaxed">
-        <span class="italic">"{{ weeklyQuote.text }}"</span>
-        <span v-if="weeklyQuote.author" class="ml-1 text-mushroom-400 dark:text-mushroom-500 not-italic">— {{ weeklyQuote.author }}</span>
+    <div class="quote-banner rounded-xl px-5 py-4 flex items-center gap-4 cursor-pointer select-none" @click="nextQuote">
+      <div class="quote-shimmer"></div>
+      <div class="relative z-10 shrink-0 w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-lg">
+        ✨
+      </div>
+      <Transition name="quote-fade" mode="out-in">
+        <div :key="quoteKey" class="relative z-10 min-w-0 flex-1">
+          <p class="text-sm font-medium text-white/95 leading-relaxed italic">"{{ weeklyQuote.text }}"</p>
+          <p v-if="weeklyQuote.author" class="text-xs text-white/60 mt-1 not-italic">— {{ weeklyQuote.author }}</p>
+        </div>
+      </Transition>
+      <div class="relative z-10 shrink-0 w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-sm flex items-center justify-center transition-colors" title="Next quote">
+        <svg class="w-3.5 h-3.5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
       </div>
     </div>
 

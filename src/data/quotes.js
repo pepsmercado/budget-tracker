@@ -12,13 +12,18 @@ const quotes = [
   { text: "Don't tell me where your priorities are. Show me where you spend your money.", author: "James W. Frick" },
   { text: "Financial freedom is available to those who learn about it and work for it.", author: "Robert Kiyosaki" },
   { text: "This week's budget check-in: you're doing better than you think." },
-  { text: "Small changes lead to big results. Keep going.", author: "Your Budget App" },
+  { text: "Small changes lead to big results. Keep going." },
   { text: "The goal isn't more money. The goal is living life on your own terms.", author: "Chris Brogan" },
 ]
 
+export const QUOTE_COUNT = quotes.length
+
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 
-export function getWeeklyQuote() {
-  const weekNum = Math.floor(Date.now() / WEEK_MS)
-  return quotes[weekNum % quotes.length]
+export function getWeeklyIndex() {
+  return Math.floor(Date.now() / WEEK_MS) % QUOTE_COUNT
+}
+
+export function getQuoteAt(index) {
+  return quotes[((index % QUOTE_COUNT) + QUOTE_COUNT) % QUOTE_COUNT]
 }

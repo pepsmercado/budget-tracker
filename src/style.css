@@ -264,3 +264,60 @@ body {
 .sidebar-link-parent.active {
   background-color: var(--primary);
 }
+
+/* Weekly quote banner */
+.quote-banner {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #158039, #0592b5, #9333ea, #17ad49, #2d88ff, #a855f7, #02afce);
+  background-size: 400% 400%;
+  animation: quote-gradient 12s ease infinite;
+  box-shadow: 0 2px 12px rgba(21, 128, 57, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.quote-banner:hover {
+  box-shadow: 0 4px 20px rgba(21, 128, 57, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.quote-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.08) 45%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.08) 55%,
+    transparent 70%
+  );
+  background-size: 250% 100%;
+  animation: quote-shimmer 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes quote-gradient {
+  0%, 100% { background-position: 0% 50%; }
+  25% { background-position: 100% 0%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+}
+
+@keyframes quote-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Quote fade transition */
+.quote-fade-enter-active,
+.quote-fade-leave-active {
+  transition: all 0.3s ease;
+}
+.quote-fade-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.quote-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
