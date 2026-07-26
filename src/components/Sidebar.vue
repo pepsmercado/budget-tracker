@@ -6,6 +6,8 @@ const route = useRoute()
 const router = useRouter()
 const collapsed = ref(localStorage.getItem('sidebar-collapsed') === 'true')
 const sidebarOpen = inject('sidebarOpen')
+const hoveredGroup = ref(null)
+let hoverTimeout = null
 
 function closeMobile() {
   sidebarOpen.value = false
@@ -94,6 +96,17 @@ function isActive(linkTo) {
   }
   return route.path === linkTo
 }
+
+function onGroupEnter(key) {
+  clearTimeout(hoverTimeout)
+  hoveredGroup.value = key
+}
+
+function onGroupLeave() {
+  hoverTimeout = setTimeout(() => {
+    hoveredGroup.value = null
+  }, 150)
+}
 </script>
 
 <template>
@@ -149,38 +162,61 @@ function isActive(linkTo) {
 
         <!-- Group with children -->
         <template v-else>
-          <button
-            @click="collapsed ? null : toggleGroup(activeCurrency, item.key)"
-            class="sidebar-link sidebar-link-parent w-full"
-            :class="[
-              item.children.some(c => isActive(c.to)) ? 'active' : '',
-              collapsed ? 'justify-center cursor-default' : ''
-            ]"
-            :title="collapsed ? item.label : ''"
-          >
-            <span v-html="item.icon" class="flex-shrink-0"></span>
-            <template v-if="!collapsed">
-              <span class="whitespace-nowrap overflow-hidden text-ellipsis flex-1 text-left">{{ item.label }}</span>
-              <span
-                v-html="iconChevron"
-                class="flex-shrink-0 transition-transform duration-150"
-                :class="isExpanded(activeCurrency, item.key) ? 'rotate-90' : ''"
-              />
-            </template>
-          </button>
-
-          <div v-if="!collapsed && isExpanded(activeCurrency, item.key)" class="ml-3 space-y-0.5">
-            <router-link
-              v-for="child in item.children"
-              :key="child.to"
-              :to="child.to"
-              class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
-              :class="isActive(child.to) ? 'text-white font-medium bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'"
-              @click="closeMobile"
+          <div class="relative" @mouseenter="collapsed ? onGroupEnter(item.key) : null" @mouseleave="collapsed ? onGroupLeave() : null">
+            <button
+              @click="collapsed ? null : toggleGroup(activeCurrency, item.key)"
+              class="sidebar-link sidebar-link-parent w-full"
+              :class="[
+                item.children.some(c => isActive(c.to)) ? 'active' : '',
+                collapsed ? 'justify-center cursor-default' : ''
+              ]"
+              :title="collapsed ? item.label : ''"
             >
-              <span v-html="child.icon" class="flex-shrink-0 opacity-60"></span>
-              <span class="whitespace-nowrap overflow-hidden text-ellipsis">{{ child.label }}</span>
-            </router-link>
+              <span v-html="item.icon" class="flex-shrink-0"></span>
+              <template v-if="!collapsed">
+                <span class="whitespace-nowrap overflow-hidden text-ellipsis flex-1 text-left">{{ item.label }}</span>
+                <span
+                  v-html="iconChevron"
+                  class="flex-shrink-0 transition-transform duration-150"
+                  :class="isExpanded(activeCurrency, item.key) ? 'rotate-90' : ''"
+                />
+              </template>
+            </button>
+
+            <div v-if="!collapsed && isExpanded(activeCurrency, item.key)" class="ml-3 space-y-0.5">
+              <router-link
+                v-for="child in item.children"
+                :key="child.to"
+                :to="child.to"
+                class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
+                :class="isActive(child.to) ? 'text-white font-medium bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'"
+                @click="closeMobile"
+              >
+                <span v-html="child.icon" class="flex-shrink-0 opacity-60"></span>
+                <span class="whitespace-nowrap overflow-hidden text-ellipsis">{{ child.label }}</span>
+              </router-link>
+            </div>
+
+            <!-- Flyout menu when collapsed -->
+            <div
+              v-if="collapsed && hoveredGroup === item.key"
+              class="absolute left-full top-0 ml-2 w-48 py-1 bg-[#1a202c] border border-white/10 rounded-lg shadow-xl z-50"
+              @mouseenter="onGroupEnter(item.key)"
+              @mouseleave="onGroupLeave()"
+            >
+              <div class="px-3 py-1.5 text-[10px] font-medium text-white/40 uppercase tracking-wider">{{ item.label }}</div>
+              <router-link
+                v-for="child in item.children"
+                :key="child.to"
+                :to="child.to"
+                class="flex items-center gap-2.5 px-3 py-2 text-sm transition-colors cursor-pointer"
+                :class="isActive(child.to) ? 'text-white font-medium bg-white/10' : 'text-white/80 hover:text-white hover:bg-white/8'"
+                @click="closeMobile"
+              >
+                <span v-html="child.icon" class="flex-shrink-0 opacity-70"></span>
+                <span class="whitespace-nowrap">{{ child.label }}</span>
+              </router-link>
+            </div>
           </div>
         </template>
       </template>
