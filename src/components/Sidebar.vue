@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, inject } from 'vue'
+import { ref, computed, inject, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -7,6 +7,9 @@ const router = useRouter()
 const collapsed = ref(localStorage.getItem('sidebar-collapsed') === 'true')
 const sidebarOpen = inject('sidebarOpen')
 const hoveredGroup = ref(null)
+const flyoutItems = ref([])
+const flyoutStyle = ref({})
+const flyoutLabel = ref('')
 let hoverTimeout = null
 
 function closeMobile() {
@@ -97,8 +100,16 @@ function isActive(linkTo) {
   return route.path === linkTo
 }
 
-function onGroupEnter(key) {
+function onGroupEnter(key, event, item) {
   clearTimeout(hoverTimeout)
+  const rect = event.currentTarget.getBoundingClientRect()
+  flyoutItems.value = item.children
+  flyoutLabel.value = item.label
+  flyoutStyle.value = {
+    position: 'fixed',
+    top: rect.top + 'px',
+    left: (rect.right + 8) + 'px',
+  }
   hoveredGroup.value = key
 }
 
@@ -162,7 +173,7 @@ function onGroupLeave() {
 
         <!-- Group with children -->
         <template v-else>
-          <div class="relative" @mouseenter="collapsed ? onGroupEnter(item.key) : null" @mouseleave="collapsed ? onGroupLeave() : null">
+          <div class="relative" @mouseenter="collapsed ? onGroupEnter(item.key, $event, item) : null" @mouseleave="collapsed ? onGroupLeave() : null">
             <button
               @click="collapsed ? null : toggleGroup(activeCurrency, item.key)"
               class="sidebar-link sidebar-link-parent w-full"
@@ -196,27 +207,6 @@ function onGroupLeave() {
                 <span class="whitespace-nowrap overflow-hidden text-ellipsis">{{ child.label }}</span>
               </router-link>
             </div>
-
-            <!-- Flyout menu when collapsed -->
-            <div
-              v-if="collapsed && hoveredGroup === item.key"
-              class="absolute left-full top-0 ml-2 w-48 py-1 bg-[#1a202c] border border-white/10 rounded-lg shadow-xl z-50"
-              @mouseenter="onGroupEnter(item.key)"
-              @mouseleave="onGroupLeave()"
-            >
-              <div class="px-3 py-1.5 text-[10px] font-medium text-white/40 uppercase tracking-wider">{{ item.label }}</div>
-              <router-link
-                v-for="child in item.children"
-                :key="child.to"
-                :to="child.to"
-                class="flex items-center gap-2.5 px-3 py-2 text-sm transition-colors cursor-pointer"
-                :class="isActive(child.to) ? 'text-white font-medium bg-white/10' : 'text-white/80 hover:text-white hover:bg-white/8'"
-                @click="closeMobile"
-              >
-                <span v-html="child.icon" class="flex-shrink-0 opacity-70"></span>
-                <span class="whitespace-nowrap">{{ child.label }}</span>
-              </router-link>
-            </div>
           </div>
         </template>
       </template>
@@ -244,4 +234,27 @@ function onGroupLeave() {
       </button>
     </div>
   </aside>
+
+  <Teleport to="body">
+    <div
+      v-if="collapsed && hoveredGroup"
+      :style="flyoutStyle"
+      class="w-50 py-1 bg-[#1a202c] border border-white/10 rounded-lg shadow-xl z-[9999]"
+      @mouseenter="onGroupEnter(hoveredGroup, $event, { children: flyoutItems, label: flyoutLabel })"
+      @mouseleave="onGroupLeave()"
+    >
+      <div class="px-3 py-1.5 text-[10px] font-medium text-white/40 uppercase tracking-wider">{{ flyoutLabel }}</div>
+      <router-link
+        v-for="child in flyoutItems"
+        :key="child.to"
+        :to="child.to"
+        class="flex items-center gap-2.5 px-3 py-2 text-sm transition-colors cursor-pointer"
+        :class="isActive(child.to) ? 'text-white font-medium bg-white/10' : 'text-white/80 hover:text-white hover:bg-white/8'"
+        @click="closeMobile"
+      >
+        <span v-html="child.icon" class="flex-shrink-0 opacity-70"></span>
+        <span class="whitespace-nowrap">{{ child.label }}</span>
+      </router-link>
+    </div>
+  </Teleport>
 </template>
