@@ -94,18 +94,6 @@ class CategoryBudgetBulkUpdate(BaseModel):
     updates: list[CategoryBudgetBulkItem]
 
 
-class Budget(BaseModel):
-    id: str
-    month: str  # "YYYY-MM"
-    total_budget: float
-    currency: str = "PHP"
-
-
-class BudgetSet(BaseModel):
-    total_budget: float
-    currency: str = "PHP"
-
-
 class MonthlyBudgetOverride(BaseModel):
     category: str
     budget: float

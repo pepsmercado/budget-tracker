@@ -7,7 +7,7 @@ import random
 from services.base import BackendService
 from models import (
     Account, AccountCreate, Transaction, TransactionCreate,
-    Category, CategoryCreate, Budget, BudgetSet,
+    Category, CategoryCreate,
     Balance, AccountBalance, CategorySummary, MonthlyTotal,
     AnnualSummary, RatesResponse, SubAccount, MonthlyCategoryRow,
     RecurringRule, RecurringRuleCreate, RecurringRunResult,
@@ -29,7 +29,6 @@ class MockBackend(BackendService):
         self.accounts: dict[str, Account] = {}
         self.transactions: dict[str, Transaction] = {}
         self.categories: dict[str, Category] = {}
-        self.budgets: dict[str, Budget] = {}
         self.recurring_rules: dict[str, RecurringRule] = {}
         self.transfers: dict[str, Transfer] = {}
         self.monthly_budgets: dict[str, dict[str, dict]] = {}
@@ -47,7 +46,6 @@ class MockBackend(BackendService):
             "accounts": {k: v.model_dump() for k, v in self.accounts.items()},
             "transactions": {k: v.model_dump() for k, v in self.transactions.items()},
             "categories": {k: v.model_dump() for k, v in self.categories.items()},
-            "budgets": {k: v.model_dump() for k, v in self.budgets.items()},
             "recurring_rules": {k: v.model_dump() for k, v in self.recurring_rules.items()},
             "transfers": {k: v.model_dump() for k, v in self.transfers.items()},
         }
@@ -74,8 +72,6 @@ class MockBackend(BackendService):
                 self.transactions[k] = Transaction(**v)
             for k, v in data.get("categories", {}).items():
                 self.categories[k] = Category(**v)
-            for k, v in data.get("budgets", {}).items():
-                self.budgets[k] = Budget(**v)
             for k, v in data.get("recurring_rules", {}).items():
                 if "created_at" in v and isinstance(v["created_at"], str):
                     v["created_at"] = datetime.fromisoformat(v["created_at"])
@@ -206,12 +202,6 @@ class MockBackend(BackendService):
                 )
                 self.transactions[t.id] = t
 
-        for i in range(3):
-            m = today.replace(day=1) - timedelta(days=30 * i)
-            month_str = f"{m.year}-{m.month:02d}"
-            b = Budget(id=self._uid(), month=month_str, total_budget=random.uniform(60000, 120000), currency="PHP")
-            self.budgets[b.id] = b
-
         usd_checking = [a for a in self.accounts.values() if a.currency == "USD" and a.type == "checking"][0]
         usd_savings = [a for a in self.accounts.values() if a.currency == "USD" and a.type == "savings"][0]
 
@@ -335,26 +325,6 @@ class MockBackend(BackendService):
         c.budget_amount = budget_amount
         self._save()
         return c
-
-    def get_budget(self, month: str, currency: str | None = None) -> Budget | None:
-        for b in self.budgets.values():
-            if b.month == month:
-                if currency and b.currency != currency:
-                    continue
-                return b
-        return None
-
-    def set_budget(self, month: str, data: BudgetSet) -> Budget:
-        for b in self.budgets.values():
-            if b.month == month and b.currency == data.currency:
-                b.total_budget = data.total_budget
-                b.currency = data.currency
-                self._save()
-                return b
-        b = Budget(id=self._uid(), month=month, **data.model_dump())
-        self.budgets[b.id] = b
-        self._save()
-        return b
 
     def get_budget_summary(self, month: str, currency: str | None = None) -> BudgetSummary:
         from models import CategoryBudgetSummary, BudgetSummary

@@ -31,7 +31,6 @@ SHEET_TABS = {
                      "category", "description", "transfer_pair_id",
                      "sub_account_id", "created_at"],
     "categories": ["id", "name", "type", "group", "budget_amount"],
-    "budgets": ["id", "month", "total_budget", "currency"],
     "recurring_rules": ["id", "name", "account_id", "category", "amount",
                         "currency", "frequency", "day_of_month", "start_date",
                         "end_date", "active", "last_generated", "next_date",
@@ -480,46 +479,7 @@ class SheetsBackend(BackendService):
             self._invalidate("categories")
         return [self._row_to_category(r) for r in rows]
 
-    # ===================== BUDGETS =====================
-
-    def _row_to_budget(self, row: dict) -> Budget:
-        return Budget(
-            id=str(row.get("id", "")),
-            month=str(row.get("month", "")),
-            total_budget=_parse_float(row.get("total_budget")),
-            currency=str(row.get("currency", "PHP")),
-        )
-
-    def get_budget(self, month: str, currency: str | None = None) -> Budget | None:
-        for row in self._read_all("budgets"):
-            if str(row.get("month", "")).strip() == month:
-                if currency and str(row.get("currency", "")).strip() != currency:
-                    continue
-                return self._row_to_budget(row)
-        return None
-
-    def set_budget(self, month: str, data: BudgetSet) -> Budget:
-        idx = None
-        rows = self._read_all("budgets")
-        for i, row in enumerate(rows):
-            if str(row.get("month", "")).strip() == month and str(row.get("currency", "")).strip() == data.currency:
-                idx = i
-                break
-
-        if idx is not None:
-            b = Budget(id=str(rows[idx].get("id", "")), month=month,
-                       total_budget=data.total_budget, currency=data.currency)
-        else:
-            b = Budget(id=_uid(), month=month, total_budget=data.total_budget,
-                       currency=data.currency)
-
-        row = {"id": b.id, "month": b.month, "total_budget": b.total_budget,
-               "currency": b.currency}
-        if idx is not None:
-            self._write_row("budgets", idx + 2, row)
-        else:
-            self._append_row("budgets", row)
-        return b
+    # ===================== BUDGET SUMMARY =====================
 
     def get_budget_summary(self, month: str, currency: str | None = None) -> BudgetSummary:
         self._warm_cache(["accounts", "categories", "transactions"])

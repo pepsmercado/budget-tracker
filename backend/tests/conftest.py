@@ -14,7 +14,6 @@ def backend():
     b.accounts = {}
     b.transactions = {}
     b.categories = {}
-    b.budgets = {}
     b.recurring_rules = {}
     b.transfers = {}
     b.monthly_budgets = {}

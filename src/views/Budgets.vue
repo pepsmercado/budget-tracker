@@ -111,9 +111,6 @@ async function saveEdit(cat) {
     editingCategory.value = null
     await fetchBudgetSummary(selectedMonth.value, currencyParam.value)
     await fetchMonthlyOverrides()
-    if (budgetSummary.value) {
-      await api.put(`/budgets/${selectedMonth.value}`, { total_budget: budgetSummary.value.total_budget, currency: currencyParam.value })
-    }
   } catch (e) {
     console.error('Failed to save budget:', e)
     toast.error('Failed to save budget: ' + (e.response?.data?.detail || e.message))

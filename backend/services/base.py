@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from models import (
     Account, AccountCreate, Transaction, TransactionCreate,
-    Category, CategoryCreate, Budget, BudgetSet,
+    Category, CategoryCreate,
     Balance, AnnualSummary, RatesResponse, MonthlyCategoryRow,
     BudgetSummary, RecurringRule, RecurringRuleCreate, RecurringRunResult,
     Transfer, TransferCreate,
@@ -64,14 +64,6 @@ class BackendService(ABC):
 
     @abstractmethod
     def update_category_budget(self, category_id: str, budget_amount: float) -> Category:
-        pass
-
-    @abstractmethod
-    def get_budget(self, month: str, currency: str | None = None) -> Budget | None:
-        pass
-
-    @abstractmethod
-    def set_budget(self, month: str, data: BudgetSet) -> Budget:
         pass
 
     @abstractmethod
