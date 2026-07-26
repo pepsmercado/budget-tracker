@@ -663,8 +663,8 @@ function formatConverted(val) {
       </div>
       <Transition name="quote-fade" mode="out-in">
         <div :key="quoteKey" class="relative z-10 min-w-0 flex-1">
-          <p class="text-sm font-medium text-white/95 leading-relaxed italic">"{{ weeklyQuote.text }}"</p>
-          <p v-if="weeklyQuote.author" class="text-xs text-white/60 mt-1 not-italic">— {{ weeklyQuote.author }}</p>
+          <p class="quote-text text-sm font-medium text-white/95 leading-relaxed italic">"{{ weeklyQuote.text }}"</p>
+          <p v-if="weeklyQuote.author" class="text-xs text-white/50 mt-1.5 not-italic tracking-wide uppercase" style="font-family: 'Geist', sans-serif; font-size: 0.65rem;">— {{ weeklyQuote.author }}</p>
         </div>
       </Transition>
       <div class="relative z-10 shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors" title="Next quote">
