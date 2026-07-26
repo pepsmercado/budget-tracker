@@ -108,7 +108,7 @@ function onGroupEnter(key, event, item) {
   flyoutStyle.value = {
     position: 'fixed',
     top: rect.top + 'px',
-    left: (rect.right + 8) + 'px',
+    left: (rect.right - 2) + 'px',
   }
   hoveredGroup.value = key
 }
@@ -116,7 +116,26 @@ function onGroupEnter(key, event, item) {
 function onGroupLeave() {
   hoverTimeout = setTimeout(() => {
     hoveredGroup.value = null
-  }, 150)
+  }, 200)
+}
+
+function expandSidebar() {
+  if (collapsed.value) {
+    collapsed.value = true
+    localStorage.setItem('sidebar-collapsed', false)
+    collapsed.value = false
+  }
+}
+
+function onCollapsedItemClick(item) {
+  expandSidebar()
+  if (item.children) {
+    const list = expanded.value[activeCurrency.value]
+    if (!list.includes(item.key)) {
+      list.push(item.key)
+      saveExpanded(activeCurrency.value)
+    }
+  }
 }
 </script>
 
@@ -165,7 +184,7 @@ function onGroupLeave() {
           class="sidebar-link sidebar-link-parent"
           :class="isActive(item.to) ? 'active' : ''"
           :title="collapsed ? item.label : ''"
-          @click="closeMobile"
+          @click="expandSidebar(); closeMobile()"
         >
           <span v-html="item.icon" class="flex-shrink-0"></span>
           <span v-if="!collapsed" class="whitespace-nowrap overflow-hidden text-ellipsis">{{ item.label }}</span>
@@ -175,7 +194,7 @@ function onGroupLeave() {
         <template v-else>
           <div class="relative" @mouseenter="collapsed ? onGroupEnter(item.key, $event, item) : null" @mouseleave="collapsed ? onGroupLeave() : null">
             <button
-              @click="collapsed ? null : toggleGroup(activeCurrency, item.key)"
+              @click="collapsed ? onCollapsedItemClick(item) : toggleGroup(activeCurrency, item.key)"
               class="sidebar-link sidebar-link-parent w-full"
               :class="[
                 item.children.some(c => isActive(c.to)) ? 'active' : '',
@@ -242,6 +261,7 @@ function onGroupLeave() {
       class="w-50 py-1 bg-[#1a202c] border border-white/10 rounded-lg shadow-xl z-[9999]"
       @mouseenter="onGroupEnter(hoveredGroup, $event, { children: flyoutItems, label: flyoutLabel })"
       @mouseleave="onGroupLeave()"
+      style="margin-left: -2px; padding-left: 2px;"
     >
       <div class="px-3 py-1.5 text-[10px] font-medium text-white/40 uppercase tracking-wider">{{ flyoutLabel }}</div>
       <router-link
