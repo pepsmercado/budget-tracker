@@ -26,8 +26,16 @@ const hideTransfers = ref(localStorage.getItem(`transactions-hide-transfers-${cu
 const categories = ref([])
 
 async function loadAll() {
-  await Promise.all([fetchTransactions({ currency: currencyParam.value }), fetchAccounts(), fetchCategories()])
-  loadingPage.value = false
+  loadingPage.value = true
+  try {
+    await Promise.all([
+      fetchTransactions({ currency: currencyParam.value }).catch(() => {}),
+      fetchAccounts().catch(() => {}),
+      fetchCategories().catch(() => {})
+    ])
+  } finally {
+    loadingPage.value = false
+  }
 }
 
 onMounted(loadAll)

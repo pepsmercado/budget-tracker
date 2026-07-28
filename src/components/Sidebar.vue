@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, inject, nextTick } from 'vue'
+import { ref, computed, inject, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -141,6 +141,19 @@ function onCollapsedItemClick(item) {
     }
   }
 }
+
+watch(() => route.path, (path) => {
+  const items = menuFor(activeCurrency.value)
+  for (const item of items) {
+    if (item.children && item.children.some(c => path === c.to || path === c.to + '/')) {
+      const list = expanded.value[activeCurrency.value]
+      if (!list.includes(item.key)) {
+        list.push(item.key)
+        saveExpanded(activeCurrency.value)
+      }
+    }
+  }
+}, { immediate: true })
 </script>
 
 <template>

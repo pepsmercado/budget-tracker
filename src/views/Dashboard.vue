@@ -136,13 +136,27 @@ function groupSortKey(name) {
 
 async function loadDashboard() {
   loading.value = true
-  await fetchCurrentMonthSummary()
-  loading.value = false
-  await Promise.all([fetchCategories(), fetchSummary(currentYear, currencyParam.value), fetchBalances(currencyParam.value), fetchAccounts(), fetchMatrixData()])
-  buildPieMonths(summary.value.monthly)
-  await Promise.all([fetchExpenseAccountMatrix(), fetchIncomeData()])
-  if (months.value.length > 0) {
-    selectedMonth.value = months.value[months.value.length - 1].value
+  try {
+    await fetchCurrentMonthSummary().catch(() => {})
+    await Promise.all([
+      fetchCategories().catch(() => {}),
+      fetchSummary(currentYear, currencyParam.value).catch(() => {}),
+      fetchBalances(currencyParam.value).catch(() => {}),
+      fetchAccounts().catch(() => {}),
+      fetchMatrixData().catch(() => {})
+    ])
+    if (summary.value?.monthly) {
+      buildPieMonths(summary.value.monthly)
+    }
+    await Promise.all([
+      fetchExpenseAccountMatrix().catch(() => {}),
+      fetchIncomeData().catch(() => {})
+    ])
+    if (months.value.length > 0) {
+      selectedMonth.value = months.value[months.value.length - 1].value
+    }
+  } finally {
+    loading.value = false
   }
 }
 
