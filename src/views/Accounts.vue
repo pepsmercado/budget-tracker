@@ -449,6 +449,7 @@ async function handleCreate() {
           </div>
         </div>
       </div>
+      </div>
 
       <!-- Other currency section -->
       <div>
