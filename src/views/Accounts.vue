@@ -61,11 +61,11 @@ const accountTypeColors = {
   investment: 'border-l-purple-500',
 }
 
-function groupAccounts(currency) {
+const groupedByType = computed(() => {
   const typeOrder = ['savings', 'time_deposit', 'equity', 'checking', 'investment']
   const groups = {}
   for (const acc of accounts.value) {
-    if (acc.currency !== currency) continue
+    if (acc.currency !== currencyParam.value) continue
     if (!groups[acc.type]) groups[acc.type] = []
     groups[acc.type].push(acc)
   }
@@ -76,12 +76,7 @@ function groupAccounts(currency) {
     }
   }
   return ordered
-}
-
-const groupedByType = computed(() => groupAccounts(currencyParam.value))
-const otherCurrency = computed(() => currencyParam.value === 'USD' ? 'PHP' : 'USD')
-const otherCurrencySymbol = computed(() => otherCurrency.value === 'USD' ? '$' : '₱')
-const groupedByOtherType = computed(() => groupAccounts(otherCurrency.value))
+})
 
 function getBalance(accountId) {
   const b = balances.value.find(x => x.account_id === accountId)
@@ -208,7 +203,7 @@ async function handleDelete(acc) {
 }
 
 async function loadAll() {
-  await Promise.all([fetchAccounts(), fetchBalances()])
+  await Promise.all([fetchAccounts(), fetchBalances(currencyParam.value)])
 }
 
 onMounted(loadAll)
@@ -228,7 +223,7 @@ async function handleCreate() {
     showForm.value = false
     customBank.value = ''
     form.value = { name: '', type: 'savings', currency: currencyParam.value, bank: '', account_number: '', initial_balance: 0 }
-    await fetchBalances()
+    await fetchBalances(currencyParam.value)
   } catch (e) {
     console.error('Create account failed:', e)
     toast.error(e.response?.data?.detail || 'Failed to create account')
@@ -241,7 +236,7 @@ async function handleCreate() {
 <template>
   <div class="space-y-5">
     <div class="flex items-center justify-between">
-      <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">Accounts</h2>
+      <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ viewLabel }} Accounts</h2>
       <div class="flex items-center gap-3">
         <button @click="eyeHidden = !eyeHidden" class="text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300">
           <svg v-if="!eyeHidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -320,18 +315,12 @@ async function handleCreate() {
       </div>
     </div>
 
-    <div v-else class="space-y-8">
-      <!-- Current currency section -->
-      <div>
-        <div class="flex items-center gap-2 mb-3">
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400">{{ viewLabel }}</h3>
-          <div class="flex-1 h-px bg-mushroom-200 dark:bg-mushroom-700"></div>
-        </div>
-        <div v-if="groupedByType.length === 0" class="text-xs text-mushroom-400 dark:text-mushroom-500 py-4 text-center">No {{ viewLabel }} accounts yet</div>
-        <div v-for="(group, gi) in groupedByType" :key="'cur-'+group.type">
-          <h4 class="text-xs font-semibold uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500 mb-3 mt-4 first:mt-0">{{ group.label }}</h4>
-          <div class="space-y-3">
-            <div v-for="acc in group.accounts" :key="acc.id" class="card-elevated p-4 border-l-4" :class="accountTypeColors[acc.type] || 'border-l-mushroom-400'">
+    <div v-else class="space-y-6">
+      <div v-for="(group, gi) in groupedByType" :key="group.type">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500 mb-3 mt-4 first:mt-0">{{ group.label }}</h3>
+
+        <div class="space-y-3">
+          <div v-for="acc in group.accounts" :key="acc.id" class="card-elevated p-4 border-l-4" :class="accountTypeColors[acc.type] || 'border-l-mushroom-400'">
             <div class="flex items-center justify-between mb-2">
               <div>
                 <div class="flex items-center gap-2.5 mb-1">
@@ -446,137 +435,6 @@ async function handleCreate() {
                 </template>
               </div>
             </template>
-          </div>
-        </div>
-      </div>
-      </div>
-
-      <!-- Other currency section -->
-      <div>
-        <div class="flex items-center gap-2 mb-3">
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400">{{ otherCurrency }}</h3>
-          <div class="flex-1 h-px bg-mushroom-200 dark:bg-mushroom-700"></div>
-        </div>
-        <div v-if="groupedByOtherType.length === 0" class="text-xs text-mushroom-400 dark:text-mushroom-500 py-4 text-center">No {{ otherCurrency }} accounts yet</div>
-        <div v-for="(group, gi) in groupedByOtherType" :key="'other-'+group.type">
-          <h4 class="text-xs font-semibold uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500 mb-3 mt-4 first:mt-0">{{ group.label }}</h4>
-          <div class="space-y-3">
-            <div v-for="acc in group.accounts" :key="acc.id" class="card-elevated p-4 border-l-4" :class="accountTypeColors[acc.type] || 'border-l-mushroom-400'">
-              <div class="flex items-center justify-between mb-2">
-                <div>
-                  <div class="flex items-center gap-2.5 mb-1">
-                    <span v-if="acc.bank" class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium" :class="bankColors[acc.bank] || 'bg-mushroom-100 dark:bg-mushroom-800 text-mushroom-600 dark:text-mushroom-400'">{{ acc.bank }}</span>
-                    <input
-                      v-show="editingName === acc.id"
-                      v-model="nameValue"
-                      @keyup.enter="saveName(acc)"
-                      @keyup.escape="cancelName"
-                      class="input-field text-sm font-medium py-0.5 px-1.5 w-48"
-                      :ref="el => { if (el && editingName === acc.id) el.focus() }"
-                    />
-                    <span
-                      v-show="editingName !== acc.id"
-                      class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50 cursor-pointer hover:text-kangkong-600 dark:hover:text-kangkong-400"
-                      @click="startEditName(acc)"
-                    >{{ acc.name }}</span>
-                  </div>
-                  <template v-if="editingAcctNum === acc.id">
-                    <template v-if="confirmingAcctNum === acc.id">
-                      <div class="flex items-center gap-1.5 mt-1">
-                        <span class="text-xs text-mushroom-400 dark:text-mushroom-500">Save change?</span>
-                        <button @click="saveAcctNum(acc)" class="text-kangkong-600 hover:text-kangkong-800 text-xs font-medium">Yes</button>
-                        <button @click="cancelAcctNum" class="text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300 text-xs">No</button>
-                      </div>
-                    </template>
-                    <template v-else>
-                      <div class="flex items-center gap-1 mt-1">
-                        <input
-                          v-model="acctNumValue"
-                          @keyup.enter="confirmSaveAcctNum(acc)"
-                          @keyup.escape="cancelAcctNum"
-                          class="input-field text-xs py-0.5 px-1.5 w-28"
-                          placeholder="e.g. ****4521"
-                          autofocus
-                        />
-                      </div>
-                    </template>
-                  </template>
-                  <div v-else-if="acc.account_number" class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1 cursor-pointer hover:text-kangkong-600 dark:hover:text-kangkong-400" @click="startEditAcctNum(acc)">{{ acc.account_number }}</div>
-                  <div v-else class="text-xs text-mushroom-300 dark:text-mushroom-600 mt-1 cursor-pointer hover:text-kangkong-600 dark:hover:text-kangkong-400" @click="startEditAcctNum(acc)">+ Add account number</div>
-                  <div v-if="acc.dividend_type" class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">{{ acc.dividend_type }}</div>
-                  <template v-if="acc.type === 'time_deposit'">
-                    <template v-if="editingMaturity === acc.id">
-                      <div class="flex items-center gap-2 mt-2 pt-2 border-t border-mushroom-100 dark:border-mushroom-700/50">
-                        <input
-                          v-model="maturityValue"
-                          @keyup.enter="saveMaturity(acc)"
-                          @keyup.escape="cancelMaturity"
-                          type="date"
-                          class="input-field text-xs py-0.5 px-1.5 w-36"
-                          autofocus
-                        />
-                      </div>
-                    </template>
-                    <template v-else>
-                      <div class="text-xs text-mushroom-400 dark:text-mushroom-500 cursor-pointer hover:text-kangkong-600 dark:hover:text-kangkong-400 mt-2 pt-2 border-t border-mushroom-100 dark:border-mushroom-700/50" @click="startEditMaturity(acc)">
-                        {{ acc.maturity_date ? 'Maturity: ' + acc.maturity_date : '+ Set maturity date' }}
-                      </div>
-                    </template>
-                  </template>
-                  <div v-else-if="acc.maturity_date" class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-2 pt-2 border-t border-mushroom-100 dark:border-mushroom-700/50">Maturity: {{ acc.maturity_date }}</div>
-                </div>
-                <div class="text-right">
-                  <div class="text-xl font-semibold text-mushroom-950 dark:text-mushroom-50">{{ otherCurrencySymbol }}{{ getBalance(acc.id).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</div>
-                  <div class="flex justify-end mt-1">
-                    <template v-if="confirmingDelete === acc.id">
-                      <span class="text-xs text-mushroom-400 dark:text-mushroom-500 mr-1">Delete?</span>
-                      <button @click="handleDelete(acc)" class="text-tomato-500 hover:text-tomato-700 text-xs font-medium mr-1">Yes</button>
-                      <button @click="confirmingDelete = null" class="text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300 text-xs">No</button>
-                    </template>
-                    <button v-else @click="confirmingDelete = acc.id" class="text-mushroom-300 dark:text-mushroom-600 hover:text-tomato-500 dark:hover:text-tomato-400 transition-colors" title="Delete account">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <template v-if="acc.type === 'savings' && !(acc.bank === 'BPI' && acc.name === 'Settlement')">
-                <div class="mt-3 pt-3 border-t border-mushroom-100 dark:border-mushroom-700/50">
-                  <template v-if="editingGoal === acc.id">
-                    <div class="flex items-center gap-2">
-                      <input
-                        v-model.number="goalValue"
-                        @keyup.enter="saveGoal(acc)"
-                        @keyup.escape="cancelGoal"
-                        @blur="saveGoal(acc)"
-                        type="number"
-                        step="1"
-                        min="0"
-                        class="input-field text-xs py-0.5 px-1.5 w-24"
-                        autofocus
-                      />
-                      <span class="text-xs text-mushroom-400 dark:text-mushroom-500">Press Enter to save</span>
-                    </div>
-                  </template>
-                  <template v-else>
-                    <BudgetProgressBar
-                      v-if="acc.goal_amount > 0"
-                      :spent="getBalance(acc.id)"
-                      :budget="acc.goal_amount"
-                      :invert="true"
-                      class="mb-2"
-                    />
-                    <div v-if="acc.goal_amount > 0" class="flex items-center justify-between text-xs text-mushroom-500 dark:text-mushroom-400">
-                      <span @click="startEditGoal(acc)" class="cursor-pointer hover:text-kangkong-600 dark:hover:text-kangkong-400">
-                        Goal: {{ otherCurrencySymbol }}{{ acc.goal_amount.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
-                      </span>
-                      <span>{{ goalProgress(getBalance(acc.id), acc.goal_amount).toFixed(1) }}%</span>
-                    </div>
-                    <button v-else @click="startEditGoal(acc)" class="text-xs text-kangkong-600 hover:text-kangkong-800">Set goal</button>
-                  </template>
-                </div>
-              </template>
-            </div>
           </div>
         </div>
       </div>
