@@ -513,17 +513,24 @@ class SheetsBackend(BackendService):
         merged = {**template_filtered, **overrides}
 
         categories = []
+        seen = set()
         for c in exp_cats:
             if c.name in merged:
                 budget_val = merged[c.name]["budget"]
             else:
                 budget_val = c.budget_amount
-
-            # Show category if it has a budget > 0, use view currency for display
-            if budget_val > 0:
+            spent = cat_spent.get(c.name, 0)
+            if budget_val > 0 or spent > 0:
+                seen.add(c.name)
                 categories.append(CategoryBudgetSummary(
                     name=c.name, group=c.group, budget=round(budget_val, 2),
-                    currency=currency or "PHP", spent=round(cat_spent.get(c.name, 0), 2),
+                    currency=currency or "PHP", spent=round(spent, 2),
+                ))
+        for cat_name, spent in cat_spent.items():
+            if spent > 0 and cat_name not in seen:
+                categories.append(CategoryBudgetSummary(
+                    name=cat_name, group="Misc", budget=0.0,
+                    currency=currency or "PHP", spent=round(spent, 2),
                 ))
 
         total_budget = sum(c.budget for c in categories)
