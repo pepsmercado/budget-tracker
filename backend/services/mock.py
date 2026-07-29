@@ -64,11 +64,17 @@ class MockBackend(BackendService):
             print(f"MockBackend: Loaded data.json with {len(data.get('accounts', {}))} accounts, {len(data.get('transactions', {}))} transactions")
             for k, v in data.get("accounts", {}).items():
                 self.accounts[k] = Account(**v)
+            tx_time = None
             for k, v in data.get("transactions", {}).items():
                 if "created_at" in v and isinstance(v["created_at"], str):
                     v["created_at"] = datetime.fromisoformat(v["created_at"])
                 if "date" in v and isinstance(v["date"], str):
                     v["date"] = date.fromisoformat(v["date"])
+                if tx_time is None:
+                    tx_time = v.get("created_at") or datetime.now()
+                else:
+                    tx_time += timedelta(microseconds=1)
+                v["created_at"] = tx_time
                 self.transactions[k] = Transaction(**v)
             for k, v in data.get("categories", {}).items():
                 self.categories[k] = Category(**v)

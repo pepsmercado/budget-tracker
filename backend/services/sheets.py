@@ -357,25 +357,26 @@ class SheetsBackend(BackendService):
         if group:
             tabs.append("categories")
         self._warm_cache(tabs)
-        result = [self._row_to_transaction(r) for r in self._read_all("transactions")]
+        rows = self._read_all("transactions")
+        result = [(i, self._row_to_transaction(r)) for i, r in enumerate(rows)]
         if currency:
             acc_ids = {a.id for a in self.get_accounts() if a.currency == currency}
-            result = [t for t in result if t.account_id in acc_ids]
+            result = [(i, t) for i, t in result if t.account_id in acc_ids]
         if account_id:
-            result = [t for t in result if t.account_id == account_id]
+            result = [(i, t) for i, t in result if t.account_id == account_id]
         if type:
-            result = [t for t in result if t.type == type]
+            result = [(i, t) for i, t in result if t.type == type]
         if group:
             cats = {c.name for c in self.get_categories() if c.group == group}
-            result = [t for t in result if t.category in cats]
+            result = [(i, t) for i, t in result if t.category in cats]
         if category:
-            result = [t for t in result if t.category == category]
+            result = [(i, t) for i, t in result if t.category == category]
         if start_date:
-            result = [t for t in result if str(t.date) >= start_date]
+            result = [(i, t) for i, t in result if str(t.date) >= start_date]
         if end_date:
-            result = [t for t in result if str(t.date) <= end_date]
-        result.sort(key=lambda t: (str(t.date), str(t.created_at or '')), reverse=True)
-        return result
+            result = [(i, t) for i, t in result if str(t.date) <= end_date]
+        result.sort(key=lambda x: (str(x[1].date), x[0]), reverse=True)
+        return [t for _, t in result]
 
     def create_transaction(self, data: TransactionCreate) -> Transaction:
         t = Transaction(id=_uid(), **data.model_dump())
