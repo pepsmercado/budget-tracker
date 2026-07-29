@@ -10,7 +10,7 @@ import { useAuth } from '../composables/useAuth'
 
 const route = useRoute()
 const { balances, fetchBalances } = useSummary()
-const { exchangeRate, lastUpdated, fetchExchangeRate } = useExchangeRate()
+const { rate: exchangeRate, fetchRate: fetchExchangeRate } = useExchangeRate()
 const sidebarOpen = inject('sidebarOpen')
 const { theme, toggleTheme } = useTheme()
 const { isVerified, logout } = useAuth()
