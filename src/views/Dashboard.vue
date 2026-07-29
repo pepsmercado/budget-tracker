@@ -46,11 +46,6 @@ const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
 const viewLabel = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 
-const currentMonth = computed(() => {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-})
-
 function toggleIncome() {
   if (incomeVisible.value && expensesVisible.value) {
     expensesVisible.value = false
@@ -276,11 +271,10 @@ const trendLineOpts = computed(() => ({
 }))
 
 const doughnutOpts = computed(() => ({
-  responsive: true, maintainAspectRatio: false,
+  responsive: true, maintainAspectRatio: false, cutout: '55%',
   plugins: {
     legend: { position: 'bottom', labels: { usePointStyle: true, padding: 8, font: { size: 10 }, color: chartLegendColor.value } },
-    tooltip: { callbacks: { label: pctTooltip } },
-    cutout: '55%'
+    tooltip: { callbacks: { label: pctTooltip } }
   },
   onClick: () => { drilledGroup.value = null }
 }))
@@ -782,7 +776,7 @@ function formatConverted(val) {
           <Doughnut
             v-if="!drilledGroup"
             :data="groupChartData"
-            :options="{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 8, font: { size: 10 } } }, tooltip: { callbacks: { label: pctTooltip } }, cutout: '55%' }, onClick: (e, el) => { if (el.length) { drilledGroup = groupChartData.labels[el[0].index] } } }"
+            :options="{ responsive: true, maintainAspectRatio: false, cutout: '55%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 8, font: { size: 10 } } }, tooltip: { callbacks: { label: pctTooltip } } }, onClick: (e, el) => { if (el.length) { drilledGroup = groupChartData.labels[el[0].index] } } }"
             :style="{ cursor: 'pointer' }"
           />
           <Doughnut

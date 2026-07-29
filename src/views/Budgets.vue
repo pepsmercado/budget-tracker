@@ -131,22 +131,6 @@ async function fetchMonthlyOverrides() {
   monthlyOverrides.value = data
 }
 
-async function saveAsTemplate() {
-  try {
-    const overrides = budgetSummary.value.categories.map(c => ({
-      category: c.name,
-      budget: c.budget,
-      currency: currencyParam.value,
-    }))
-    await api.post(`/monthly-budgets/${selectedMonth.value}/bulk`, { overrides })
-    await fetchBudgetSummary(selectedMonth.value, currencyParam.value)
-    await fetchMonthlyOverrides()
-  } catch (e) {
-    console.error('Failed to save template:', e)
-    toast.error('Failed to save template: ' + (e.response?.data?.detail || e.message))
-  }
-}
-
 async function resetToTemplate() {
   try {
     await api.delete(`/monthly-budgets/${selectedMonth.value}`, { params: { currency: currencyParam.value } })

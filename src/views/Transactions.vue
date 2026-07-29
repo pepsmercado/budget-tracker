@@ -161,12 +161,6 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
 }
 
-const filteredStats = computed(() => {
-  const income = displayTransactions.value.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
-  const expense = displayTransactions.value.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
-  return { income, expense, net: income - expense }
-})
-
 function exportCSV() {
   const headers = ['Date', 'Type', 'Category', 'Group', 'Account', 'Description', 'Amount', 'Currency']
   const rows = transactions.value.map(t => [

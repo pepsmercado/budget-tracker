@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, inject, nextTick, watch } from 'vue'
+import { ref, computed, inject, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -125,8 +125,7 @@ function onGroupLeave() {
 
 function expandSidebar() {
   if (collapsed.value) {
-    collapsed.value = true
-    localStorage.setItem('sidebar-collapsed', false)
+    localStorage.setItem('sidebar-collapsed', 'false')
     collapsed.value = false
   }
 }

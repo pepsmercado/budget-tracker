@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import api from '../api'
 
 const token = ref(localStorage.getItem('auth_token') || '')

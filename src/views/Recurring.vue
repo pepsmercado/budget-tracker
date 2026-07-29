@@ -8,7 +8,7 @@ import { categoryIcons } from '../constants.js'
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
 
-const { rules, loading, runResult, fetchRules, createRule, updateRule, deleteRule, toggleRule, runNow } = useRecurring()
+const { rules, loading, fetchRules, createRule, updateRule, deleteRule, toggleRule, runNow } = useRecurring()
 const { accounts, fetchAccounts } = useAccounts()
 const toast = useToast()
 
