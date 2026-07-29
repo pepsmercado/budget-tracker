@@ -4,6 +4,9 @@ import { useAccounts } from '../composables/useAccounts'
 import { useSummary } from '../composables/useSummary'
 import BudgetProgressBar from '../components/BudgetProgressBar.vue'
 import Skeleton from '../components/Skeleton.vue'
+import { formatCurrency } from '../utils/format.js'
+import { currencySymbol } from '../utils/currency.js'
+import { ACCOUNT_TYPE_ORDER } from '../constants.js'
 import { useToast } from '../composables/useToast.js'
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
@@ -13,7 +16,7 @@ const { balances, fetchBalances } = useSummary()
 const toast = useToast()
 
 const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
-const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
+const curSym = computed(() => currencySymbol(currencyParam.value))
 const viewLabel = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 
 const showForm = ref(false)
@@ -62,7 +65,7 @@ const accountTypeColors = {
 }
 
 const groupedByType = computed(() => {
-  const typeOrder = ['savings', 'time_deposit', 'equity', 'checking', 'investment']
+  const typeOrder = ACCOUNT_TYPE_ORDER
   const groups = {}
   for (const acc of accounts.value) {
     if (acc.currency !== currencyParam.value) continue
@@ -83,9 +86,9 @@ function getBalance(accountId) {
   return b ? b.balance : 0
 }
 
-function formatCurrency(val) {
+function formatAccountCurrency(val) {
   if (eyeHidden.value) return '***'
-  return `${currencySymbol.value}${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+  return formatCurrency(val, curSym.value)
 }
 
 function goalProgress(balance, goal) {
@@ -199,6 +202,7 @@ async function handleDelete(acc) {
     await fetchBalances(currencyParam.value)
   } catch (e) {
     console.error('Failed to delete account:', e)
+    toast.error(e.response?.data?.detail || 'Failed to delete account')
   }
 }
 
@@ -385,7 +389,7 @@ async function handleCreate() {
                 <div v-else-if="acc.maturity_date" class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-2 pt-2 border-t border-mushroom-100 dark:border-mushroom-700/50">Maturity: {{ acc.maturity_date }}</div>
               </div>
               <div class="text-right">
-                <div class="text-xl font-semibold text-mushroom-950 dark:text-mushroom-50">{{ formatCurrency(getBalance(acc.id)) }}</div>
+                <div class="text-xl font-semibold text-mushroom-950 dark:text-mushroom-50">{{ formatAccountCurrency(getBalance(acc.id)) }}</div>
                 <div class="flex justify-end mt-1">
                   <template v-if="confirmingDelete === acc.id">
                     <span class="text-xs text-mushroom-400 dark:text-mushroom-500 mr-1">Delete?</span>
@@ -427,7 +431,7 @@ async function handleCreate() {
                   />
                   <div v-if="acc.goal_amount > 0" class="flex items-center justify-between text-xs text-mushroom-500 dark:text-mushroom-400">
                     <span @click="startEditGoal(acc)" class="cursor-pointer hover:text-kangkong-600 dark:hover:text-kangkong-400">
-                      Goal: {{ formatCurrency(acc.goal_amount) }}
+                      Goal: {{ formatAccountCurrency(acc.goal_amount) }}
                     </span>
                     <span>{{ goalProgress(getBalance(acc.id), acc.goal_amount).toFixed(1) }}%</span>
                   </div>

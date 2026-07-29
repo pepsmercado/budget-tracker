@@ -4,6 +4,8 @@ import { useRoute } from 'vue-router'
 import { useSummary } from '../composables/useSummary'
 import { useExchangeRate } from '../composables/useExchangeRate'
 import { useTheme } from '../composables/useTheme'
+import { formatCurrency } from '../utils/format.js'
+import { currencySymbol } from '../utils/currency.js'
 import { useAuth } from '../composables/useAuth'
 
 const route = useRoute()
@@ -31,7 +33,7 @@ const currentCurrency = computed(() => {
   return 'PHP'
 })
 
-const currencySymbol = computed(() => currentCurrency.value === 'USD' ? '$' : '₱')
+const curSym = computed(() => currencySymbol(currentCurrency.value))
 
 const filteredBalances = computed(() => {
   return balances.value.filter(b => b.currency === currentCurrency.value)
@@ -39,7 +41,7 @@ const filteredBalances = computed(() => {
 
 const totalNetWorth = computed(() => {
   const total = filteredBalances.value.reduce((sum, b) => sum + b.balance, 0)
-  return `${currencySymbol.value}${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return formatCurrency(total, curSym.value)
 })
 
 const rateDisplay = computed(() => {
@@ -86,8 +88,7 @@ function openExchangeRateSite() {
 }
 
 function formatBal(val, currency) {
-  if (currency === 'USD') return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-  return `₱${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return formatCurrency(val, currencySymbol(currency))
 }
 </script>
 

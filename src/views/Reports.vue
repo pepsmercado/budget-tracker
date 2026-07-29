@@ -3,6 +3,9 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { Bar, Doughnut, Line } from 'vue-chartjs'
 import Skeleton from '../components/Skeleton.vue'
 import { useTheme } from '../composables/useTheme'
+import { formatMonthYear, formatCurrency, shortMonth, CHART_COLORS } from '../utils/format.js'
+import { currencySymbol } from '../utils/currency.js'
+import { EXPENSE_GROUP_ORDER } from '../constants.js'
 import api from '../api'
 
 const { isDark } = useTheme()
@@ -10,7 +13,7 @@ const { isDark } = useTheme()
 const props = defineProps({ currency: { type: String, default: 'php' } })
 
 const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
-const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
+const curSym = computed(() => currencySymbol(currencyParam.value))
 
 const mode = ref('monthly')
 const now = new Date()
@@ -53,8 +56,8 @@ watch(selectedYear, fetchYearly)
 watch(currencyParam, load)
 
 function fmt(val) {
-  const abs = Math.abs(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  return val < 0 ? `-${currencySymbol.value}${abs}` : `${currencySymbol.value}${abs}`
+  const formatted = formatCurrency(Math.abs(val), curSym.value)
+  return val < 0 ? `-${formatted}` : formatted
 }
 
 function pctChange(curr, prev) {
@@ -84,7 +87,7 @@ const chartLegendColor = computed(() => isDark.value ? '#b0b8b6' : '#5c6b61')
 
 const monthLabel = computed(() => {
   const [y, m] = selectedMonth.value.split('-')
-  return new Date(parseInt(y), parseInt(m) - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })
+  return formatMonthYear(parseInt(y), parseInt(m))
 })
 
 // ========== MONTHLY ==========
@@ -120,7 +123,7 @@ const groupedCategories = computed(() => {
   return groups
 })
 
-const groupOrder = ['Fixed', 'Essential', 'Lifestyle', 'School', 'Misc', 'Sinking']
+const groupOrder = EXPENSE_GROUP_ORDER
 const sortedGroupKeys = computed(() => {
   return groupOrder.filter(g => groupedCategories.value[g]).concat(
     Object.keys(groupedCategories.value).filter(g => !groupOrder.includes(g))
@@ -155,10 +158,9 @@ const doughnutData = computed(() => {
   const labels = top.map(c => c.name)
   const data = top.map(c => c.spent)
   if (otherSum > 0) { labels.push('Others'); data.push(otherSum) }
-  const colors = ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa', '#f472b6', '#94a3b8', '#cbd5e1']
   return {
     labels,
-    datasets: [{ data, backgroundColor: colors.slice(0, data.length), borderWidth: 0, hoverOffset: 4 }]
+    datasets: [{ data, backgroundColor: CHART_COLORS.slice(0, data.length), borderWidth: 0, hoverOffset: 4 }]
   }
 })
 
@@ -190,7 +192,7 @@ const INCOME_CATS = new Set(['Salary', 'Cashback', 'Interest'])
 const monthlyTrendData = computed(() => {
   const mc = yearlyData.value?.monthly_categories
   if (!mc) return null
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const mons = Array.from({ length: 12 }, (_, i) => shortMonth(i + 1))
   const incomeArr = new Array(12).fill(0)
   const expenseArr = new Array(12).fill(0)
   for (const row of mc) {
@@ -203,7 +205,7 @@ const monthlyTrendData = computed(() => {
     }
   }
   return {
-    labels: months,
+    labels: mons,
     datasets: [
       { label: 'Income', data: incomeArr, backgroundColor: '#34d399', borderRadius: 4 },
       { label: 'Expenses', data: expenseArr, backgroundColor: '#f87171', borderRadius: 4 },
@@ -214,7 +216,7 @@ const monthlyTrendData = computed(() => {
 const cumulativeNetData = computed(() => {
   const mc = yearlyData.value?.monthly_categories
   if (!mc) return null
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const mons = Array.from({ length: 12 }, (_, i) => shortMonth(i + 1))
   const monthlyNet = new Array(12).fill(0)
   for (const row of mc) {
     for (const [mon, val] of Object.entries(row.monthly)) {
@@ -232,7 +234,7 @@ const cumulativeNetData = computed(() => {
     cumulative.push(running)
   }
   return {
-    labels: months,
+    labels: mons,
     datasets: [{
       label: 'Cumulative Net',
       data: cumulative,
@@ -255,7 +257,7 @@ const cumulativeNetOpts = computed(() => ({
   scales: {
     y: {
       beginAtZero: true,
-      ticks: { font: { size: 10 }, color: chartTickColor.value, callback: (v) => `${currencySymbol.value}${v.toLocaleString()}` },
+      ticks: { font: { size: 10 }, color: chartTickColor.value, callback: (v) => formatCurrency(v, curSym.value) },
       grid: { color: chartGridColor.value },
     },
     x: { ticks: { font: { size: 10 }, color: chartTickColor.value }, grid: { display: false } }
@@ -273,7 +275,7 @@ const barOpts = computed(() => ({
   scales: {
     y: {
       beginAtZero: true,
-      ticks: { font: { size: 10 }, color: chartTickColor.value, callback: (v) => `${currencySymbol.value}${v.toLocaleString()}` },
+      ticks: { font: { size: 10 }, color: chartTickColor.value, callback: (v) => formatCurrency(v, curSym.value) },
       grid: { color: chartGridColor.value },
     },
     x: { ticks: { font: { size: 10 }, color: chartTickColor.value }, grid: { display: false } }
@@ -321,15 +323,14 @@ const yearlyDoughnutData = computed(() => {
   const labels = top.map(c => c.name)
   const data = top.map(c => c.amount)
   if (otherSum > 0) { labels.push('Others'); data.push(otherSum) }
-  const colors = ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa', '#f472b6', '#94a3b8', '#cbd5e1']
   return {
     labels,
-    datasets: [{ data, backgroundColor: colors.slice(0, data.length), borderWidth: 0, hoverOffset: 4 }]
+    datasets: [{ data, backgroundColor: CHART_COLORS.slice(0, data.length), borderWidth: 0, hoverOffset: 4 }]
   }
 })
 
 const monthlySummaries = computed(() => yearlyData.value?.monthly_summary || [])
-const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const monthNames = Array.from({ length: 12 }, (_, i) => shortMonth(i + 1))
 
 const bestMonth = computed(() => {
   if (!monthlySummaries.value.length) return null
@@ -350,7 +351,7 @@ const worstMonth = computed(() => {
 
 function monthName(ms) {
   const m = parseInt(ms.split('-')[1], 10)
-  return monthNames[m - 1]
+  return shortMonth(m)
 }
 </script>
 

@@ -5,6 +5,10 @@ import { useSummary } from '../composables/useSummary'
 import { useAccounts } from '../composables/useAccounts'
 import { useTransactions } from '../composables/useTransactions'
 import { useTheme } from '../composables/useTheme'
+import { useCategories } from '../composables/useCategories'
+import { formatCurrency, shortMonth, CHART_COLORS } from '../utils/format.js'
+import { EXPENSE_GROUP_ORDER, ACCOUNT_TYPE_ORDER, MONTH_NAMES } from '../constants.js'
+import { currencySymbol } from '../utils/currency.js'
 import api from '../api'
 import Skeleton from '../components/Skeleton.vue'
 import { getWeeklyIndex, getQuoteAt, QUOTE_COUNT } from '../data/quotes'
@@ -26,8 +30,8 @@ const { summary, balances, fetchSummary, fetchBalances } = useSummary()
 const { accounts, fetchAccounts } = useAccounts()
 const { transactions, fetchTransactions } = useTransactions()
 
+const { categories, fetchCategories } = useCategories()
 const currentYear = new Date().getFullYear()
-const categories = ref([])
 const selectedMonth = ref('')
 const drilledGroup = ref(null)
 const expenseMatrixMode = ref('category')
@@ -43,7 +47,7 @@ const incomeVisible = ref(true)
 const expensesVisible = ref(true)
 
 const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
-const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
+const curSym = computed(() => currencySymbol(currencyParam.value))
 const viewLabel = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 
 function toggleIncome() {
@@ -84,8 +88,7 @@ const months = computed(() => {
   if (!summary.value) return []
   return summary.value.monthly.map(m => {
     const [y, mo] = m.month.split('-')
-    const date = new Date(y, parseInt(mo) - 1)
-    return { value: m.month, label: date.toLocaleString('en-US', { month: 'short' }) }
+    return { value: m.month, label: shortMonth(parseInt(mo)) }
   })
 })
 
@@ -94,8 +97,7 @@ function buildPieMonths(monthlyData) {
     { value: 'full-year', label: 'Full Year' },
     ...monthlyData.map(m => {
       const [y, mo] = m.month.split('-')
-      const date = new Date(y, parseInt(mo) - 1)
-      return { value: m.month, label: date.toLocaleString('en-US', { month: 'short' }) }
+      return { value: m.month, label: shortMonth(parseInt(mo)) }
     })
   ]
   if (!pieMonths.value.find(m => m.value === selectedMonth.value)) {
@@ -108,11 +110,6 @@ async function fetchPieMonths() {
   buildPieMonths(data.monthly)
 }
 
-async function fetchCategories() {
-  const { data } = await api.get('/categories')
-  categories.value = data
-}
-
 const categoryToGroup = computed(() => {
   const map = {}
   for (const c of categories.value) {
@@ -123,7 +120,7 @@ const categoryToGroup = computed(() => {
   return map
 })
 
-const GROUP_ORDER = ['Fixed', 'Essential', 'Lifestyle', 'School', 'Misc', 'Sinking']
+const GROUP_ORDER = EXPENSE_GROUP_ORDER
 function groupSortKey(name) {
   const idx = GROUP_ORDER.indexOf(name)
   return idx >= 0 ? idx : GROUP_ORDER.length
@@ -132,20 +129,20 @@ function groupSortKey(name) {
 async function loadDashboard() {
   loading.value = true
   try {
-    await fetchCurrentMonthSummary().catch(() => {})
+    await fetchCurrentMonthSummary().catch(e => console.warn('Dashboard fetch failed:', e))
     await Promise.all([
-      fetchCategories().catch(() => {}),
-      fetchSummary(currentYear, currencyParam.value).catch(() => {}),
-      fetchBalances(currencyParam.value).catch(() => {}),
-      fetchAccounts().catch(() => {}),
-      fetchMatrixData().catch(() => {})
+      fetchCategories(),
+      fetchSummary(currentYear, currencyParam.value).catch(e => console.warn('Dashboard fetch failed:', e)),
+      fetchBalances(currencyParam.value).catch(e => console.warn('Dashboard fetch failed:', e)),
+      fetchAccounts().catch(e => console.warn('Dashboard fetch failed:', e)),
+      fetchMatrixData().catch(e => console.warn('Dashboard fetch failed:', e))
     ])
     if (summary.value?.monthly) {
       buildPieMonths(summary.value.monthly)
     }
     await Promise.all([
-      fetchExpenseAccountMatrix().catch(() => {}),
-      fetchIncomeData().catch(() => {})
+      fetchExpenseAccountMatrix().catch(e => console.warn('Dashboard fetch failed:', e)),
+      fetchIncomeData().catch(e => console.warn('Dashboard fetch failed:', e))
     ])
     if (months.value.length > 0) {
       selectedMonth.value = months.value[months.value.length - 1].value
@@ -206,29 +203,28 @@ const monthlyChartData = computed(() => {
   return {
     labels: summary.value.monthly.map(m => {
       const [y, mo] = m.month.split('-')
-      const date = new Date(y, parseInt(mo) - 1)
-      return date.toLocaleString('en-US', { month: 'short' })
+      return shortMonth(parseInt(mo))
     }),
     datasets: [
       {
         label: 'Income',
         data: summary.value.monthly.map(m => Math.round(m.income)),
-        borderColor: '#17ad49',
+        borderColor: CHART_COLORS[0],
         backgroundColor: 'rgba(23, 173, 73, 0.08)',
         fill: true,
         tension: 0.4,
         pointRadius: 3,
-        pointBackgroundColor: '#17ad49',
+        pointBackgroundColor: CHART_COLORS[0],
       },
       {
         label: 'Expense',
         data: summary.value.monthly.map(m => Math.round(m.expense)),
-        borderColor: '#da2f38',
+        borderColor: CHART_COLORS[1],
         backgroundColor: 'rgba(218, 47, 56, 0.08)',
         fill: true,
         tension: 0.4,
         pointRadius: 3,
-        pointBackgroundColor: '#da2f38',
+        pointBackgroundColor: CHART_COLORS[1],
       },
     ],
   }
@@ -245,7 +241,7 @@ watch(selectedMonth, async (val) => {
     await fetchTransactions({ currency: currencyParam.value, start_date: `${y}-${m}-01`, end_date: `${y}-${m}-${lastDay}` })
   }
   monthlyTransactions.value = transactions.value.filter(t => t.type === 'expense')
-}, { immediate: true })
+})
 
 function pctTooltip(context) {
   const label = context.label || ''
@@ -300,12 +296,11 @@ const groupChartData = computed(() => {
     groups[group] += t.amount
   }
   const sorted = Object.entries(groups).sort((a, b) => groupSortKey(a[0]) - groupSortKey(b[0]))
-  const colors = ['#da2f38', '#17ad49', '#8952f6', '#1679fa', '#ff970a', '#0592b5', '#738482']
   return {
     labels: sorted.map(([g]) => g),
     datasets: [{
       data: sorted.map(([, v]) => Math.round(v)),
-      backgroundColor: sorted.map((_, i) => colors[i % colors.length]),
+      backgroundColor: sorted.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]),
       borderWidth: 0,
       hoverOffset: 4,
     }],
@@ -324,12 +319,11 @@ const drilledChartData = computed(() => {
     }
   }
   const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1])
-  const colors = ['#da2f38', '#ff970a', '#ffdf1b', '#f6737a', '#ffb132', '#ffd16d']
   return {
     labels: sorted.map(([c]) => c),
     datasets: [{
       data: sorted.map(([, v]) => Math.round(v)),
-      backgroundColor: sorted.map((_, i) => colors[i % colors.length]),
+      backgroundColor: sorted.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]),
       borderWidth: 0,
       hoverOffset: 4,
     }],
@@ -348,8 +342,7 @@ const matrixAvg = ref(0)
 
 async function fetchMatrixData() {
   const { data } = await api.get(`/summary/${selectedYear.value}/monthly-categories`, { params: { currency: currencyParam.value } })
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  matrixMonths.value = monthNames
+  matrixMonths.value = MONTH_NAMES
 
   const groups = {}
   for (const row of data) {
@@ -431,7 +424,7 @@ function isExpenseAccountCollapsed(typeName) {
   return expenseAccountCollapsed.value.has(typeName)
 }
 
-const ACCOUNT_TYPE_ORDER = ['savings', 'checking', 'time_deposit', 'equity', 'investment']
+
 
 async function fetchExpenseAccountMatrix() {
   const { data: txnsData } = await api.get(`/transactions`, { params: { currency: currencyParam.value, start_date: `${selectedYear.value}-01-01`, end_date: `${selectedYear.value}-12-31`, type: 'expense' } })
@@ -698,12 +691,12 @@ function formatConverted(val) {
           ></div>
         </div>
         <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">
-          {{ currentMonthBudget ? `${currencySymbol}${currentMonthExpense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${currencySymbol}${currentMonthBudget.total_budget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'No budget set' }}
+          {{ currentMonthBudget ? `${formatCurrency(currentMonthExpense, curSym)} / ${formatCurrency(currentMonthBudget.total_budget, curSym)}` : 'No budget set' }}
         </div>
         <div v-if="currentMonthBudget" class="mt-1">
           <span class="text-xs text-mushroom-400 dark:text-mushroom-500 mr-1">Remaining:</span>
           <span class="text-xs font-medium" :class="budgetRemaining >= 0 ? 'text-kangkong-600' : 'text-tomato-600'">
-            {{ budgetRemaining < 0 ? '-' : '' }}{{ currencySymbol }}{{ Math.abs(budgetRemaining).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+            {{ budgetRemaining < 0 ? '-' : '' }}{{ formatCurrency(Math.abs(budgetRemaining), curSym) }}
           </span>
         </div>
       </div>
@@ -711,7 +704,7 @@ function formatConverted(val) {
       <div class="card-elevated p-4">
         <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Expenses This Month</div>
         <div class="text-lg font-semibold text-tomato-500">
-          {{ currencySymbol }}{{ currentMonthExpense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+          {{ formatCurrency(currentMonthExpense, curSym) }}
         </div>
         <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
@@ -721,7 +714,7 @@ function formatConverted(val) {
       <div class="card-elevated p-4">
         <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Income This Month</div>
         <div class="text-lg font-semibold text-kangkong-500">
-          {{ currencySymbol }}{{ currentMonthIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+          {{ formatCurrency(currentMonthIncome, curSym) }}
         </div>
         <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
@@ -788,7 +781,7 @@ function formatConverted(val) {
         </div>
         <div v-if="!drilledGroup && nonBudgetedTotal > 0" class="mt-2 pt-2 border-t border-mushroom-100 dark:border-mushroom-700/50 flex items-center justify-between text-xs">
           <span class="text-mushroom-500 dark:text-mushroom-400">Non-budgeted</span>
-          <span class="font-medium text-mushroom-950 dark:text-mushroom-50">{{ currencySymbol }}{{ Math.round(nonBudgetedTotal).toLocaleString() }}</span>
+          <span class="font-medium text-mushroom-950 dark:text-mushroom-50">{{ formatCurrency(Math.round(nonBudgetedTotal), curSym) }}</span>
         </div>
       </div>
     </div>
@@ -819,8 +812,8 @@ function formatConverted(val) {
             <tr class="border-b border-mushroom-200 dark:border-mushroom-700">
               <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900">Category</th>
               <th v-for="(m, i) in incomeMatrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Total {{ currencySymbol }}</th>
-              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Avg {{ currencySymbol }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Total {{ curSym }}</th>
+              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Avg {{ curSym }}</th>
             </tr>
           </thead>
           <tbody>
@@ -848,11 +841,11 @@ function formatConverted(val) {
             <tr class="border-b border-mushroom-200 dark:border-mushroom-700">
               <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900">Account</th>
               <th v-for="(m, i) in incomeMatrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Total {{ currencySymbol }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-for="row in incomeAccountRows" :key="row.name + row.type">
+                <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Total {{ curSym }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template v-for="row in incomeAccountRows" :key="row.name + row.type">
               <tr
                 v-if="row.type === 'group'"
                 class="bg-mushroom-50 dark:bg-mushroom-800 cursor-pointer select-none hover:bg-mushroom-100 dark:hover:bg-mushroom-700 transition-colors"
@@ -921,8 +914,8 @@ function formatConverted(val) {
             <tr class="border-b border-mushroom-200 dark:border-mushroom-700">
               <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900">Category</th>
               <th v-for="(m, i) in matrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Total {{ currencySymbol }}</th>
-              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Avg {{ currencySymbol }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Total {{ curSym }}</th>
+              <th v-if="showAverages" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Avg {{ curSym }}</th>
             </tr>
           </thead>
           <tbody>
@@ -978,7 +971,7 @@ function formatConverted(val) {
             <tr class="border-b border-mushroom-200 dark:border-mushroom-700">
               <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900">Account</th>
               <th v-for="(m, i) in matrixMonths" :key="i" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">{{ m }}</th>
-              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Total {{ currencySymbol }}</th>
+              <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Total {{ curSym }}</th>
             </tr>
           </thead>
           <tbody>

@@ -29,6 +29,10 @@ def list_transactions(
 
 @router.post("/transactions", status_code=201)
 def create_transaction(data: TransactionCreate, _auth: None = Depends(require_auth)):
+    if data.account_id not in {a.id for a in backend.get_accounts()}:
+        raise HTTPException(status_code=404, detail="Account not found")
+    if data.category not in {c.name for c in backend.get_categories()}:
+        raise HTTPException(status_code=400, detail="Category not found")
     return backend.create_transaction(data)
 
 

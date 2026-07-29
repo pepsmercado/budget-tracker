@@ -20,14 +20,24 @@ export function useTransfers() {
   }
 
   async function createTransfer(payload) {
-    const { data } = await api.post('/transfers', payload)
-    await fetchTransfers(lastCurrency)
-    return data
+    try {
+      const { data } = await api.post('/transfers', payload)
+      await fetchTransfers(lastCurrency)
+      return data
+    } catch (e) {
+      console.warn('createTransfer failed:', e)
+      throw e
+    }
   }
 
   async function deleteTransfer(transferId) {
-    await api.delete(`/transfers/${transferId}`)
-    await fetchTransfers(lastCurrency)
+    try {
+      await api.delete(`/transfers/${transferId}`)
+      await fetchTransfers(lastCurrency)
+    } catch (e) {
+      console.warn('deleteTransfer failed:', e)
+      throw e
+    }
   }
 
   return { transfers, loading, fetchTransfers, createTransfer, deleteTransfer }

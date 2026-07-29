@@ -3,6 +3,8 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useTransfers } from '../composables/useTransfers'
 import { useAccounts } from '../composables/useAccounts'
 import { useToast } from '../composables/useToast.js'
+import { formatDate, formatCurrency } from '../utils/format.js'
+import { currencySymbol } from '../utils/currency.js'
 import Skeleton from '../components/Skeleton.vue'
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
@@ -12,7 +14,7 @@ const { accounts, fetchAccounts } = useAccounts()
 const toast = useToast()
 
 const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
-const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
+const curSym = computed(() => currencySymbol(currencyParam.value))
 const viewLabel = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 
 const showForm = ref(false)
@@ -31,11 +33,7 @@ function accountName(id) {
   return a ? a.name : 'Unknown'
 }
 
-function formatDate(d) {
-  if (!d) return '—'
-  const dt = typeof d === 'string' ? new Date(d + 'T00:00:00') : new Date(d)
-  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
+
 
 function canSubmit() {
   return form.value.from_account_id && form.value.to_account_id &&
@@ -64,6 +62,7 @@ async function handleDelete(t) {
     toast.success('Transfer reversed')
   } catch (e) {
     console.error('Failed to delete transfer:', e)
+    toast.error(e.response?.data?.detail || 'Failed to reverse transfer')
   }
 }
 
@@ -109,11 +108,11 @@ watch(currencyParam, loadAll)
             </select>
           </div>
           <div>
-            <label class="label-text">Amount ({{ currencySymbol }})</label>
+            <label class="label-text">Amount ({{ curSym }})</label>
             <input v-model.number="form.amount" type="number" step="0.01" min="0.01" required class="input-field" />
           </div>
           <div>
-            <label class="label-text">Fee ({{ currencySymbol }}) <span class="text-mushroom-300 dark:text-mushroom-600">optional</span></label>
+            <label class="label-text">Fee ({{ curSym }}) <span class="text-mushroom-300 dark:text-mushroom-600">optional</span></label>
             <input v-model.number="form.fee" type="number" step="0.01" min="0" class="input-field" />
           </div>
           <div>
@@ -169,9 +168,10 @@ watch(currencyParam, loadAll)
             </div>
             <div class="flex items-center gap-3 text-xs text-mushroom-400 dark:text-mushroom-500">
               <span>{{ formatDate(t.date) }}</span>
+
               <template v-if="t.fee > 0">
                 <span class="text-mushroom-200 dark:text-mushroom-600">|</span>
-                <span class="text-tomato-500 dark:text-tomato-400">Fee: {{ currencySymbol }}{{ t.fee.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</span>
+                <span class="text-tomato-500 dark:text-tomato-400">Fee: {{ formatCurrency(t.fee, curSym) }}</span>
               </template>
               <template v-if="t.note">
                 <span class="text-mushroom-200 dark:text-mushroom-600">|</span>
@@ -180,7 +180,7 @@ watch(currencyParam, loadAll)
             </div>
           </div>
           <div class="flex items-center gap-3">
-            <span class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ currencySymbol }}{{ t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</span>
+            <span class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ formatCurrency(t.amount, curSym) }}</span>
             <div class="flex items-center gap-1">
               <template v-if="confirmingDelete === t.id">
                 <span class="text-xs text-mushroom-400 dark:text-mushroom-500 mr-1">Reverse?</span>

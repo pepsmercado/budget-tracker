@@ -19,10 +19,14 @@ export function useSummary() {
   }
 
   async function fetchBalances(currency) {
-    const params = {}
-    if (currency) params.currency = currency
-    const { data } = await api.get('/balance', { params })
-    balances.value = data
+    try {
+      const params = {}
+      if (currency) params.currency = currency
+      const { data } = await api.get('/balance', { params })
+      balances.value = data
+    } catch (e) {
+      console.warn('fetchBalances failed:', e)
+    }
   }
 
   return { summary, balances, loading, fetchSummary, fetchBalances }

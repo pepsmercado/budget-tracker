@@ -6,6 +6,8 @@ import CategoryBadge from '../components/CategoryBadge.vue'
 import Skeleton from '../components/Skeleton.vue'
 import { categoryIcons } from '../constants.js'
 import { useToast } from '../composables/useToast.js'
+import { formatDate, formatCurrency } from '../utils/format.js'
+import { currencySymbol } from '../utils/currency.js'
 import api from '../api'
 
 const loadingPage = ref(true)
@@ -18,7 +20,7 @@ const { accounts, fetchAccounts } = useAccounts()
 const toast = useToast()
 
 const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
-const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
+const curSym = computed(() => currencySymbol(currencyParam.value))
 const viewLabel = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 
 const filters = ref({ account_id: '', type: '', group: '', category: '', start_date: '', end_date: '' })
@@ -143,6 +145,7 @@ async function handleDelete(id) {
     toast.success('Transaction deleted')
   } catch (e) {
     console.error('Failed to delete transaction:', e)
+    toast.error(e.response?.data?.detail || 'Failed to delete transaction')
   }
 }
 
@@ -156,10 +159,7 @@ function groupedByDate(txns) {
   return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]))
 }
 
-function formatDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00')
-  return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
-}
+
 
 function exportCSV() {
   const headers = ['Date', 'Type', 'Category', 'Group', 'Account', 'Description', 'Amount', 'Currency']
@@ -286,7 +286,7 @@ function exportCSV() {
           </div>
           <div class="flex items-center gap-3 flex-shrink-0">
             <span class="text-sm font-medium w-28 text-right" :class="t.type === 'income' ? 'text-kangkong-700 dark:text-kangkong-400' : 'text-tomato-600 dark:text-tomato-400'">
-              {{ t.type === 'income' ? '+' : '-' }}{{ currencySymbol }}{{ t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
+              {{ t.type === 'income' ? '+' : '-' }}{{ formatCurrency(t.amount, curSym) }}
             </span>
             <div class="w-20 text-right">
               <router-link :to="`/${currency}/transactions/${t.id}/edit`" class="text-xs text-mushroom-400 dark:text-mushroom-500 hover:text-kangkong-600 dark:hover:text-kangkong-400">Edit</router-link>

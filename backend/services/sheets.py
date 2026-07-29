@@ -7,6 +7,8 @@ from datetime import date, datetime
 from google.oauth2.service_account import Credentials
 
 from services.base import BackendService
+from services.seed_data import CATEGORIES_DATA
+from services.helpers import advance_date, fetch_rates
 from models import (
     Account, AccountCreate, Transaction, TransactionCreate,
     Category, CategoryCreate,
@@ -79,6 +81,7 @@ def _parse_date(val):
     try:
         return date.fromisoformat(str(val).strip())
     except ValueError:
+        print(f"WARNING: failed to parse date '{val}', using today()")
         return date.today()
 
 
@@ -90,6 +93,7 @@ def _parse_datetime(val):
     try:
         return datetime.fromisoformat(str(val).strip())
     except ValueError:
+        print(f"WARNING: failed to parse datetime '{val}', using now()")
         return datetime.now()
 
 
@@ -106,33 +110,7 @@ class SheetsBackend(BackendService):
         rows = self._read_all("categories")
         if len(rows) > 0:
             return
-        categories_data = [
-            ("Rent", "expense", "Fixed", 15000),
-            ("Electricity", "expense", "Fixed", 3000),
-            ("Gas", "expense", "Fixed", 1500),
-            ("Subscriptions", "expense", "Fixed", 2000),
-            ("Phone & Wifi", "expense", "Fixed", 1500),
-            ("Rent Insurance", "expense", "Fixed", 800),
-            ("Health Insurance", "expense", "Fixed", 2500),
-            ("Groceries", "expense", "Essential", 12000),
-            ("Household", "expense", "Essential", 3000),
-            ("Transportation", "expense", "Essential", 4000),
-            ("Medical", "expense", "Essential", 2000),
-            ("Eating Out", "expense", "Lifestyle", 5000),
-            ("Social Events", "expense", "Lifestyle", 3000),
-            ("Hobbies", "expense", "Lifestyle", 2000),
-            ("Shopping", "expense", "Sinking", 5000),
-            ("Beauty", "expense", "Sinking", 2000),
-            ("Travel", "expense", "Sinking", 8000),
-            ("Others", "expense", "Sinking", 2000),
-            ("Tuition", "expense", "School", 25000),
-            ("School Supplies", "expense", "School", 2000),
-            ("Salary", "income", "Income", 0),
-            ("Cashback", "income", "Income", 0),
-            ("Interest", "income", "Income", 0),
-            ("Others", "income", "Income", 0),
-            ("Transfer Fees", "expense", "Misc", 0),
-        ]
+        categories_data = CATEGORIES_DATA
         for name, ctype, group, budget in categories_data:
             c = Category(id=_uid(), name=name, type=ctype, group=group,
                          budget_amount=budget)
@@ -192,8 +170,8 @@ class SheetsBackend(BackendService):
                 if rows:
                     self._sheets_cache[tab_name] = rows
                     self._cache_times[tab_name] = now
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"WARNING: failed to warm cache for {to_fetch}: {e}")
 
     def _read_all(self, tab_name: str) -> list[dict]:
         now = time.time()
@@ -703,48 +681,8 @@ class SheetsBackend(BackendService):
             monthly=sorted(monthly.values(), key=lambda x: x.month),
         )
 
-    _rates_cache = None
-    _rates_cache_time = None
-
     def get_rates(self) -> RatesResponse:
-        import httpx
-        from datetime import timedelta
-
-        if SheetsBackend._rates_cache and SheetsBackend._rates_cache_time:
-            if datetime.now() - SheetsBackend._rates_cache_time < timedelta(hours=12):
-                return SheetsBackend._rates_cache
-
-        apis = [
-            'https://open.er-api.com/v6/latest/USD',
-            'https://api.exchangerate-api.com/v4/latest/USD',
-        ]
-
-        with httpx.Client(timeout=10) as client:
-            for api_url in apis:
-                try:
-                    res = client.get(api_url, headers={'User-Agent': 'Mozilla/5.0'})
-                    data = res.json()
-                    rates = data.get('rates', {})
-                    php_rate = rates.get("PHP")
-                    if php_rate:
-                        result = RatesResponse(
-                            base="USD",
-                            rates={
-                                "USD": 1.0, "PHP": php_rate,
-                                "EUR": rates.get("EUR", 0.92),
-                                "GBP": rates.get("GBP", 0.79),
-                                "JPY": rates.get("JPY", 149.5),
-                            }
-                        )
-                        SheetsBackend._rates_cache = result
-                        SheetsBackend._rates_cache_time = datetime.now()
-                        return result
-                except Exception:
-                    continue
-
-        if SheetsBackend._rates_cache:
-            return SheetsBackend._rates_cache
-        return RatesResponse(base="USD", rates={"USD": 1.0, "PHP": 56.0, "EUR": 0.92, "GBP": 0.79, "JPY": 149.5})
+        return fetch_rates()
 
     def get_monthly_category_breakdown(self, year: int, currency: str | None = None) -> list[MonthlyCategoryRow]:
         self._warm_cache(["accounts", "transactions", "categories"])
@@ -838,18 +776,7 @@ class SheetsBackend(BackendService):
         return self._row_to_recurring(rows[idx])
 
     def _advance_date(self, date_str: str, frequency: str) -> str:
-        import calendar
-        y, m, d = int(date_str[:4]), int(date_str[5:7]), int(date_str[8:10])
-        if frequency == "monthly":
-            m += 1
-            if m > 12:
-                m = 1
-                y += 1
-            last_day = calendar.monthrange(y, m)[1]
-            d = min(d, last_day)
-        else:
-            y += 1
-        return f"{y}-{m:02d}-{d:02d}"
+        return advance_date(date_str, frequency)
 
     def run_recurring(self, currency: str | None = None) -> RecurringRunResult:
         today = date.today()
@@ -933,7 +860,7 @@ class SheetsBackend(BackendService):
         if bal < data.amount + data.fee:
             raise ValueError(f"Insufficient balance. Available: {bal:.2f}")
 
-        tx_date = date.fromisoformat(data.date) if isinstance(data.date, str) else data.date
+        tx_date = date.fromisoformat(data.date)
         t = Transfer(
             id=_uid(), from_account_id=data.from_account_id,
             to_account_id=data.to_account_id, amount=data.amount,

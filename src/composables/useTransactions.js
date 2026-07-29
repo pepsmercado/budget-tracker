@@ -26,20 +26,35 @@ export function useTransactions() {
   }
 
   async function createTransaction(payload) {
-    const { data } = await api.post('/transactions', payload)
-    await fetchTransactions(lastFilters)
-    return data
+    try {
+      const { data } = await api.post('/transactions', payload)
+      await fetchTransactions(lastFilters)
+      return data
+    } catch (e) {
+      console.warn('createTransaction failed:', e)
+      throw e
+    }
   }
 
   async function updateTransaction(id, payload) {
-    const { data } = await api.put(`/transactions/${id}`, payload)
-    await fetchTransactions(lastFilters)
-    return data
+    try {
+      const { data } = await api.put(`/transactions/${id}`, payload)
+      await fetchTransactions(lastFilters)
+      return data
+    } catch (e) {
+      console.warn('updateTransaction failed:', e)
+      throw e
+    }
   }
 
   async function deleteTransaction(id) {
-    await api.delete(`/transactions/${id}`)
-    await fetchTransactions(lastFilters)
+    try {
+      await api.delete(`/transactions/${id}`)
+      await fetchTransactions(lastFilters)
+    } catch (e) {
+      console.warn('deleteTransaction failed:', e)
+      throw e
+    }
   }
 
   return { transactions, loading, fetchTransactions, createTransaction, updateTransaction, deleteTransaction }

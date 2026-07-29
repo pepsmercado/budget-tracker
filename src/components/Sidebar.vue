@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed, inject, watch } from 'vue'
+import { ref, computed, inject, watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import SidebarIcon from './SidebarIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -53,43 +54,32 @@ function isExpanded(currency, key) {
   return expanded.value[currency]?.includes(key)
 }
 
-const iconDashboard = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`
-const iconTransactions = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>`
-const iconAdd = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>`
-const iconUpload = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`
-const iconBudget = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-8 8"/><path d="M8 8h8v8"/></svg>`
-const iconAccounts = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4h-4z"/></svg>`
-const iconRecurring = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/><polyline points="21 3 21 9 15 9"/></svg>`
-const iconTransfer = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>`
-const iconReports = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>`
-const iconChevron = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>`
-
 function menuFor(currency) {
   const prefix = `/${currency}`
   return [
-    { to: `${prefix}`, label: 'Dashboard', icon: iconDashboard },
+    { to: `${prefix}`, label: 'Dashboard', icon: 'dashboard' },
     {
       key: 'transactions',
       label: 'Transactions',
-      icon: iconTransactions,
+      icon: 'transactions',
       children: [
-        { to: `${prefix}/transactions`, label: 'All Transactions', icon: iconTransactions },
-        { to: `${prefix}/transactions/new`, label: 'Add Record', icon: iconAdd },
-        { to: `${prefix}/transfers`, label: 'Transfers', icon: iconTransfer },
-        { to: `${prefix}/upload`, label: 'Bulk Upload', icon: iconUpload },
+        { to: `${prefix}/transactions`, label: 'All Transactions', icon: 'transactions' },
+        { to: `${prefix}/transactions/new`, label: 'Add Record', icon: 'add' },
+        { to: `${prefix}/transfers`, label: 'Transfers', icon: 'transfers' },
+        { to: `${prefix}/upload`, label: 'Bulk Upload', icon: 'upload' },
       ]
     },
     {
       key: 'planning',
       label: 'Planning',
-      icon: iconBudget,
+      icon: 'budgets',
       children: [
-        { to: `${prefix}/budgets`, label: 'Budgets', icon: iconBudget },
-        { to: `${prefix}/accounts`, label: 'Accounts', icon: iconAccounts },
-        { to: `${prefix}/recurring`, label: 'Recurring', icon: iconRecurring },
+        { to: `${prefix}/budgets`, label: 'Budgets', icon: 'budgets' },
+        { to: `${prefix}/accounts`, label: 'Accounts', icon: 'accounts' },
+        { to: `${prefix}/recurring`, label: 'Recurring', icon: 'recurring' },
       ]
     },
-    { to: `${prefix}/reports`, label: 'Reports', icon: iconReports },
+    { to: `${prefix}/reports`, label: 'Reports', icon: 'reports' },
   ]
 }
 
@@ -153,6 +143,8 @@ watch(() => route.path, (path) => {
     }
   }
 }, { immediate: true })
+
+onBeforeUnmount(() => clearTimeout(hoverTimeout))
 </script>
 
 <template>
@@ -202,7 +194,7 @@ watch(() => route.path, (path) => {
           :title="collapsed ? item.label : ''"
           @click="expandSidebar(); closeMobile()"
         >
-          <span v-html="item.icon" class="flex-shrink-0"></span>
+          <SidebarIcon :name="item.icon" class="flex-shrink-0" />
           <span v-if="!collapsed" class="whitespace-nowrap overflow-hidden text-ellipsis">{{ item.label }}</span>
         </router-link>
 
@@ -218,14 +210,13 @@ watch(() => route.path, (path) => {
               ]"
               :title="collapsed ? item.label : ''"
             >
-              <span v-html="item.icon" class="flex-shrink-0"></span>
+              <SidebarIcon :name="item.icon" class="flex-shrink-0" />
               <template v-if="!collapsed">
                 <span class="whitespace-nowrap overflow-hidden text-ellipsis flex-1 text-left">{{ item.label }}</span>
-                <span
-                  v-html="iconChevron"
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   class="flex-shrink-0 transition-transform duration-150"
                   :class="isExpanded(activeCurrency, item.key) ? 'rotate-90' : ''"
-                />
+                ><path d="M9 18l6-6-6-6"/></svg>
               </template>
             </button>
 
@@ -238,7 +229,7 @@ watch(() => route.path, (path) => {
                 :class="isActive(child.to) ? 'text-white font-medium bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'"
                 @click="closeMobile"
               >
-                <span v-html="child.icon" class="flex-shrink-0 opacity-60"></span>
+                <SidebarIcon :name="child.icon" class="flex-shrink-0 opacity-60" />
                 <span class="whitespace-nowrap overflow-hidden text-ellipsis">{{ child.label }}</span>
               </router-link>
             </div>
@@ -288,7 +279,7 @@ watch(() => route.path, (path) => {
         :class="isActive(child.to) ? 'text-white font-medium bg-white/10' : 'text-white/80 hover:text-white hover:bg-white/8'"
         @click="closeMobile"
       >
-        <span v-html="child.icon" class="flex-shrink-0 opacity-70"></span>
+        <SidebarIcon :name="child.icon" class="flex-shrink-0 opacity-70" />
         <span class="whitespace-nowrap">{{ child.label }}</span>
       </router-link>
     </div>

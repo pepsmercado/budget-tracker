@@ -6,3 +6,11 @@ export const categoryIcons = {
   Tuition: '🎓', 'School Supplies': '📚', Salary: '💰', Cashback: '💵',
   Interest: '📈', 'Transfer Fees': '💸',
 }
+
+export const EXPENSE_GROUP_ORDER = ['Fixed', 'Essential', 'Lifestyle', 'School', 'Misc', 'Sinking']
+
+export const CATEGORY_GROUP_ORDER = ['Income', 'Fixed', 'Essential', 'Lifestyle', 'School', 'Misc', 'Sinking']
+
+export const ACCOUNT_TYPE_ORDER = ['savings', 'time_deposit', 'equity', 'checking', 'investment']
+
+export const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']

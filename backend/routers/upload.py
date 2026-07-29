@@ -86,7 +86,7 @@ def guess_category(description, tx_type):
 
 def detect_bank(content: str) -> str:
     lower = content.lower()
-    if "bpi" in lower or "bpi" in lower:
+    if "bpi" in lower:
         return "bpi"
     if "bdo" in lower:
         return "bdo"
@@ -97,7 +97,7 @@ def detect_bank(content: str) -> str:
     return "unknown"
 
 
-def parse_bpi(rows: list[dict]) -> list[BankStatementRow]:
+def _parse_credit_debit(rows: list[dict]) -> list[BankStatementRow]:
     result = []
     for row in rows:
         date_str = normalize_date(row.get("Date", row.get("Transaction Date", "")).strip())
@@ -126,37 +126,14 @@ def parse_bpi(rows: list[dict]) -> list[BankStatementRow]:
             except ValueError:
                 pass
     return result
+
+
+def parse_bpi(rows: list[dict]) -> list[BankStatementRow]:
+    return _parse_credit_debit(rows)
 
 
 def parse_bdo(rows: list[dict]) -> list[BankStatementRow]:
-    result = []
-    for row in rows:
-        date_str = normalize_date(row.get("Date", row.get("Transaction Date", "")).strip())
-        desc = row.get("Description", row.get("Particulars", "")).strip()
-        amount_str = row.get("Amount", "0").strip().replace(",", "").replace("PHP", "").replace("USD", "").strip()
-        credit = row.get("Credit", "").strip().replace(",", "").replace("PHP", "").replace("USD", "").strip()
-        debit = row.get("Debit", "").strip().replace(",", "").replace("PHP", "").replace("USD", "").strip()
-
-        if credit and credit != "0" and credit != "":
-            try:
-                amt = float(credit)
-                result.append(BankStatementRow(date=date_str, description=desc, amount=amt, type="income", raw=dict(row)))
-            except ValueError:
-                pass
-        elif debit and debit != "0" and debit != "":
-            try:
-                amt = float(debit)
-                result.append(BankStatementRow(date=date_str, description=desc, amount=amt, type="expense", raw=dict(row)))
-            except ValueError:
-                pass
-        elif amount_str and amount_str != "0":
-            try:
-                amt = float(amount_str)
-                tx_type = "income" if amt > 0 else "expense"
-                result.append(BankStatementRow(date=date_str, description=desc, amount=abs(amt), type=tx_type, raw=dict(row)))
-            except ValueError:
-                pass
-    return result
+    return _parse_credit_debit(rows)
 
 
 MAYA_TX_RE = re.compile(

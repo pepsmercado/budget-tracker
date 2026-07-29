@@ -5,14 +5,11 @@ import os
 from routers import accounts, transactions, categories, budgets, summary, upload, recurring, transfers, reports
 from routers import monthly_budgets
 from auth import router as auth_router
-from app_state import backend
 
 app = FastAPI(title="Expense Tracker API", redirect_slashes=False)
 
-cors_origins = [
-    "http://localhost:5173",
-    "http://localhost:5174",
-]
+cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174").split(",")
+PORT = int(os.environ.get("PORT", "8001"))
 vercel_url = os.environ.get("VERCEL_URL")
 if vercel_url:
     cors_origins.append(f"https://{vercel_url}")

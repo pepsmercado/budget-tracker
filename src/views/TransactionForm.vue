@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import { useTransactions } from '../composables/useTransactions'
 import { useAccounts } from '../composables/useAccounts'
+import { CATEGORY_GROUP_ORDER } from '../constants.js'
 import Skeleton from '../components/Skeleton.vue'
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
@@ -41,7 +42,7 @@ const groupedCategories = computed(() => {
     if (!groups[group]) groups[group] = []
     groups[group].push(c)
   }
-  const order = ['Income', 'Fixed', 'Essential', 'Lifestyle', 'School', 'Misc', 'Sinking']
+  const order = CATEGORY_GROUP_ORDER
   const sorted = {}
   for (const g of order) {
     if (groups[g]) sorted[g] = groups[g]

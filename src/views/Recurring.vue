@@ -4,6 +4,8 @@ import { useRecurring } from '../composables/useRecurring'
 import { useAccounts } from '../composables/useAccounts'
 import { useToast } from '../composables/useToast.js'
 import Skeleton from '../components/Skeleton.vue'
+import { formatDate, formatCurrency } from '../utils/format.js'
+import { currencySymbol } from '../utils/currency.js'
 import { categoryIcons } from '../constants.js'
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
@@ -13,7 +15,7 @@ const { accounts, fetchAccounts } = useAccounts()
 const toast = useToast()
 
 const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
-const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
+const curSym = computed(() => currencySymbol(currencyParam.value))
 const viewLabel = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 
 const showForm = ref(false)
@@ -32,10 +34,7 @@ const frequencyLabels = { monthly: 'Monthly', yearly: 'Yearly' }
 
 const currencyAccounts = computed(() => accounts.value.filter(a => a.currency === currencyParam.value))
 
-function formatDate(d) {
-  if (!d) return '—'
-  return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
+
 
 function nextDateLabel(r) {
   if (!r.next_date) return 'Not scheduled'
@@ -163,7 +162,7 @@ watch(currencyParam, loadAll)
             <input v-model="form.name" placeholder="e.g. Rent" required class="input-field" />
           </div>
           <div>
-            <label class="label-text">Amount ({{ currencySymbol }})</label>
+            <label class="label-text">Amount ({{ curSym }})</label>
             <input v-model.number="form.amount" type="number" step="0.01" min="0" required class="input-field" />
           </div>
           <div>
@@ -260,7 +259,7 @@ watch(currencyParam, loadAll)
               <div class="flex items-center gap-3 mt-1 text-xs text-mushroom-400 dark:text-mushroom-500">
                 <span>{{ frequencyLabels[r.frequency] }} on {{ r.day_of_month }}{{ r.day_of_month === 1 ? 'st' : r.day_of_month === 2 ? 'nd' : r.day_of_month === 3 ? 'rd' : 'th' }}</span>
                 <span class="text-mushroom-200 dark:text-mushroom-600">|</span>
-                <span class="font-medium text-mushroom-700 dark:text-mushroom-300">{{ currencySymbol }}{{ r.amount.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</span>
+                <span class="font-medium text-mushroom-700 dark:text-mushroom-300">{{ formatCurrency(r.amount, curSym) }}</span>
                 <span class="text-mushroom-200 dark:text-mushroom-600">|</span>
                 <span :class="nextDateClass(r)">{{ nextDateLabel(r) }}</span>
                 <template v-if="r.end_date">

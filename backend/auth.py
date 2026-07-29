@@ -1,10 +1,10 @@
 import hashlib
 import os
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header
 
 router = APIRouter()
 
-SALT = "budget-tracker-salt"
+SALT = os.environ.get("AUTH_SALT", "budget-tracker-salt")
 
 
 def get_access_pin():

@@ -11,8 +11,16 @@ def list_accounts():
     return backend.get_accounts()
 
 
+VALID_ACCOUNT_TYPES = {"checking", "savings", "credit_card", "settlement", "time_deposit", "investment"}
+VALID_CURRENCIES = {"PHP", "USD"}
+
+
 @router.post("/accounts", status_code=201)
 def create_account(data: AccountCreate, _auth: None = Depends(require_auth)):
+    if data.type not in VALID_ACCOUNT_TYPES:
+        raise HTTPException(status_code=400, detail=f"Invalid account type '{data.type}'. Must be one of: {', '.join(sorted(VALID_ACCOUNT_TYPES))}")
+    if data.currency not in VALID_CURRENCIES:
+        raise HTTPException(status_code=400, detail=f"Invalid currency '{data.currency}'. Must be one of: {', '.join(sorted(VALID_CURRENCIES))}")
     return backend.create_account(data)
 
 

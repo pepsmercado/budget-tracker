@@ -137,3 +137,7 @@ class BackendService(ABC):
     @abstractmethod
     def delete_transfer(self, transfer_id: str) -> None:
         pass
+
+    @abstractmethod
+    def bulk_update_category_budgets(self, updates: dict[str, float]) -> list[Category]:
+        pass

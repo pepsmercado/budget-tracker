@@ -5,6 +5,9 @@ import api from '../api'
 import BudgetProgressBar from '../components/BudgetProgressBar.vue'
 import Skeleton from '../components/Skeleton.vue'
 import { categoryIcons } from '../constants.js'
+import { formatCurrency } from '../utils/format.js'
+import { currencySymbol } from '../utils/currency.js'
+import { EXPENSE_GROUP_ORDER } from '../constants.js'
 import { useToast } from '../composables/useToast.js'
 
 const props = defineProps({ currency: { type: String, default: 'php' } })
@@ -13,7 +16,7 @@ const { budgetSummary, loading, fetchBudgetSummary } = useBudgets()
 const toast = useToast()
 
 const currencyParam = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
-const currencySymbol = computed(() => props.currency === 'usd' ? '$' : '₱')
+const curSym = computed(() => currencySymbol(currencyParam.value))
 const viewLabel = computed(() => props.currency === 'usd' ? 'USD' : 'PHP')
 const currentMonth = computed(() => {
   const n = new Date()
@@ -70,7 +73,7 @@ const groupedBudgetCategories = computed(() => {
   return groups
 })
 
-const groupOrder = ['Fixed', 'Essential', 'Lifestyle', 'School', 'Misc', 'Sinking']
+const groupOrder = EXPENSE_GROUP_ORDER
 const sortedGroupKeys = computed(() => {
   return groupOrder.filter(g => groupedBudgetCategories.value[g])
 })
@@ -197,11 +200,7 @@ function cancelEdit() {
 }
 
 function formatAmount(val) {
-  return `${currencySymbol.value}${val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-}
-
-function formatAmountDecimal(val) {
-  return `${currencySymbol.value}${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+  return formatCurrency(val, curSym.value)
 }
 
 function percent(spent, budget) {
@@ -379,7 +378,7 @@ watch(selectedMonth, (val) => {
               <BudgetProgressBar :spent="cat.spent" :budget="cat.budget" />
               <div class="flex items-center justify-between mt-2 text-xs">
                 <span class="text-mushroom-500 dark:text-mushroom-400">
-                  <span class="font-medium text-mushroom-700 dark:text-mushroom-300">{{ formatAmountDecimal(cat.spent) }}</span> spent
+                  <span class="font-medium text-mushroom-700 dark:text-mushroom-300">{{ formatAmount(cat.spent) }}</span> spent
                 </span>
                 <span :class="cat.spent > cat.budget && cat.budget > 0 ? 'text-tomato-600 font-medium' : 'text-kangkong-600'">
                   {{ formatAmount(Math.max(0, cat.budget - cat.spent)) }} left
@@ -394,7 +393,7 @@ watch(selectedMonth, (val) => {
       </div>
     </div>
 
-    <div v-else class="text-center py-12 text-mushroom-400 dark:text-mushroom-500 text-sm">Loading budget data...</div>
+    <div v-else class="text-center py-12 text-mushroom-400 dark:text-mushroom-500 text-sm">No budget data available</div>
   </div>
 
   <!-- Template Editor Modal -->

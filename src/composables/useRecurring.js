@@ -21,26 +21,46 @@ export function useRecurring() {
   }
 
   async function createRule(payload) {
-    const { data } = await api.post('/recurring', payload)
-    await fetchRules(lastCurrency)
-    return data
+    try {
+      const { data } = await api.post('/recurring', payload)
+      await fetchRules(lastCurrency)
+      return data
+    } catch (e) {
+      console.warn('createRule failed:', e)
+      throw e
+    }
   }
 
   async function updateRule(ruleId, payload) {
-    const { data } = await api.put(`/recurring/${ruleId}`, payload)
-    await fetchRules(lastCurrency)
-    return data
+    try {
+      const { data } = await api.put(`/recurring/${ruleId}`, payload)
+      await fetchRules(lastCurrency)
+      return data
+    } catch (e) {
+      console.warn('updateRule failed:', e)
+      throw e
+    }
   }
 
   async function deleteRule(ruleId) {
-    await api.delete(`/recurring/${ruleId}`)
-    await fetchRules(lastCurrency)
+    try {
+      await api.delete(`/recurring/${ruleId}`)
+      await fetchRules(lastCurrency)
+    } catch (e) {
+      console.warn('deleteRule failed:', e)
+      throw e
+    }
   }
 
   async function toggleRule(ruleId, active) {
-    const { data } = await api.put(`/recurring/${ruleId}/toggle`, { active })
-    await fetchRules(lastCurrency)
-    return data
+    try {
+      const { data } = await api.put(`/recurring/${ruleId}/toggle`, { active })
+      await fetchRules(lastCurrency)
+      return data
+    } catch (e) {
+      console.warn('toggleRule failed:', e)
+      throw e
+    }
   }
 
   async function runNow(currency) {

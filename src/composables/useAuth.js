@@ -39,5 +39,5 @@ export function useAuth() {
     localStorage.removeItem('auth_token')
   }
 
-  return { token, isVerified, isEnabled, error, loading, checkStatus, verify, logout }
+  return { isVerified, isEnabled, error, loading, checkStatus, verify, logout }
 }
