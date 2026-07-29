@@ -153,6 +153,9 @@ function groupedByDate(txns) {
     if (!groups[d]) groups[d] = []
     groups[d].push(t)
   }
+  for (const date in groups) {
+    groups[date].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+  }
   return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]))
 }
 
