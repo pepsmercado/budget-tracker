@@ -706,6 +706,12 @@ function formatConverted(val) {
         <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">
           {{ currentMonthBudget ? `${currencySymbol}${currentMonthExpense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${currencySymbol}${currentMonthBudget.total_budget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'No budget set' }}
         </div>
+        <div v-if="currentMonthBudget" class="mt-1">
+          <span class="text-xs text-mushroom-400 dark:text-mushroom-500 mr-1">Remaining:</span>
+          <span class="text-xs font-medium" :class="budgetRemaining >= 0 ? 'text-kangkong-600' : 'text-tomato-600'">
+            {{ budgetRemaining < 0 ? '-' : '' }}{{ currencySymbol }}{{ Math.abs(budgetRemaining).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+          </span>
+        </div>
       </div>
 
       <div class="card-elevated p-4">

@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peps Budget Tracker — Demo</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: { extend: { colors: {
+    mushroom: { 50:'#f7f8f8',100:'#e6eaea',200:'#d9dede',300:'#b8c1c0',400:'#919f9d',500:'#738482',600:'#5d6c6b',700:'#4c5857',800:'#414b4b',900:'#394141',950:'#262b2b' },
+    kangkong: { 50:'#f0fdf4',100:'#dcfce6',200:'#bbf7ce',300:'#86efa8',400:'#4ade7b',500:'#22c558',600:'#17ad49',700:'#158039',800:'#166531',900:'#14532b' },
+    tomato: { 50:'#fef2f3',100:'#fee2e3',200:'#fdcbce',300:'#fba6aa',400:'#f6737a',500:'#ec4750',600:'#da2f38',700:'#b61f27' },
+    carrot: { 50:'#fffaec',100:'#fff4d3',200:'#ffe5a5',300:'#ffd16d',400:'#ffb132',500:'#ff970a' },
+    mango: { 50:'#ffffea',100:'#fffbc5',200:'#fff885',300:'#ffed46',400:'#ffdf1b',500:'#ffbf00' },
+    blueberry: { 50:'#eef7ff',100:'#d8ebff',200:'#badcff',300:'#8bbdff',400:'#549eff',500:'#2d88ff',600:'#1679fa' },
+    purple: { 50:'#faf5ff',100:'#f3e8ff',200:'#e9d5ff',300:'#d8b4fe',400:'#c084fc',500:'#a855f7',600:'#9333ea' },
+    wintermelon: { 50:'#ecfeff',100:'#cefbff',200:'#a3f3fe',300:'#64e9fc',400:'#1ed5f2',500:'#02afce',600:'#0592b5' }
+  }}}
+}
+</script>
+<style>
+*{font-family:'Geist',ui-sans-serif,system-ui,sans-serif;box-sizing:border-box}
+body{margin:0;background:#f2f2f4;color:#1d1d1f;-webkit-font-smoothing:antialiased}
+.dark{background:#0e1218;color:#d0d8e4}
+.card-elevated{background:#fff;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.03)}
+.dark .card-elevated{background:#151b24;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.quote-banner{background:linear-gradient(135deg,#f5f5f7,#f0f0f5);position:relative;overflow:hidden}
+.dark .quote-banner{background:linear-gradient(135deg,#151b24,#181e28);border:1px solid rgba(255,255,255,.04)}
+.quote-shimmer{position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(0,0,0,.02) 45%,rgba(0,0,0,.05) 50%,rgba(0,0,0,.02) 55%,transparent 70%);background-size:250% 100%;pointer-events:none}
+.sidebar-link{display:flex;align-items:center;gap:.75rem;padding:.5rem .75rem;border-radius:.5rem;font-weight:500;font-size:.875rem;transition:all .15s ease;color:rgba(255,255,255,.65);text-decoration:none;cursor:pointer}
+.sidebar-link:hover{background:rgba(255,255,255,.08);color:#fff}
+.sidebar-link.active{background:rgba(74,144,217,.25);color:#fff}
+.sidebar-link-parent{background:rgba(255,255,255,.04)}
+.sidebar-link-parent:hover{background:rgba(255,255,255,.08)}
+.sidebar-link-parent.active{background:#4a90d9}
+select.input-field,.input-field{padding:.5rem .75rem;border-radius:.5rem;border:1px solid transparent;background:var(--muted,#e8e8ea);color:inherit;font-size:.875rem;width:100%}
+.dark select.input-field,.dark .input-field{background:#1a2030;border-color:#222a36}
+.input-field:focus{outline:none;border-color:#4a90d9;box-shadow:0 0 0 2px rgba(74,144,217,.12)}
+.group-tab{padding:.5rem 1rem;border-radius:.5rem;font-size:.75rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.group-tab.active{background:rgba(74,144,217,.15);color:#4a90d9}
+.group-tab:not(.active){color:#919f9d}
+.dark .group-tab:not(.active){color:#5c6e82}
+.pill-btn{padding:.25rem .5rem;border-radius:.375rem;font-size:.75rem;font-weight:500;cursor:pointer;transition:all .15s;border:none}
+.pill-btn.active{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.1);color:#1d1d1f}
+.dark .pill-btn.active{background:#222a36;color:#d0d8e4}
+.pill-btn:not(.active){background:transparent;color:#738482}
+.toggle-track{width:2rem;height:1.125rem;border-radius:9999px;cursor:pointer;transition:background .2s;position:relative}
+.toggle-track.on{background:#17ad49}
+.toggle-track.off{background:#b8c1c0}
+.dark .toggle-track.off{background:#384456}
+.toggle-knob{width:.875rem;height:.875rem;border-radius:50%;background:#fff;position:absolute;top:.125rem;transition:left .2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.toggle-track.on .toggle-knob{left:1rem}
+.toggle-track.off .toggle-knob{left:.125rem}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.table-scroll::-webkit-scrollbar{height:4px}
+.table-scroll::-webkit-scrollbar-thumb{background:#d9dede;border-radius:2px}
+.dark .table-scroll::-webkit-scrollbar-thumb{background:#384456}
+.flyout-group{transition:all .15s ease}
+.border-l-accent{border-left:4px solid var(--accent-color)}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="flex h-dvh" :class="dark ? 'dark' : ''">
+  <!-- Sidebar (desktop) -->
+  <aside class="bg-[#11161e] text-white flex flex-col transition-all duration-200 shrink-0 hidden lg:flex" :class="sidebarCollapsed ? 'w-14' : 'w-56'">
+    <div class="p-4 border-b border-white/10">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0"><img src="/favicon.png" class="w-full h-full object-cover"></div>
+        <h1 v-if="!sidebarCollapsed" class="font-semibold text-sm whitespace-nowrap">Peps Budget Tracker</h1>
+      </div>
+    </div>
+    <nav class="flex-1 p-2 overflow-y-auto">
+      <div v-if="!sidebarCollapsed" class="flex mb-3 rounded-lg bg-white/5 p-0.5">
+        <button v-for="c in ['usd','php']" :key="c" @click="currency=c" class="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-colors" :class="currency===c?'bg-white/15 text-white':'text-white/70 hover:text-white'">
+          <span>{{ c==='usd'?'🇺🇸':'🇵🇭' }}</span><span>{{ c.toUpperCase() }}</span>
+        </button>
+      </div>
+      <template v-for="item in menuItems" :key="item.label">
+        <a v-if="!item.children" @click.prevent="view=item.view" class="sidebar-link" :class="view===item.view?'active':''">
+          <span v-html="item.icon" class="shrink-0"></span>
+          <span v-if="!sidebarCollapsed" class="whitespace-nowrap">{{ item.label }}</span>
+        </a>
+        <template v-else>
+          <div>
+            <button @click="item._open=!item._open" class="sidebar-link sidebar-link-parent w-full" :class="[item.children.some(c=>c.view===view)?'active':'',sidebarCollapsed?'justify-center':'']">
+              <span v-html="item.icon" class="shrink-0"></span>
+              <template v-if="!sidebarCollapsed">
+                <span class="whitespace-nowrap flex-1 text-left">{{ item.label }}</span>
+                <svg class="w-3 h-3 shrink-0 transition-transform" :class="item._open?'rotate-90':''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/></svg>
+              </template>
+            </button>
+            <div v-if="!sidebarCollapsed&&item._open" class="ml-3 space-y-0.5">
+              <a v-for="child in item.children" :key="child.view" @click.prevent="view=child.view" class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer" :class="view===child.view?'text-white font-medium bg-white/10':'text-white/70 hover:text-white hover:bg-white/5'">
+                <span class="whitespace-nowrap">{{ child.label }}</span>
+              </a>
+            </div>
+          </div>
+        </template>
+      </template>
+    </nav>
+    <div class="p-2 border-t border-white/10">
+      <button @click="sidebarCollapsed=!sidebarCollapsed" class="w-full flex items-center justify-center gap-2 p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 transition-transform duration-200" :class="sidebarCollapsed?'rotate-180':''"><path d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/></svg>
+        <span v-if="!sidebarCollapsed" class="text-xs whitespace-nowrap">Collapse</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+    <!-- TopBar -->
+    <header class="h-12 bg-white dark:bg-mushroom-900 border-b border-mushroom-200 dark:border-mushroom-700 flex items-center justify-between px-3 sm:px-5 shrink-0">
+      <div class="flex items-center gap-3">
+        <button @click="mobileMenu=!mobileMenu" class="lg:hidden text-mushroom-500 dark:text-mushroom-400 hover:text-mushroom-700 dark:hover:text-mushroom-200 transition-colors">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+      </div>
+      <div class="flex items-center gap-3 sm:gap-5">
+        <button @click="dark=!dark" class="p-1.5 rounded-lg text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-700 dark:hover:text-mushroom-200 hover:bg-mushroom-100 dark:hover:bg-mushroom-800 transition-colors">
+          <svg v-if="dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
+        <div class="w-px h-4 bg-mushroom-200 dark:bg-mushroom-700"></div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs text-mushroom-400 dark:text-mushroom-500">🇺🇸</span>
+          <span class="text-sm font-semibold text-kangkong-700 dark:text-mushroom-100">${{ netWorth.toLocaleString(undefined,{minimumFractionDigits:2}) }}</span>
+        </div>
+        <div class="w-px h-4 bg-mushroom-200 dark:bg-mushroom-700"></div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs text-mushroom-400 dark:text-mushroom-500">🇵🇭</span>
+          <span class="text-sm font-semibold text-kangkong-700 dark:text-mushroom-100">₱{{ netWorthPhp.toLocaleString(undefined,{minimumFractionDigits:2}) }}</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-3 sm:p-5">
+
+      <!-- ============ DASHBOARD ============ -->
+      <div v-if="view==='dashboard'" class="space-y-5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ currency.toUpperCase() }} Dashboard</h2>
+          <span class="text-xs text-mushroom-400 dark:text-mushroom-500">2026</span>
+        </div>
+
+        <div class="quote-banner rounded-xl px-5 py-4 flex items-center gap-4 cursor-pointer select-none" @click="quoteIdx=(quoteIdx+1)%quotes.length">
+          <div class="quote-shimmer"></div>
+          <div class="relative z-10 shrink-0 w-9 h-9 rounded-full bg-black/5 dark:bg-white/10 backdrop-blur-sm flex items-center justify-center text-base">✨</div>
+          <div class="relative z-10 min-w-0 flex-1">
+            <p class="text-sm font-medium leading-relaxed text-mushroom-800 dark:text-white/95">"{{ quotes[quoteIdx].text }}"</p>
+            <p v-if="quotes[quoteIdx].author" class="text-xs mt-1.5 text-mushroom-500 dark:text-white/50" style="font-size:.65rem">— {{ quotes[quoteIdx].author }}</p>
+          </div>
+          <div class="relative z-10 shrink-0 w-7 h-7 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 flex items-center justify-center transition-colors">
+            <svg class="w-3.5 h-3.5 text-mushroom-700 dark:text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="card-elevated p-4">
+            <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Budget Status</div>
+            <div class="text-lg font-semibold text-mushroom-950 dark:text-mushroom-50">{{ budgetPct }}%</div>
+            <div class="mt-2 h-2 bg-mushroom-100 dark:bg-mushroom-800 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-300" :class="budgetPct>100?'bg-tomato-500':budgetPct>80?'bg-mango-500':'bg-kangkong-500'" :style="{width:Math.min(budgetPct,100)+'%'}"></div>
+            </div>
+            <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">{{ cs }}{{ monthExpense.toLocaleString(undefined,{minimumFractionDigits:2}) }} / {{ cs }}{{ totalBudget.toLocaleString(undefined,{minimumFractionDigits:2}) }}</div>
+          </div>
+          <div class="card-elevated p-4">
+            <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Expenses This Month</div>
+            <div class="text-lg font-semibold text-tomato-500">{{ cs }}{{ monthExpense.toLocaleString(undefined,{minimumFractionDigits:2}) }}</div>
+            <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">July 2026</div>
+          </div>
+          <div class="card-elevated p-4">
+            <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Income This Month</div>
+            <div class="text-lg font-semibold text-kangkong-500">{{ cs }}{{ monthIncome.toLocaleString(undefined,{minimumFractionDigits:2}) }}</div>
+            <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">July 2026</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="card-elevated p-4">
+            <h3 class="text-sm font-medium text-mushroom-600 dark:text-mushroom-400 mb-2">Monthly Trend</h3>
+            <div class="h-48"><canvas ref="trendCanvas"></canvas></div>
+            <div class="flex items-center justify-center gap-4 mt-2">
+              <button @click="showIncome=!showIncome" class="flex items-center gap-1.5 text-xs" :class="showIncome?'opacity-100 font-medium text-mushroom-700 dark:text-mushroom-300':'opacity-40 text-mushroom-500'">
+                <span class="w-2.5 h-2.5 rounded-full bg-kangkong-500"></span>Income
+              </button>
+              <button @click="showExpenses=!showExpenses" class="flex items-center gap-1.5 text-xs" :class="showExpenses?'opacity-100 font-medium text-mushroom-700 dark:text-mushroom-300':'opacity-40 text-mushroom-500'">
+                <span class="w-2.5 h-2.5 rounded-full bg-tomato-500"></span>Expenses
+              </button>
+            </div>
+          </div>
+          <div class="card-elevated p-4">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-sm font-medium text-mushroom-600 dark:text-mushroom-400">Expense by Group</h3>
+              <div class="flex items-center gap-2">
+                <select v-model="pieMonth" class="text-xs py-1 px-2 rounded-lg bg-mushroom-100 dark:bg-mushroom-800 text-mushroom-700 dark:text-mushroom-300 border-0 outline-none">
+                  <option v-for="m in pieMonthOpts" :key="m.v" :value="m.v">{{ m.l }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="h-48"><canvas ref="pieCanvas"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Income Breakdown Matrix -->
+        <div class="card-elevated p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <h3 class="text-sm font-medium text-mushroom-600 dark:text-mushroom-400">Income Breakdown</h3>
+              <div class="flex bg-mushroom-100 dark:bg-mushroom-800 rounded-md p-0.5">
+                <button @click="incomeMode='category'" class="px-2 py-0.5 text-xs rounded pill-btn" :class="incomeMode==='category'?'active':''">Categories</button>
+                <button @click="incomeMode='account'" class="px-2 py-0.5 text-xs rounded pill-btn" :class="incomeMode==='account'?'active':''">Accounts</button>
+              </div>
+            </div>
+            <label class="flex items-center gap-1 text-xs text-mushroom-500 dark:text-mushroom-400 cursor-pointer">
+              <input type="checkbox" v-model="showAvg" class="rounded"> Show Averages
+            </label>
+          </div>
+          <div class="table-scroll">
+            <table class="w-full text-xs">
+              <thead><tr class="border-b border-mushroom-200 dark:border-mushroom-700">
+                <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900 z-10">Category</th>
+                <th v-for="m in matrixMonths" :key="m" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">{{ m }}</th>
+                <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Total {{ cs }}</th>
+                <th v-if="showAvg" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Avg {{ cs }}</th>
+              </tr></thead>
+              <tbody>
+                <tr v-for="row in incomeMatrix" :key="row.name" class="border-b border-mushroom-100 dark:border-mushroom-700/50">
+                  <td class="px-2 py-1 text-mushroom-600 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900 z-10">{{ row.name }}</td>
+                  <td v-for="(v,i) in row.data" :key="i" class="text-right px-2 py-1 text-mushroom-700 dark:text-mushroom-300">{{ v ? cs + v.toLocaleString() : '—' }}</td>
+                  <td class="text-right px-2 py-1 font-medium text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ cs }}{{ row.data.reduce((a,b)=>a+b,0).toLocaleString() }}</td>
+                  <td v-if="showAvg" class="text-right px-2 py-1 text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">{{ cs }}{{ Math.round(row.data.reduce((a,b)=>a+b,0)/12).toLocaleString() }}</td>
+                </tr>
+              </tbody>
+              <tfoot><tr class="border-t-2 border-mushroom-300 dark:border-mushroom-600 font-medium">
+                <td class="px-2 py-1.5 text-mushroom-950 dark:text-mushroom-50 sticky left-0 bg-white dark:bg-mushroom-900 z-10">Total</td>
+                <td v-for="(v,i) in matrixTotals" :key="i" class="text-right px-2 py-1.5 text-mushroom-950 dark:text-mushroom-50">{{ cs }}{{ v.toLocaleString() }}</td>
+                <td class="text-right px-2 py-1.5 font-semibold text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ cs }}{{ matrixGrand.toLocaleString() }}</td>
+                <td v-if="showAvg" class="text-right px-2 py-1.5 text-mushroom-600 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">{{ cs }}{{ Math.round(matrixGrand/12).toLocaleString() }}</td>
+              </tr></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Expense Breakdown Matrix -->
+        <div class="card-elevated p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <h3 class="text-sm font-medium text-mushroom-600 dark:text-mushroom-400">Expense Breakdown</h3>
+              <div class="flex bg-mushroom-100 dark:bg-mushroom-800 rounded-md p-0.5">
+                <button @click="expenseMode='category'" class="px-2 py-0.5 text-xs rounded pill-btn" :class="expenseMode==='category'?'active':''">Categories</button>
+                <button @click="expenseMode='account'" class="px-2 py-0.5 text-xs rounded pill-btn" :class="expenseMode==='account'?'active':''">Accounts</button>
+              </div>
+            </div>
+            <label class="flex items-center gap-1 text-xs text-mushroom-500 dark:text-mushroom-400 cursor-pointer">
+              <input type="checkbox" v-model="showAvg" class="rounded"> Show Averages
+            </label>
+          </div>
+          <div class="table-scroll">
+            <table class="w-full text-xs">
+              <thead><tr class="border-b border-mushroom-200 dark:border-mushroom-700">
+                <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900 z-10">Category</th>
+                <th v-for="m in matrixMonths" :key="m" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">{{ m }}</th>
+                <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Total {{ cs }}</th>
+                <th v-if="showAvg" class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">Avg {{ cs }}</th>
+              </tr></thead>
+              <tbody>
+                <template v-for="g in expenseGroups" :key="g.name">
+                  <tr @click="g.open=!g.open" class="bg-mushroom-50 dark:bg-mushroom-800 cursor-pointer select-none hover:bg-mushroom-100 dark:hover:bg-mushroom-700 transition-colors">
+                    <td class="px-2 py-1 font-medium text-mushroom-700 dark:text-mushroom-300 sticky left-0 bg-mushroom-50 dark:bg-mushroom-800 z-10">
+                      <span class="inline-flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="transition-transform duration-200" :class="g.open?'rotate-90':''"><path d="M9 5l7 7-7 7"/></svg>{{ g.name }}</span>
+                    </td>
+                    <template v-if="g.open">
+                      <td v-for="(v,i) in g.total" :key="i" class="text-right px-2 py-1 font-medium text-mushroom-700 dark:text-mushroom-300">{{ cs }}{{ v.toLocaleString() }}</td>
+                      <td class="text-right px-2 py-1 font-semibold text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ cs }}{{ g.total.reduce((a,b)=>a+b,0).toLocaleString() }}</td>
+                    </template>
+                    <td v-else :colspan="14"></td>
+                  </tr>
+                  <tr v-for="cat in g.cats" :key="cat.name" v-show="g.open" class="border-b border-mushroom-100 dark:border-mushroom-700/50">
+                    <td class="px-2 py-1 text-mushroom-600 dark:text-mushroom-400 sticky left-0 bg-white dark:bg-mushroom-900 z-10 pl-6">{{ cat.icon }} {{ cat.name }}</td>
+                    <td v-for="(v,i) in cat.data" :key="i" class="text-right px-2 py-1 text-mushroom-700 dark:text-mushroom-300">{{ v ? cs + v.toLocaleString() : '—' }}</td>
+                    <td class="text-right px-2 py-1 font-medium text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ cs }}{{ cat.data.reduce((a,b)=>a+b,0).toLocaleString() }}</td>
+                    <td v-if="showAvg" class="text-right px-2 py-1 text-mushroom-500 dark:text-mushroom-400 border-l border-mushroom-200 dark:border-mushroom-700">{{ cs }}{{ Math.round(cat.data.reduce((a,b)=>a+b,0)/12).toLocaleString() }}</td>
+                  </tr>
+                </template>
+              </tbody>
+              <tfoot><tr class="border-t-2 border-mushroom-300 dark:border-mushroom-600 font-medium">
+                <td class="px-2 py-1.5 text-mushroom-950 dark:text-mushroom-50 sticky left-0 bg-white dark:bg-mushroom-900 z-10">Total</td>
+                <td v-for="(v,i) in expMatrixTotals" :key="i" class="text-right px-2 py-1.5 text-mushroom-950 dark:text-mushroom-50">{{ cs }}{{ v.toLocaleString() }}</td>
+                <td class="text-right px-2 py-1.5 font-semibold text-mushroom-950 dark:text-mushroom-50 border-l border-mushroom-200 dark:border-mushroom-700">{{ cs }}{{ expMatrixGrand.toLocaleString() }}</td>
+              </tr></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ TRANSACTIONS ============ -->
+      <div v-if="view==='transactions'" class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ currency.toUpperCase() }} Transactions</h2>
+          <button class="px-3 py-1.5 rounded-lg bg-kangkong-600 text-white text-xs font-medium hover:bg-kangkong-700 transition-colors">Export CSV</button>
+        </div>
+
+        <div class="card p-3 bg-white dark:bg-mushroom-900 flex flex-wrap items-center gap-2">
+          <select v-model="txFilter.account" class="input-field py-1.5 text-xs w-auto min-w-[120px]"><option value="">All accounts</option><option v-for="a in allAccountsList" :key="a">{{ a }}</option></select>
+          <select v-model="txFilter.type" class="input-field py-1.5 text-xs w-auto"><option value="">All types</option><option value="expense">Expense</option><option value="income">Income</option></select>
+          <select v-model="txFilter.category" class="input-field py-1.5 text-xs w-auto"><option value="">All categories</option><option v-for="c in allCategories" :key="c">{{ c }}</option></select>
+          <input v-model="txFilter.start" type="date" class="input-field py-1.5 text-xs w-auto">
+          <input v-model="txFilter.end" type="date" class="input-field py-1.5 text-xs w-auto">
+          <button v-if="hasTxFilter" @click="clearTxFilter" class="text-xs text-tomato-500 hover:text-tomato-600 font-medium px-2">Clear Filters</button>
+          <div class="ml-auto flex items-center gap-2">
+            <span class="text-xs text-mushroom-500 dark:text-mushroom-400">Transfers</span>
+            <div class="toggle-track" :class="showTransfers?'on':'off'" @click="showTransfers=!showTransfers"><div class="toggle-knob"></div></div>
+          </div>
+        </div>
+
+        <div v-for="(txns, date) in groupedTx" :key="date" class="card-elevated overflow-hidden">
+          <div class="px-4 py-2 bg-mushroom-50 dark:bg-mushroom-800 text-xs font-medium text-mushroom-600 dark:text-mushroom-400">{{ date }}</div>
+          <div v-for="tx in txns" :key="tx.id" class="flex items-center px-4 py-2.5 border-b border-mushroom-100 dark:border-mushroom-800 last:border-0">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0 mr-3" :class="tx.type==='income'?'bg-kangkong-100 dark:bg-kangkong-900/30':tx.isTransfer?'bg-blueberry-100 dark:bg-blueberry-900/30':'bg-mushroom-100 dark:bg-mushroom-800'">
+              {{ catIcon[tx.category] || '📋' }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-medium text-mushroom-800 dark:text-mushroom-100 truncate">{{ tx.description }}</div>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span v-if="tx.isTransfer" class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blueberry-100 text-blueberry-600 dark:bg-blueberry-900/30 dark:text-blueberry-400">Transfer</span>
+                <span v-else class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-mushroom-100 dark:bg-mushroom-800 text-mushroom-600 dark:text-mushroom-400">{{ tx.category }}</span>
+                <span class="text-[10px] text-mushroom-400 dark:text-mushroom-500">{{ tx.account }}</span>
+              </div>
+            </div>
+            <span class="text-sm font-semibold ml-3 shrink-0" :class="tx.type==='income'?'text-kangkong-600 dark:text-kangkong-400':'text-tomato-600 dark:text-tomato-400'">{{ tx.type==='income'?'+':'-' }}{{ cs }}{{ tx.amount.toLocaleString(undefined,{minimumFractionDigits:2}) }}</span>
+            <div class="flex items-center gap-2 ml-3 w-20 justify-end shrink-0">
+              <button class="text-xs text-mushroom-400 hover:text-blueberry-500 transition-colors">Edit</button>
+              <button v-if="tx._confirm" class="flex items-center gap-1">
+                <button class="text-xs text-tomato-500 font-medium">Yes</button>
+                <button @click="tx._confirm=false" class="text-xs text-mushroom-400">No</button>
+              </button>
+              <button v-else @click="tx._confirm=true" class="text-xs text-mushroom-400 hover:text-tomato-500 transition-colors">Del</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ BUDGETS ============ -->
+      <div v-if="view==='budgets'" class="space-y-5">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ currency.toUpperCase() }} Budgets</h2>
+          <div class="flex items-center gap-2">
+            <button class="px-2 py-1 rounded-lg text-xs text-mushroom-500 hover:bg-mushroom-100 dark:hover:bg-mushroom-800 transition-colors" title="Edit Template">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button @click="budgetMonthIdx=Math.max(0,budgetMonthIdx-1)" class="p-1 rounded hover:bg-mushroom-100 dark:hover:bg-mushroom-800"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <span class="text-sm font-medium text-mushroom-800 dark:text-mushroom-100 min-w-[120px] text-center">{{ budgetMonthLabel }}</span>
+            <button @click="budgetMonthIdx=Math.min(5,budgetMonthIdx+1)" class="p-1 rounded hover:bg-mushroom-100 dark:hover:bg-mushroom-800"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+            <button v-if="budgetMonthIdx!==5" class="px-3 py-1 rounded-full text-xs font-medium bg-blueberry-500 text-white hover:bg-blueberry-600 transition-colors">This Month</button>
+          </div>
+        </div>
+
+        <div class="card-elevated p-6">
+          <div class="flex items-center justify-between mb-3">
+            <div><div class="text-[10px] uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500 font-semibold mb-1">Total Budget</div>
+            <div class="text-xl font-semibold text-mushroom-950 dark:text-mushroom-50">{{ cs }}{{ totalBudget.toLocaleString() }} / {{ cs }}{{ totalBudget.toLocaleString() }}</div></div>
+            <div class="text-right"><div class="text-[10px] uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500 font-semibold mb-1">Remaining</div>
+            <div class="text-xl font-semibold" :class="budgetRemaining>=0?'text-kangkong-600 dark:text-kangkong-400':'text-tomato-500'">{{ cs }}{{ Math.abs(budgetRemaining).toLocaleString() }}</div>
+            <div class="text-[10px] text-mushroom-400 dark:text-mushroom-500">{{ budgetPct }}% spent</div></div>
+          </div>
+          <div class="h-2.5 bg-mushroom-100 dark:bg-mushroom-800 rounded-full overflow-hidden">
+            <div class="h-full rounded-full transition-all" :class="budgetPct>100?'bg-tomato-500':budgetPct>80?'bg-mango-500':'bg-kangkong-500'" :style="{width:Math.min(budgetPct,100)+'%'}"></div>
+          </div>
+        </div>
+
+        <div v-for="g in budgetGroups" :key="g.name">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400">{{ g.name }}</span>
+            <div class="flex-1 h-px bg-mushroom-200 dark:bg-mushroom-700"></div>
+            <span class="text-xs text-mushroom-400 dark:text-mushroom-500">{{ cs }}{{ g.spent.toLocaleString() }} / {{ cs }}{{ g.budget.toLocaleString() }}</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+            <div v-for="cat in g.cats" :key="cat.name" class="card-elevated p-4 flex flex-col">
+              <div class="flex items-start justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">{{ cat.icon }}</span>
+                  <div>
+                    <div class="text-sm font-medium text-mushroom-800 dark:text-mushroom-100">{{ cat.name }}</div>
+                    <div class="text-[10px] uppercase tracking-wider text-mushroom-400 dark:text-mushroom-500">{{ g.name }}</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div v-if="!cat.editing" @click="cat.editing=true" class="text-sm font-semibold text-mushroom-800 dark:text-mushroom-100 cursor-pointer hover:text-blueberry-500">{{ cs }}{{ cat.budget.toLocaleString() }}</div>
+                  <input v-else v-model.number="cat.budget" type="number" @keydown.enter="cat.editing=false" @keydown.escape="cat.editing=false" @blur="cat.editing=false" class="input-field py-0.5 px-1 text-sm w-24 text-right" autofocus>
+                </div>
+              </div>
+              <div class="mt-auto">
+                <div class="h-1.5 bg-mushroom-100 dark:bg-mushroom-800 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full" :class="cat.pct>90?'bg-tomato-500':cat.pct>70?'bg-carrot-500':'bg-kangkong-500'" :style="{width:Math.min(cat.pct,100)+'%'}"></div>
+                </div>
+                <div class="flex items-center justify-between mt-1">
+                  <span class="text-[10px] text-mushroom-400 dark:text-mushroom-500">{{ cs }}{{ cat.spent.toLocaleString() }} spent</span>
+                  <span class="text-[10px]" :class="cat.remaining>=0?'text-mushroom-400 dark:text-mushroom-500':'text-tomato-500'">{{ cs }}{{ Math.abs(cat.remaining).toLocaleString() }} {{ cat.remaining>=0?'left':'over' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ ACCOUNTS ============ -->
+      <div v-if="view==='accounts'" class="space-y-5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">Accounts</h2>
+          <div class="flex items-center gap-2">
+            <button @click="hideBalances=!hideBalances" class="p-1.5 rounded-lg text-mushroom-400 hover:bg-mushroom-100 dark:hover:bg-mushroom-800 transition-colors">
+              <svg v-if="hideBalances" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button @click="showAccForm=!showAccForm" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" :class="showAccForm?'bg-mushroom-200 dark:bg-mushroom-700 text-mushroom-700 dark:text-mushroom-300':'bg-kangkong-600 text-white hover:bg-kangkong-700'">{{ showAccForm?'Cancel':'+ Add Account' }}</button>
+          </div>
+        </div>
+
+        <div v-if="showAccForm" class="card-elevated p-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-semibold mb-1 block">Account Name</label><input class="input-field text-sm" placeholder="e.g. Savings"></div>
+            <div><label class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-semibold mb-1 block">Bank</label>
+              <select v-model="selectedBank" class="input-field text-sm">
+                <option>BDO</option><option>BPI</option><option>Maya</option><option>Security Bank</option><option>GCash</option><option>UnionBank</option><option>EastWest</option><option>PNB</option><option>Metrobank</option><option>Other</option>
+              </select></div>
+            <div v-if="selectedBank==='Other'" class="sm:col-span-2">
+              <label class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-semibold mb-1 block">Custom Bank Name</label>
+              <input v-model="customBank" class="input-field text-sm" placeholder="Enter bank name..."></div>
+            <div><label class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-semibold mb-1 block">Type</label>
+              <select class="input-field text-sm"><option>Savings</option><option>Checking</option><option>Time Deposit</option><option>Equity</option><option>Investment</option></select></div>
+            <div><label class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-semibold mb-1 block">Account Number</label><input class="input-field text-sm" placeholder="e.g. ****4521"></div>
+            <div><label class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-semibold mb-1 block">Initial Balance</label><input type="number" class="input-field text-sm" placeholder="0"></div>
+            <div><label class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-semibold mb-1 block">Currency</label>
+              <select v-model="otherAccCurrency" class="input-field text-sm"><option value="usd">USD ($)</option><option value="php">PHP (₱)</option></select></div>
+          </div>
+          <button class="mt-3 px-4 py-2 rounded-lg bg-kangkong-600 text-white text-sm font-medium hover:bg-kangkong-700 transition-colors">Create Account</button>
+        </div>
+
+        <!-- USD -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs font-semibold text-mushroom-500 dark:text-mushroom-400 uppercase tracking-wider">USD</span>
+            <div class="flex-1 h-px bg-mushroom-200 dark:bg-mushroom-700"></div>
+            <span v-if="!hideBalances" class="text-xs text-mushroom-400 dark:text-mushroom-500">Total: ${{ netWorth.toLocaleString() }}</span>
+          </div>
+          <div v-for="g in accountGroupsUsd" :key="g.type">
+            <div class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-bold mb-2">{{ g.type.replace('_',' ') }}</div>
+            <div v-for="a in g.accounts" :key="a.name" class="card-elevated p-4 mb-3" :style="{'border-left':'4px solid '+a.color}">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-3">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold text-white" :style="{'background':a.bankColor}">{{ a.bank }}</span>
+                  <div>
+                    <div v-if="!a.editingName" @click="a.editingName=true" class="text-sm font-medium text-mushroom-800 dark:text-mushroom-100 cursor-pointer hover:text-blueberry-500">{{ a.name }}</div>
+                    <input v-else v-model="a.name" @keydown.enter="a.editingName=false" @keydown.escape="a.editingName=false" @blur="a.editingName=false" class="input-field py-0.5 px-1 text-sm w-40" autofocus>
+                    <div class="text-xs text-mushroom-400 dark:text-mushroom-500">{{ a.number || '+ Add account number' }}</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-base font-semibold text-mushroom-800 dark:text-mushroom-100">{{ hideBalances?'***':'$'+a.balance.toLocaleString() }}</div>
+                  <div class="text-[10px]" :class="a.change>=0?'text-kangkong-600':'text-tomato-500'">{{ a.change>=0?'+':'' }}${{ Math.abs(a.change).toLocaleString() }} this month</div>
+                </div>
+              </div>
+              <div v-if="a.goal" class="mt-2">
+                <div class="h-1.5 bg-mushroom-100 dark:bg-mushroom-800 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full bg-blueberry-400" :style="{width:Math.min(100,a.balance/a.goal*100)+'%'}"></div>
+                </div>
+                <div class="flex items-center justify-between mt-1">
+                  <span class="text-[10px] text-mushroom-400 dark:text-mushroom-500">Goal: ${{ a.goal.toLocaleString() }}</span>
+                  <span class="text-[10px] text-blueberry-500 font-medium">{{ Math.round(a.balance/a.goal*100) }}%</span>
+                </div>
+              </div>
+              <div v-else class="mt-2"><button class="text-[10px] text-mushroom-400 hover:text-blueberry-500 transition-colors">+ Set goal</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PHP -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs font-semibold text-mushroom-500 dark:text-mushroom-400 uppercase tracking-wider">PHP</span>
+            <div class="flex-1 h-px bg-mushroom-200 dark:bg-mushroom-700"></div>
+            <span v-if="!hideBalances" class="text-xs text-mushroom-400 dark:text-mushroom-500">Total: ₱{{ netWorthPhp.toLocaleString() }}</span>
+          </div>
+          <div v-for="g in accountGroupsPhp" :key="g.type">
+            <div class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-bold mb-2">{{ g.type.replace('_',' ') }}</div>
+            <div v-for="a in g.accounts" :key="a.name" class="card-elevated p-4 mb-3" :style="{'border-left':'4px solid '+a.color}">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-3">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold text-white" :style="{'background':a.bankColor}">{{ a.bank }}</span>
+                  <div>
+                    <div v-if="!a.editingName" @click="a.editingName=true" class="text-sm font-medium text-mushroom-800 dark:text-mushroom-100 cursor-pointer hover:text-blueberry-500">{{ a.name }}</div>
+                    <input v-else v-model="a.name" @keydown.enter="a.editingName=false" @keydown.escape="a.editingName=false" @blur="a.editingName=false" class="input-field py-0.5 px-1 text-sm w-40" autofocus>
+                    <div class="text-xs text-mushroom-400 dark:text-mushroom-500">{{ a.number || '+ Add account number' }}</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-base font-semibold text-mushroom-800 dark:text-mushroom-100">{{ hideBalances?'***':'₱'+a.balance.toLocaleString() }}</div>
+                  <div class="text-[10px]" :class="a.change>=0?'text-kangkong-600':'text-tomato-500'">{{ a.change>=0?'+':'' }}₱{{ Math.abs(a.change).toLocaleString() }} this month</div>
+                </div>
+              </div>
+              <div v-if="a.goal" class="mt-2">
+                <div class="h-1.5 bg-mushroom-100 dark:bg-mushroom-800 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full bg-blueberry-400" :style="{width:Math.min(100,a.balance/a.goal*100)+'%'}"></div>
+                </div>
+                <div class="flex items-center justify-between mt-1">
+                  <span class="text-[10px] text-mushroom-400 dark:text-mushroom-500">Goal: ₱{{ a.goal.toLocaleString() }}</span>
+                  <span class="text-[10px] text-blueberry-500 font-medium">{{ Math.round(a.balance/a.goal*100) }}%</span>
+                </div>
+              </div>
+              <div v-else class="mt-2"><button class="text-[10px] text-mushroom-400 hover:text-blueberry-500 transition-colors">+ Set goal</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ REPORTS ============ -->
+      <div v-if="view==='reports'" class="space-y-5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">Reports</h2>
+          <div class="flex bg-mushroom-100 dark:bg-mushroom-800 rounded-lg p-0.5">
+            <button @click="reportMode='monthly'" class="px-3 py-1 text-xs rounded pill-btn" :class="reportMode==='monthly'?'active':''">Monthly</button>
+            <button @click="reportMode='yearly'" class="px-3 py-1 text-xs rounded pill-btn" :class="reportMode==='yearly'?'active':''">Yearly</button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button class="p-1 rounded hover:bg-mushroom-100 dark:hover:bg-mushroom-800"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <span class="text-sm font-medium text-mushroom-800 dark:text-mushroom-100">{{ reportMode==='monthly'?'July 2026':'2026' }}</span>
+          <button class="p-1 rounded hover:bg-mushroom-100 dark:hover:bg-mushroom-800"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="card-elevated p-4"><div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Budget</div><div class="text-lg font-semibold text-mushroom-800 dark:text-mushroom-100">{{ cs }}{{ totalBudget.toLocaleString() }}</div><div class="text-[10px] text-mushroom-400 dark:text-mushroom-500 mt-0.5">No change vs last month</div></div>
+          <div class="card-elevated p-4"><div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Spent</div><div class="text-lg font-semibold text-tomato-500">{{ cs }}{{ monthExpense.toLocaleString() }}</div><div class="text-[10px] text-kangkong-600 dark:text-kangkong-400 mt-0.5">↓ 12% vs last month</div></div>
+          <div class="card-elevated p-4"><div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Remaining</div><div class="text-lg font-semibold text-kangkong-600 dark:text-kangkong-400">{{ cs }}{{ budgetRemaining.toLocaleString() }}</div><div class="text-[10px] text-mushroom-400 dark:text-mushroom-500 mt-0.5">{{ budgetPct }}% of budget used</div></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="card-elevated p-4">
+            <h3 class="text-sm font-medium text-mushroom-700 dark:text-mushroom-300 mb-3">Spending Breakdown</h3>
+            <div class="h-48"><canvas ref="reportPieCanvas"></canvas></div>
+            <div class="flex flex-wrap gap-3 mt-3">
+              <div v-for="c in reportCatLegend" :key="c.name" class="flex items-center gap-1.5 text-xs">
+                <span class="w-2 h-2 rounded-full" :style="{'background':c.color}"></span>
+                <span class="text-mushroom-600 dark:text-mushroom-400">{{ c.name }}</span>
+                <span class="font-medium text-mushroom-800 dark:text-mushroom-100">{{ cs }}{{ c.total.toLocaleString() }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="card-elevated p-4">
+            <h3 class="text-sm font-medium text-mushroom-700 dark:text-mushroom-300 mb-3">Account Balances</h3>
+            <div class="space-y-2">
+              <div v-for="a in allAccountsList" :key="a" class="flex items-center justify-between text-sm">
+                <span class="text-mushroom-600 dark:text-mushroom-400">{{ a }}</span>
+                <span class="font-medium text-mushroom-800 dark:text-mushroom-100">{{ cs }}{{ (Math.random()*80000+20000).toFixed(0) }}</span>
+              </div>
+              <div class="border-t border-mushroom-200 dark:border-mushroom-700 pt-2 flex items-center justify-between">
+                <span class="text-sm font-medium text-mushroom-800 dark:text-mushroom-100">Total</span>
+                <span class="text-sm font-semibold text-mushroom-950 dark:text-mushroom-50">{{ cs }}{{ netWorth.toLocaleString() }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-for="g in reportGroups" :key="g.name" class="card-elevated overflow-hidden">
+          <div class="px-4 py-2.5 bg-mushroom-50 dark:bg-mushroom-800 flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400">{{ g.name }}</span>
+            <span class="text-xs text-mushroom-400 dark:text-mushroom-500">{{ cs }}{{ g.spent.toLocaleString() }} / {{ cs }}{{ g.budget.toLocaleString() }}</span>
+          </div>
+          <div v-for="cat in g.cats" :key="cat.name" class="flex items-center justify-between px-4 py-2 border-b border-mushroom-100 dark:border-mushroom-800 last:border-0">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-sm">{{ cat.icon }}</span>
+              <span class="text-sm text-mushroom-700 dark:text-mushroom-300 truncate">{{ cat.name }}</span>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+              <div class="w-24 h-1.5 bg-mushroom-100 dark:bg-mushroom-800 rounded-full overflow-hidden hidden sm:block">
+                <div class="h-full rounded-full" :class="cat.pct>90?'bg-tomato-500':'bg-kangkong-500'" :style="{width:Math.min(cat.pct,100)+'%'}"></div>
+              </div>
+              <span class="text-xs font-medium text-mushroom-700 dark:text-mushroom-300 w-20 text-right">{{ cs }}{{ cat.spent.toLocaleString() }}</span>
+              <span class="text-[10px] text-mushroom-400 dark:text-mushroom-500 w-12 text-right">of {{ cs }}{{ cat.budget.toLocaleString() }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ RECURRING ============ -->
+      <div v-if="view==='recurring'" class="space-y-5">
+        <div class="flex items-center justify-between">
+          <div><h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ currency.toUpperCase() }} Recurring</h2>
+          <p class="text-xs text-mushroom-400 dark:text-mushroom-500">Automated expense templates</p></div>
+          <div class="flex items-center gap-2">
+            <button class="px-3 py-1.5 rounded-lg text-xs font-medium bg-kangkong-600 text-white hover:bg-kangkong-700 transition-colors flex items-center gap-1.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+              Run Now
+            </button>
+            <button class="px-3 py-1.5 rounded-lg text-xs font-medium bg-mushroom-100 dark:bg-mushroom-800 text-mushroom-700 dark:text-mushroom-300 hover:bg-mushroom-200 dark:hover:bg-mushroom-700 transition-colors">+ Add Rule</button>
+          </div>
+        </div>
+
+        <div v-for="r in recurringRules" :key="r.name" class="card-elevated p-4" :style="{'border-left':'4px solid '+(r.active?'#22c558':'#b8c1c0')}">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="toggle-track" :class="r.active?'on':'off'" @click="r.active=!r.active" style="width:2.25rem;height:1.25rem"><div class="toggle-knob" style="width:1rem;height:1rem"></div></div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span>{{ catIcon[r.category]||'📋' }}</span>
+                  <span class="text-sm font-medium text-mushroom-800 dark:text-mushroom-100">{{ r.name }}</span>
+                  <span class="px-1.5 py-0.5 rounded text-[10px] font-medium" :class="r.active?'bg-kangkong-100 text-kangkong-700 dark:bg-kangkong-900/30 dark:text-kangkong-400':'bg-mushroom-100 text-mushroom-500 dark:bg-mushroom-800'">{{ r.active?'Active':'Paused' }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-mushroom-400 dark:text-mushroom-500 mt-0.5">
+                  <span>{{ r.frequency }} on {{ r.day }}{{ ordinal(r.day) }}</span>
+                  <span>·</span>
+                  <span class="font-medium text-mushroom-600 dark:text-mushroom-300">{{ cs }}{{ r.amount.toLocaleString() }}</span>
+                  <span>·</span>
+                  <span :class="r.dueSoon?'text-tomato-500 font-semibold':'text-mushroom-400 dark:text-mushroom-500'">{{ r.next }}</span>
+                  <template v-if="r.ends"><span>·</span><span>Ends {{ r.ends }}</span></template>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="p-1.5 rounded text-mushroom-400 hover:text-mushroom-600 dark:hover:text-mushroom-300 hover:bg-mushroom-100 dark:hover:bg-mushroom-800 transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button v-if="r._confirmDel" class="flex items-center gap-1">
+                <button class="text-xs text-tomato-500 font-medium">Yes</button>
+                <button @click="r._confirmDel=false" class="text-xs text-mushroom-400">No</button>
+              </button>
+              <button v-else @click="r._confirmDel=true" class="p-1.5 rounded text-mushroom-400 hover:text-tomato-500 hover:bg-mushroom-100 dark:hover:bg-mushroom-800 transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ TRANSFERS ============ -->
+      <div v-if="view==='transfers'" class="space-y-5">
+        <div class="flex items-center justify-between">
+          <div><h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ currency.toUpperCase() }} Transfers</h2>
+          <p class="text-xs text-mushroom-400 dark:text-mushroom-500">Move money between accounts</p></div>
+          <button @click="showTransferForm=!showTransferForm" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" :class="showTransferForm?'bg-mushroom-200 dark:bg-mushroom-700 text-mushroom-700 dark:text-mushroom-300':'bg-mushroom-100 dark:bg-mushroom-800 text-mushroom-700 dark:text-mushroom-300 hover:bg-mushroom-200 dark:hover:bg-mushroom-700'">{{ showTransferForm?'Cancel':'+ New Transfer' }}</button>
+        </div>
+
+        <div v-if="showTransferForm" class="card-elevated p-5">
+          <h3 class="text-sm font-medium text-mushroom-800 dark:text-mushroom-100 mb-3">New Transfer</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-semibold mb-1 block">From Account</label>
+              <select class="input-field text-sm"><option>Select source...</option><option v-for="a in allAccountsList" :key="a">{{ a }}</option></select></div>
+            <div><label class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-semibold mb-1 block">To Account</label>
+              <select class="input-field text-sm"><option>Select destination...</option><option v-for="a in allAccountsList" :key="a">{{ a }}</option></select></div>
+            <div><label class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-semibold mb-1 block">Amount</label><input type="number" class="input-field text-sm" placeholder="0.00" min="0.01" step="0.01"></div>
+            <div><label class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-semibold mb-1 block">Fee (optional)</label><input type="number" class="input-field text-sm" placeholder="0.00"></div>
+            <div><label class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-semibold mb-1 block">Date</label><input type="date" class="input-field text-sm" value="2026-07-27"></div>
+            <div><label class="text-[10px] uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400 font-semibold mb-1 block">Note (optional)</label><input class="input-field text-sm" placeholder="e.g. Monthly savings"></div>
+          </div>
+          <button class="mt-3 px-4 py-2 rounded-lg bg-kangkong-600 text-white text-sm font-medium hover:bg-kangkong-700 transition-colors">Create Transfer</button>
+        </div>
+
+        <div v-for="t in transfers" :key="t.id" class="card-elevated p-4" style="border-left:4px solid #549eff">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="flex items-center gap-2 text-sm font-medium text-mushroom-800 dark:text-mushroom-100">
+                <span>{{ t.from }}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-mushroom-400"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                <span>{{ t.to }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-mushroom-400 dark:text-mushroom-500 mt-0.5">
+                <span>{{ t.date }}</span>
+                <template v-if="t.fee"><span>·</span><span class="text-tomato-500">Fee: {{ cs }}{{ t.fee.toLocaleString() }}</span></template>
+                <template v-if="t.note"><span>·</span><span>{{ t.note }}</span></template>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-base font-semibold text-blueberry-600 dark:text-blueberry-400">{{ cs }}{{ t.amount.toLocaleString(undefined,{minimumFractionDigits:2}) }}</span>
+              <button v-if="t._confirmReverse" class="flex items-center gap-1">
+                <button class="text-xs text-tomato-500 font-medium">Yes</button>
+                <button @click="t._confirmReverse=false" class="text-xs text-mushroom-400">No</button>
+              </button>
+              <button v-else @click="t._confirmReverse=true" class="p-1.5 rounded text-mushroom-400 hover:text-tomato-500 hover:bg-mushroom-100 dark:hover:bg-mushroom-800 transition-colors" title="Reverse">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- FAB -->
+  <button class="fixed bottom-6 right-6 w-12 h-12 bg-kangkong-600 hover:bg-kangkong-700 dark:bg-blueberry-500 dark:hover:bg-blueberry-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all z-50 hover:scale-110" title="Add Record">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+
+  <!-- Mobile sidebar -->
+  <div v-if="mobileMenu" class="fixed inset-0 bg-black/40 z-40 lg:hidden" @click="mobileMenu=false"></div>
+  <div v-if="mobileMenu" class="fixed inset-y-0 left-0 z-50 w-56 lg:hidden">
+    <aside class="bg-[#11161e] text-white h-full flex flex-col">
+      <div class="p-4 border-b border-white/10 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg overflow-hidden"><img src="/favicon.png" class="w-full h-full object-cover"></div>
+          <h1 class="font-semibold text-sm">Peps Budget Tracker</h1>
+        </div>
+        <button @click="mobileMenu=false" class="text-white/60 hover:text-white"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+      <nav class="flex-1 p-2 overflow-y-auto">
+        <div class="flex mb-3 rounded-lg bg-white/5 p-0.5">
+          <button v-for="c in ['usd','php']" :key="c" @click="currency=c" class="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-colors" :class="currency===c?'bg-white/15 text-white':'text-white/70'">
+            <span>{{ c==='usd'?'🇺🇸':'🇵🇭' }}</span><span>{{ c.toUpperCase() }}</span>
+          </button>
+        </div>
+        <a v-for="item in flatMenu" :key="item.view" @click.prevent="view=item.view;mobileMenu=false" class="sidebar-link" :class="view===item.view?'active':''">
+          <span class="whitespace-nowrap">{{ item.label }}</span>
+        </a>
+      </nav>
+    </aside>
+  </div>
+
+  <!-- Demo badge -->
+  <div class="fixed top-14 left-1/2 -translate-x-1/2 z-50 px-3 py-1 rounded-full bg-blueberry-500/90 text-white text-[10px] font-semibold tracking-wide uppercase backdrop-blur-sm shadow-lg pointer-events-none select-none">Demo Mode — Sample Data</div>
+</div>
+</div>
+
+<script>
+const{createApp,ref,reactive,computed,watch,onMounted,nextTick}=Vue
+
+createApp({
+setup(){
+const dark=ref(false)
+const currency=ref('usd')
+const view=ref('dashboard')
+const sidebarCollapsed=ref(false)
+const mobileMenu=ref(false)
+const quoteIdx=ref(0)
+const trendCanvas=ref(null)
+const pieCanvas=ref(null)
+const reportPieCanvas=ref(null)
+const showIncome=ref(true)
+const showExpenses=ref(true)
+const showAvg=ref(false)
+const incomeMode=ref('category')
+const expenseMode=ref('category')
+const pieMonth=ref('2026-07')
+const showTransfers=ref(true)
+const hideBalances=ref(false)
+const showAccForm=ref(false)
+const showTransferForm=ref(false)
+const budgetMonthIdx=ref(5)
+const reportMode=ref('monthly')
+const txFilter=reactive({account:'',type:'',category:'',start:'',end:''})
+const selectedBank=ref('BDO')
+const customBank=ref('')
+const otherAccCurrency=ref('usd')
+
+const cs=computed(()=>currency.value==='usd'?'$':'₱')
+const quotes=[
+{text:"A budget is telling your money where to go instead of wondering where it went.",author:"Dave Ramsey"},
+{text:"Do not save what is left after spending, but spend what is left after saving.",author:"Warren Buffett"},
+{text:"The goal isn't more money. The goal is living life on your own terms.",author:"Chris Brogan"},
+{text:"Beware of little expenses; a small leak will sink a great ship.",author:"Benjamin Franklin"},
+{text:"Financial freedom is available to those who learn about it and work for it.",author:"Robert Kiyosaki"},
+]
+const pieMonthOpts=[{v:'full-year',l:'Full Year'},{v:'2026-07',l:'Jul'},{v:'2026-06',l:'Jun'},{v:'2026-05',l:'May'},{v:'2026-04',l:'Apr'},{v:'2026-03',l:'Mar'},{v:'2026-02',l:'Feb'}]
+
+const catIcon={Rent:'🏠',Electricity:'⚡',Gas:'🔥',Subscriptions:'📺','Phone & Wifi':'📱','Rent Insurance':'🛡️','Health Insurance':'🏥',Groceries:'🛒',Household:'🧹',Transportation:'🚗',Medical:'💊','Eating Out':'🍽️','Social Events':'🎉',Hobbies:'🎯',Shopping:'🛍️',Beauty:'💄',Travel:'✈️',Others:'📋',Tuition:'🎓','School Supplies':'📚',Salary:'💰',Cashback:'💵',Interest:'📈','Transfer Fees':'💸'}
+
+const matrixMonths=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const months=['2026-02','2026-03','2026-04','2026-05','2026-06','2026-07']
+const budgetMonthLabel=computed(()=>{const ms=['January','February','March','April','May','June','July','August','September','October','November','December'];const m=months[budgetMonthIdx.value];const[y,mo]=m.split('-');return `${ms[parseInt(mo)-1]} ${y}`})
+
+const accountsUsd=ref([
+{name:'BDO Savings',type:'savings',bank:'BDO',bankColor:'#004B87',number:'****7823',balance:125400,change:8500,color:'#22c558',goal:200000,editingName:false},
+{name:'GCash Wallet',type:'savings',bank:'GCash',bankColor:'#007DFE',number:'****1234',balance:12800,change:2100,color:'#22c558',goal:null,editingName:false},
+{name:'Maya Savings',type:'savings',bank:'Maya',bankColor:'#00C853',number:'****5678',balance:45200,change:3400,color:'#22c558',goal:100000,editingName:false},
+{name:'BPI Regular',type:'checking',bank:'BPI',bankColor:'#C41E3A',number:'****3456',balance:28900,change:-1200,color:'#2d88ff',goal:null,editingName:false},
+{name:'BPI Time Deposit',type:'time_deposit',bank:'BPI',bankColor:'#C41E3A',number:'****9012',balance:100000,change:0,color:'#ffbf00',goal:null,editingName:false},
+])
+const accountsPhp=ref([
+{name:'BDO Checking',type:'checking',bank:'BDO',bankColor:'#004B87',number:'****2010',balance:18500,change:3000,color:'#2d88ff',goal:null,editingName:false},
+{name:'Maya Wallet',type:'savings',bank:'Maya',bankColor:'#00C853',number:'****8765',balance:8900,change:-500,color:'#22c558',goal:null,editingName:false},
+])
+const allAccountsList=computed(()=>[...new Set([...accountsUsd.value,...accountsPhp.value].map(a=>a.name))])
+const netWorth=computed(()=>accountsUsd.value.reduce((s,a)=>s+a.balance,0))
+const netWorthPhp=computed(()=>accountsPhp.value.reduce((s,a)=>s+a.balance,0))
+function getAccountGroups(accs){
+const order=['savings','checking','time_deposit','equity','investment']
+const groups={}
+for(const a of accs){if(!groups[a.type])groups[a.type]=[];groups[a.type].push(a)}
+return order.filter(t=>groups[t]).map(t=>({type:t,accounts:groups[t]}))
+}
+const accountGroupsUsd=computed(()=>getAccountGroups(accountsUsd.value))
+const accountGroupsPhp=computed(()=>getAccountGroups(accountsPhp.value))
+
+const totalBudget=30000
+const monthExpense=18600
+const monthIncome=85000
+const budgetPct=computed(()=>Math.round(monthExpense/totalBudget*100))
+const budgetRemaining=computed(()=>totalBudget-monthExpense)
+
+const incomeMatrix=[
+{name:'Salary',data:[55000,55000,55000,55000,55000,55000,55000,0,0,0,0,0]},
+{name:'Freelance',data:[18000,12000,20000,15000,18000,18000,18000,0,0,0,0,0]},
+{name:'Interest',data:[120,95,130,110,125,140,135,0,0,0,0,0]},
+]
+const matrixTotals=computed(()=>{const t=Array(12).fill(0);for(const r of incomeMatrix)r.data.forEach((v,i)=>t[i]+=v);return t})
+const matrixGrand=computed(()=>matrixTotals.value.reduce((a,b)=>a+b,0))
+
+const expenseGroups=ref([
+{name:'Fixed',open:true,cats:[
+{name:'Rent',icon:'🏠',data:[12000,12000,12000,12000,12000,12000,12000,0,0,0,0,0]},
+{name:'Electricity',icon:'⚡',data:[2100,1800,1900,2200,2000,2100,2100,0,0,0,0,0]},
+{name:'Phone & Wifi',icon:'📱',data:[899,899,899,899,899,899,899,0,0,0,0,0]},
+]},
+{name:'Essential',open:false,cats:[
+{name:'Groceries',icon:'🛒',data:[5000,4800,5200,4600,5100,5000,5010,0,0,0,0,0]},
+{name:'Transportation',icon:'🚗',data:[3200,2800,3500,2900,3100,3000,2530,0,0,0,0,0]},
+{name:'Medical',icon:'💊',data:[500,200,800,300,400,600,560,0,0,0,0,0]},
+]},
+{name:'Lifestyle',open:false,cats:[
+{name:'Eating Out',icon:'🍽️',data:[2500,2200,2800,2100,2400,2300,2200,0,0,0,0,0]},
+{name:'Shopping',icon:'🛍️',data:[1500,2000,1200,1800,2500,1600,1650,0,0,0,0,0]},
+{name:'Subscriptions',icon:'📺',data:[578,578,578,578,578,578,578,0,0,0,0,0]},
+{name:'Travel',icon:'✈️',data:[0,5000,0,3000,0,2000,3500,0,0,0,0,0]},
+]},
+{name:'School',open:false,cats:[
+{name:'Tuition',icon:'🎓',data:[0,0,8000,0,0,0,0,0,0,0,0,0]},
+{name:'School Supplies',icon:'📚',data:[500,200,1500,200,200,300,200,0,0,0,0,0]},
+]},
+])
+
+const expMatrixTotals=computed(()=>{const t=Array(12).fill(0);for(const g of expenseGroups.value)for(const c of g.cats)c.data.forEach((v,i)=>t[i]+=v);return t})
+const expMatrixGrand=computed(()=>expMatrixTotals.value.reduce((a,b)=>a+b,0))
+
+const budgetGroups=computed(()=>[
+{name:'Fixed',spent:14999,budget:16000,cats:[
+{icon:'🏠',name:'Rent',budget:12000,spent:12000,pct:100,remaining:0,editing:false},
+{icon:'⚡',name:'Electricity',budget:2500,spent:2100,pct:84,remaining:400,editing:false},
+{icon:'📱',name:'Phone & Wifi',budget:1000,spent:899,pct:90,remaining:101,editing:false},
+]},
+{name:'Essential',spent:8100,budget:10000,cats:[
+{icon:'🛒',name:'Groceries',budget:6000,spent:5010,pct:84,remaining:990,editing:false},
+{icon:'🚗',name:'Transportation',budget:4000,spent:2530,pct:63,remaining:1470,editing:false},
+{icon:'💊',name:'Medical',budget:3000,spent:560,pct:19,remaining:2440,editing:false},
+]},
+{name:'Lifestyle',spent:7928,budget:9000,cats:[
+{icon:'🍽️',name:'Eating Out',budget:3000,spent:2200,pct:73,remaining:800,editing:false},
+{icon:'🛍️',name:'Shopping',budget:3000,spent:1650,pct:55,remaining:1350,editing:false},
+{icon:'📺',name:'Subscriptions',budget:600,spent:578,pct:96,remaining:22,editing:false},
+{icon:'✈️',name:'Travel',budget:3000,spent:3500,pct:100,remaining:-500,editing:false},
+]},
+{name:'School',spent:200,budget:2000,cats:[
+{icon:'🎓',name:'Tuition',budget:1000,spent:0,pct:0,remaining:1000,editing:false},
+{icon:'📚',name:'School Supplies',budget:500,spent:200,pct:40,remaining:300,editing:false},
+]},
+])
+
+const transactions=ref([
+{id:1,description:'SM Supermarket',category:'Groceries',date:'Jul 25, 2026',amount:2350,type:'expense',account:'BDO Savings',isTransfer:false,_confirm:false},
+{id:2,description:'Salary - July',category:'Salary',date:'Jul 1, 2026',amount:55000,type:'income',account:'BDO Savings',isTransfer:false,_confirm:false},
+{id:3,description:'Meralco Electric',category:'Electricity',date:'Jul 22, 2026',amount:2100,type:'expense',account:'BDO Savings',isTransfer:false,_confirm:false},
+{id:4,description:'Grab Food',category:'Eating Out',date:'Jul 24, 2026',amount:485,type:'expense',account:'GCash Wallet',isTransfer:false,_confirm:false},
+{id:5,description:'Freelance Payment',category:'Salary',date:'Jul 15, 2026',amount:18000,type:'income',account:'BDO Savings',isTransfer:false,_confirm:false},
+{id:6,description:'LRT Commute',category:'Transportation',date:'Jul 25, 2026',amount:65,type:'expense',account:'GCash Wallet',isTransfer:false,_confirm:false},
+{id:7,description:'Globe Telecom',category:'Phone & Wifi',date:'Jul 20, 2026',amount:899,type:'expense',account:'BDO Savings',isTransfer:false,_confirm:false},
+{id:8,description:'Shopee Order',category:'Shopping',date:'Jul 23, 2026',amount:1650,type:'expense',account:'GCash Wallet',isTransfer:false,_confirm:false},
+{id:9,description:'Netflix Subscription',category:'Subscriptions',date:'Jul 18, 2026',amount:399,type:'expense',account:'BPI Regular',isTransfer:false,_confirm:false},
+{id:10,description:'Jollibee Family',category:'Eating Out',date:'Jul 19, 2026',amount:780,type:'expense',account:'GCash Wallet',isTransfer:false,_confirm:false},
+{id:11,description:'Watsons',category:'Medical',date:'Jul 21, 2026',amount:560,type:'expense',account:'BDO Savings',isTransfer:false,_confirm:false},
+{id:12,description:'AirBnB - Baguio',category:'Travel',date:'Jul 5, 2026',amount:3500,type:'expense',account:'BPI Regular',isTransfer:false,_confirm:false},
+{id:13,description:'Gym Membership',category:'Medical',date:'Jul 3, 2026',amount:1500,type:'expense',account:'BDO Savings',isTransfer:false,_confirm:false},
+{id:14,description:'Online Tutoring',category:'Salary',date:'Jul 8, 2026',amount:12000,type:'income',account:'Maya Savings',isTransfer:false,_confirm:false},
+{id:15,description:'Gas Station',category:'Transportation',date:'Jul 16, 2026',amount:2200,type:'expense',account:'BDO Savings',isTransfer:false,_confirm:false},
+{id:16,description:'Spotify Premium',category:'Subscriptions',date:'Jul 7, 2026',amount:179,type:'expense',account:'GCash Wallet',isTransfer:false,_confirm:false},
+{id:17,description:'Water Utility - Maynilad',category:'Household',date:'Jul 14, 2026',amount:650,type:'expense',account:'BDO Savings',isTransfer:false,_confirm:false},
+{id:18,description:'Tutoring Side Gig',category:'Salary',date:'Jul 22, 2026',amount:8000,type:'income',account:'Maya Savings',isTransfer:false,_confirm:false},
+{id:19,description:'Groceries - Puregold',category:'Groceries',date:'Jul 24, 2026',amount:2540,type:'expense',account:'BDO Checking',isTransfer:false,_confirm:false},
+{id:20,description:'Lunch - Carinderia',category:'Eating Out',date:'Jul 25, 2026',amount:180,type:'expense',account:'Maya Wallet',isTransfer:false,_confirm:false},
+{id:21,description:'Jeepney Fare',category:'Transportation',date:'Jul 25, 2026',amount:24,type:'expense',account:'Maya Wallet',isTransfer:false,_confirm:false},
+{id:22,description:'Online Freelance (PHP)',category:'Salary',date:'Jul 22, 2026',amount:15000,type:'income',account:'BDO Checking',isTransfer:false,_confirm:false},
+])
+
+const hasTxFilter=computed(()=>txFilter.account||txFilter.type||txFilter.category||txFilter.start||txFilter.end)
+function clearTxFilter(){Object.assign(txFilter,{account:'',type:'',category:'',start:'',end:''})}
+const allCategories=computed(()=>[...new Set(transactions.value.map(t=>t.category))])
+
+const groupedTx=computed(()=>{
+let list=[...transactions.value]
+if(txFilter.type)list=list.filter(t=>txFilter.type==='income'?t.type==='income':'expense')
+if(txFilter.account)list=list.filter(t=>t.account===txFilter.account)
+if(txFilter.category)list=list.filter(t=>t.category===txFilter.category)
+const groups={}
+for(const t of list){if(!groups[t.date])groups[t.date]=[];groups[t.date].push(t)}
+return groups
+})
+
+const recurringRules=ref([
+{name:'Netflix',category:'Subscriptions',amount:399,frequency:'Monthly',day:18,next:'Aug 18, 2026',ends:null,active:true,dueSoon:false,_confirmDel:false},
+{name:'Spotify Premium',category:'Subscriptions',amount:179,frequency:'Monthly',day:7,next:'Aug 7, 2026',ends:null,active:true,dueSoon:false,_confirmDel:false},
+{name:'Gym Membership',category:'Medical',amount:1500,frequency:'Monthly',day:3,next:'Aug 3, 2026',ends:null,active:true,dueSoon:false,_confirmDel:false},
+{name:'Globe Telecom',category:'Phone & Wifi',amount:899,frequency:'Monthly',day:20,next:'Aug 20, 2026',ends:null,active:true,dueSoon:false,_confirmDel:false},
+{name:'Internet - Converge',category:'Phone & Wifi',amount:1500,frequency:'Monthly',day:15,next:'Aug 15, 2026',ends:null,active:true,dueSoon:false,_confirmDel:false},
+{name:'Landers Membership',category:'Shopping',amount:1200,frequency:'Yearly',day:10,next:'Jul 10, 2027',ends:null,active:true,dueSoon:false,_confirmDel:false},
+])
+
+const transfers=ref([
+{id:1,from:'GCash Wallet',to:'BDO Savings',amount:5000,fee:0,date:'Jul 25, 2026',note:'Monthly savings',_confirmReverse:false},
+{id:2,from:'BDO Savings',to:'Maya Savings',amount:10000,fee:0,date:'Jul 1, 2026',note:'High-yield savings',_confirmReverse:false},
+{id:3,from:'BDO Savings',to:'GCash Wallet',amount:2000,fee:15,date:'Jul 15, 2026',note:'Cash for expenses',_confirmReverse:false},
+{id:4,from:'Maya Savings',to:'BDO Savings',amount:15000,fee:0,date:'Jul 15, 2026',note:'Freelance transfer',_confirmReverse:false},
+])
+
+const reportCatLegend=[
+{name:'Groceries',color:'#158039',total:5010},
+{name:'Electricity',color:'#ec4750',total:2100},
+{name:'Transportation',color:'#2d88ff',total:2530},
+{name:'Shopping',color:'#a855f7',total:1650},
+{name:'Eating Out',color:'#ff970a',total:2200},
+]
+const reportGroups=computed(()=>budgetGroups.value)
+
+function ordinal(n){const s=['th','st','nd','rd'];const v=n%100;return n+(s[(v-20)%10]||s[v]||s[0])}
+
+let trendChart=null,pieChart=null,reportPieChart=null
+
+function initTrendChart(){
+if(!trendCanvas.value)return
+if(trendChart)trendChart.destroy()
+const ctx=trendCanvas.value.getContext('2d')
+const labels=['Jan','Feb','Mar','Apr','May','Jun','Jul']
+trendChart=new Chart(ctx,{type:'line',data:{labels,datasets:[
+{label:'Income',data:[75000,73000,75130,70000,73125,73140,85000],borderColor:'#22c558',backgroundColor:'rgba(34,197,88,.1)',fill:true,tension:.4,pointRadius:3,borderWidth:2},
+{label:'Expenses',data:[28000,42000,32000,40000,35000,30000,18600],borderColor:'#ec4750',backgroundColor:'rgba(236,71,80,.1)',fill:true,tension:.4,pointRadius:3,borderWidth:2},
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:10}}}}}})
+}
+
+function initPieChart(){
+if(!pieCanvas.value)return
+if(pieChart)pieChart.destroy()
+const ctx=pieCanvas.value.getContext('2d')
+pieChart=new Chart(ctx,{type:'doughnut',data:{labels:['Fixed','Essential','Lifestyle','School','Misc'],datasets:[{data:[14999,8100,7928,200,1373],backgroundColor:['#22c558','#ec4750','#ff970a','#2d88ff','#a855f7'],borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:8,font:{size:10}}}}}})
+}
+
+function initReportPie(){
+if(!reportPieCanvas.value)return
+if(reportPieChart)reportPieChart.destroy()
+const ctx=reportPieCanvas.value.getContext('2d')
+reportPieChart=new Chart(ctx,{type:'doughnut',data:{labels:['Groceries','Electricity','Transportation','Shopping','Eating Out','Subscriptions','Medical','Travel','Household'],datasets:[{data:[5010,2100,2530,1650,2200,578,2060,3500,650],backgroundColor:['#158039','#ec4750','#2d88ff','#a855f7','#ff970a','#02afce','#f6737a','#ffb132','#919f9d'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:false}}}})
+}
+
+watch(view,(v)=>{
+if(v==='dashboard'){nextTick(()=>{initTrendChart();initPieChart()})}
+if(v==='reports'){nextTick(()=>{initReportPie()})}
+})
+
+onMounted(()=>{nextTick(()=>{initTrendChart();initPieChart()})})
+
+const menuItems=[
+{label:'Dashboard',view:'dashboard',icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>'},
+{label:'Transactions',view:'transactions',icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>'},
+{label:'Planning',icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-8 8"/><path d="M8 8h8v8"/></svg>',_open:true,children:[
+{label:'Budgets',view:'budgets'},{label:'Accounts',view:'accounts'},{label:'Recurring',view:'recurring'},
+]},
+{label:'Transfers',view:'transfers',icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>'},
+{label:'Reports',view:'reports',icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>'},
+]
+const flatMenu=[{label:'Dashboard',view:'dashboard'},{label:'Transactions',view:'transactions'},{label:'Budgets',view:'budgets'},{label:'Accounts',view:'accounts'},{label:'Recurring',view:'recurring'},{label:'Transfers',view:'transfers'},{label:'Reports',view:'reports'}]
+
+return{dark,currency,view,sidebarCollapsed,mobileMenu,quoteIdx,cs,quotes,pieMonthOpts,catIcon,
+trendCanvas,pieCanvas,reportPieCanvas,showIncome,showExpenses,showAvg,incomeMode,expenseMode,
+matrixMonths,showTransfers,hideBalances,showAccForm,showTransferForm,budgetMonthIdx,budgetMonthLabel,reportMode,
+txFilter,hasTxFilter,clearTxFilter,allCategories,allAccountsList,netWorth,accountsUsd,accountsPhp,accountGroupsUsd,accountGroupsPhp,netWorthPhp,selectedBank,customBank,otherAccCurrency,
+incomeMatrix,matrixTotals,matrixGrand,expenseGroups,expMatrixTotals,expMatrixGrand,
+totalBudget,monthExpense,monthIncome,budgetPct,budgetRemaining,budgetGroups,
+transactions,groupedTx,recurringRules,transfers,
+reportCatLegend,reportGroups,menuItems,flatMenu,ordinal,
+}
+}
+}).mount('#app')
+</script>
+</body>
+</html>

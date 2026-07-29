@@ -53,7 +53,8 @@ watch(selectedYear, fetchYearly)
 watch(currencyParam, load)
 
 function fmt(val) {
-  return `${currencySymbol.value}${Math.abs(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  const abs = Math.abs(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return val < 0 ? `-${currencySymbol.value}${abs}` : `${currencySymbol.value}${abs}`
 }
 
 function pctChange(curr, prev) {
