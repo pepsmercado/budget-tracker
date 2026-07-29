@@ -148,21 +148,12 @@ async function handleDelete(id) {
 
 function groupedByDate(txns) {
   const groups = {}
-  for (let i = 0; i < txns.length; i++) {
-    const t = txns[i]
+  for (const t of txns) {
     const d = t.date
     if (!groups[d]) groups[d] = []
-    groups[d].push({ txn: t, idx: i })
-  }
-  for (const date in groups) {
-    groups[date].sort((a, b) => {
-      const aTime = a.txn.created_at ? new Date(a.txn.created_at).getTime() : 0
-      const bTime = b.txn.created_at ? new Date(b.txn.created_at).getTime() : 0
-      return bTime - aTime || b.idx - a.idx
-    })
+    groups[d].push(t)
   }
   return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]))
-    .map(([date, items]) => [date, items.map(i => i.txn)])
 }
 
 function formatDate(dateStr) {
