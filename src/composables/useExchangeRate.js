@@ -10,9 +10,10 @@ export function useExchangeRate() {
     loading.value = true
     try {
       const { data } = await api.get('/rates')
-      if (data && data.PHP_USD) {
-        rate.value = data.PHP_USD
-        localStorage.setItem('last_known_rate', data.PHP_USD)
+      const phpRate = data?.rates?.PHP
+      if (phpRate) {
+        rate.value = phpRate
+        localStorage.setItem('last_known_rate', phpRate)
         isStale.value = false
       }
     } catch (e) {
