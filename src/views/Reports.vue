@@ -92,6 +92,16 @@ const budgetCategories = computed(() => {
   return monthlyData.value.budget.categories.filter(c => c.budget > 0 || c.spent > 0)
 })
 
+const budgetedCategoriesOnly = computed(() => {
+  if (!monthlyData.value?.budget?.categories) return []
+  return monthlyData.value.budget.categories.filter(c => c.budget > 0)
+})
+
+const nonBudgetedCategories = computed(() => {
+  if (!monthlyData.value?.budget?.categories) return []
+  return monthlyData.value.budget.categories.filter(c => c.budget === 0 && c.spent > 0)
+})
+
 const prevCategories = computed(() => {
   if (!monthlyData.value?.prev_budget?.categories) return []
   const map = {}
@@ -101,7 +111,7 @@ const prevCategories = computed(() => {
 
 const groupedCategories = computed(() => {
   const groups = {}
-  for (const cat of budgetCategories.value) {
+  for (const cat of budgetedCategoriesOnly.value) {
     const g = cat.group || 'Misc'
     if (!groups[g]) groups[g] = []
     groups[g].push(cat)
@@ -136,7 +146,7 @@ const accountBalances = computed(() => {
 const totalBalance = computed(() => accountBalances.value.reduce((s, a) => s + a.balance, 0))
 
 const doughnutData = computed(() => {
-  const cats = budgetCategories.value.filter(c => c.spent > 0)
+  const cats = budgetedCategoriesOnly.value.filter(c => c.spent > 0)
   if (!cats.length) return null
   const sorted = [...cats].sort((a, b) => b.spent - a.spent)
   const top = sorted.slice(0, 8)
@@ -472,7 +482,7 @@ function monthName(ms) {
         </div>
       </div>
 
-      <!-- Grouped categories -->
+      <!-- Grouped categories (budgeted) -->
       <div class="space-y-3">
         <div v-for="group in sortedGroupKeys" :key="group" class="card-elevated overflow-hidden">
           <div class="px-4 py-2.5 border-b border-mushroom-100 dark:border-mushroom-700/50 flex items-center justify-between bg-mushroom-50 dark:bg-mushroom-800">
@@ -498,6 +508,26 @@ function monthName(ms) {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Non-budgeted expenses -->
+      <div v-if="nonBudgetedCategories.length" class="card-elevated overflow-hidden">
+        <div class="px-4 py-2.5 border-b border-mushroom-100 dark:border-mushroom-700/50 bg-mushroom-50 dark:bg-mushroom-800">
+          <span class="text-xs font-semibold uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400">Non-budgeted</span>
+        </div>
+        <div class="divide-y divide-mushroom-100 dark:divide-mushroom-700/50">
+          <div v-for="cat in nonBudgetedCategories" :key="cat.name" class="px-4 py-2.5 flex items-center justify-between">
+            <div class="flex-1 min-w-0">
+              <span class="text-sm text-mushroom-950 dark:text-mushroom-50">{{ cat.name }}</span>
+              <div class="text-[10px] text-mushroom-400 dark:text-mushroom-500 mt-0.5">{{ cat.group || 'Misc' }}</div>
+            </div>
+            <span class="ml-3 text-sm font-medium text-mushroom-950 dark:text-mushroom-50 flex-shrink-0 w-28 text-right">{{ fmt(cat.spent) }}</span>
+          </div>
+        </div>
+        <div class="px-4 py-2 bg-mushroom-50/50 dark:bg-mushroom-800/50 border-t border-mushroom-100 dark:border-mushroom-700/50 flex items-center justify-between text-xs">
+          <span class="text-mushroom-500 dark:text-mushroom-400">Total non-budgeted</span>
+          <span class="font-medium text-mushroom-950 dark:text-mushroom-50">{{ fmt(nonBudgetedCategories.reduce((s, c) => s + c.spent, 0)) }}</span>
         </div>
       </div>
     </template>

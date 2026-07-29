@@ -272,7 +272,7 @@ class MockBackend(BackendService):
             result = [t for t in result if str(t.date) >= start_date]
         if end_date:
             result = [t for t in result if str(t.date) <= end_date]
-        result.sort(key=lambda t: t.date, reverse=True)
+        result.sort(key=lambda t: (str(t.date), str(t.created_at or '')), reverse=True)
         return result
 
     def create_transaction(self, data: TransactionCreate) -> Transaction:

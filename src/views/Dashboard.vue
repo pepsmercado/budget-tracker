@@ -167,6 +167,7 @@ watch(currencyParam, loadDashboard)
 const currentMonthBudget = ref(null)
 const currentMonthIncome = ref(0)
 const currentMonthExpense = ref(0)
+const budgetedCategories = ref(new Set())
 
 async function fetchCurrentMonthSummary() {
   const now = new Date()
@@ -179,7 +180,12 @@ async function fetchCurrentMonthSummary() {
     api.get(`/transactions`, { params: { currency: currencyParam.value, start_date: `${y}-${m}-01`, end_date: `${y}-${m}-${new Date(y, parseInt(m), 0).getDate()}` } })
   ])
 
-  if (summaryRes?.data) currentMonthBudget.value = summaryRes.data
+  if (summaryRes?.data) {
+    currentMonthBudget.value = summaryRes.data
+    budgetedCategories.value = new Set(
+      (summaryRes.data.categories || []).filter(c => c.budget > 0).map(c => c.name)
+    )
+  }
 
   const txns = txnsRes.data || []
   currentMonthIncome.value = txns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
@@ -279,12 +285,22 @@ const doughnutOpts = computed(() => ({
   onClick: () => { drilledGroup.value = null }
 }))
 
+const nonBudgetedTotal = computed(() => {
+  const txns = monthlyTransactions.value
+  let total = 0
+  for (const t of txns) {
+    if (!budgetedCategories.value.has(t.category)) {
+      total += t.amount
+    }
+  }
+  return total
+})
+
 const groupChartData = computed(() => {
   const txns = monthlyTransactions.value
-  if (!txns.length) return { labels: [], datasets: [] }
-
   const groups = {}
   for (const t of txns) {
+    if (!budgetedCategories.value.has(t.category)) continue
     const group = categoryToGroup.value[t.category] || 'Others'
     if (!groups[group]) groups[group] = 0
     groups[group] += t.amount
@@ -343,7 +359,7 @@ async function fetchMatrixData() {
 
   const groups = {}
   for (const row of data) {
-    const group = categoryToGroup.value[row.category] || 'Others'
+    const group = row.group || 'Others'
     if (!groups[group]) groups[group] = []
     groups[group].push(row)
   }
@@ -769,6 +785,10 @@ function formatConverted(val) {
             :options="doughnutOpts"
             :style="{ cursor: 'pointer' }"
           />
+        </div>
+        <div v-if="!drilledGroup && nonBudgetedTotal > 0" class="mt-2 pt-2 border-t border-mushroom-100 dark:border-mushroom-700/50 flex items-center justify-between text-xs">
+          <span class="text-mushroom-500 dark:text-mushroom-400">Non-budgeted</span>
+          <span class="font-medium text-mushroom-950 dark:text-mushroom-50">{{ currencySymbol }}{{ Math.round(nonBudgetedTotal).toLocaleString() }}</span>
         </div>
       </div>
     </div>
