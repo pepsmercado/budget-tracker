@@ -6,7 +6,7 @@
 @theme {
   --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
 
-  --color-mushroom-50: #fdf8f7;
+  --color-mushroom-50: #f5ece8;
   --color-mushroom-100: #f5ece8;
   --color-mushroom-200: #ede0db;
   --color-mushroom-300: #d8c2b9;
@@ -78,7 +78,7 @@
 }
 
 :root {
-  --background: #fdf8f7;
+  --background: #f5ece8;
   --foreground: #201a18;
   --card: #ffffff;
   --card-foreground: #201a18;
@@ -89,7 +89,7 @@
   --secondary: #ede0db;
   --secondary-foreground: #53443d;
   --tertiary: #666034;
-  --muted: #f5ece8;
+  --muted: #ede0db;
   --muted-foreground: #7a6b62;
   --border: #d8c2b9;
   --outline: #85736c;
