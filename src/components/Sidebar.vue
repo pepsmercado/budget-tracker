@@ -149,10 +149,10 @@ onBeforeUnmount(() => clearTimeout(hoverTimeout))
 
 <template>
   <aside
-    class="bg-[#1c1b1b] text-white flex flex-col transition-all duration-200 ease-in-out h-full"
+    class="bg-[var(--sidebar-bg)] text-[var(--sidebar-text)] flex flex-col transition-all duration-200 ease-in-out h-full"
     :class="collapsed ? 'w-14' : 'w-56'"
   >
-    <div class="p-4 border-b border-white/10">
+    <div class="p-4 border-b border-[var(--sidebar-border)]">
       <div class="flex items-center gap-2.5 cursor-pointer" @click="router.push('/usd'); closeMobile()">
         <div class="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
           <img src="/favicon.png" alt="Logo" class="w-full h-full object-cover" />
@@ -163,13 +163,13 @@ onBeforeUnmount(() => clearTimeout(hoverTimeout))
 
     <nav class="flex-1 p-2 overflow-y-auto">
       <!-- Currency tabs -->
-      <div v-if="!collapsed" class="flex mb-3 rounded-lg bg-white/5 p-0.5">
+      <div v-if="!collapsed" class="flex mb-3 rounded-lg bg-[var(--sidebar-currency-bg)] p-0.5">
         <button
           v-for="c in ['usd', 'php']"
           :key="c"
           @click="switchCurrency(c)"
           class="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-colors"
-          :class="activeCurrency === c ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white'"
+          :class="activeCurrency === c ? 'bg-[var(--sidebar-currency-active)] text-[var(--sidebar-text)]' : 'text-[var(--sidebar-text-secondary)] hover:text-[var(--sidebar-text)]'"
         >
           <span>{{ c === 'usd' ? '🇺🇸' : '🇵🇭' }}</span>
           <span>{{ c.toUpperCase() }}</span>
@@ -178,7 +178,7 @@ onBeforeUnmount(() => clearTimeout(hoverTimeout))
       <button
         v-if="collapsed"
         @click="switchCurrency(activeCurrency === 'usd' ? 'php' : 'usd')"
-        class="w-full flex items-center justify-center py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors mb-2"
+        class="w-full flex items-center justify-center py-1.5 rounded-lg text-[var(--sidebar-text-secondary)] hover:text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] transition-colors mb-2"
         :title="activeCurrency === 'usd' ? 'Switch to PHP' : 'Switch to USD'"
       >
         <span class="text-lg">{{ activeCurrency === 'usd' ? '🇺🇸' : '🇵🇭' }}</span>
@@ -226,7 +226,7 @@ onBeforeUnmount(() => clearTimeout(hoverTimeout))
                 :key="child.to"
                 :to="child.to"
                 class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
-                :class="isActive(child.to) ? 'text-white font-medium bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'"
+                :class="isActive(child.to) ? 'text-[var(--sidebar-text)] font-medium bg-[var(--sidebar-active-link)]' : 'text-[var(--sidebar-text-secondary)] hover:text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)]'"
                 @click="closeMobile"
               >
                 <SidebarIcon :name="child.icon" class="flex-shrink-0 opacity-60" />
@@ -238,10 +238,10 @@ onBeforeUnmount(() => clearTimeout(hoverTimeout))
       </template>
     </nav>
 
-    <div class="p-2 border-t border-white/10">
+    <div class="p-2 border-t border-[var(--sidebar-border)]">
       <button
         @click="toggle"
-        class="w-full flex items-center justify-center gap-2 p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+        class="w-full flex items-center justify-center gap-2 p-2 rounded-lg text-[var(--sidebar-text-secondary)] hover:text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] transition-colors"
         :title="collapsed ? 'Expand' : 'Collapse'"
       >
         <svg
@@ -265,18 +265,18 @@ onBeforeUnmount(() => clearTimeout(hoverTimeout))
     <div
       v-if="collapsed && hoveredGroup"
       :style="flyoutStyle"
-      class="w-50 py-1 bg-mushroom-800 border border-white/10 rounded-lg shadow-xl z-[9999]"
+      class="w-50 py-1 bg-[var(--sidebar-bg)] border border-[var(--sidebar-border)] rounded-lg shadow-xl z-[9999]"
       @mouseenter="onFlyoutEnter()"
       @mouseleave="onGroupLeave()"
       style="margin-left: -2px; padding-left: 2px;"
     >
-      <div class="px-3 py-1.5 text-[10px] font-medium text-white/40 uppercase tracking-wider">{{ flyoutLabel }}</div>
+      <div class="px-3 py-1.5 text-[10px] font-medium text-[var(--sidebar-text-secondary)] uppercase tracking-wider">{{ flyoutLabel }}</div>
       <router-link
         v-for="child in flyoutItems"
         :key="child.to"
         :to="child.to"
         class="flex items-center gap-2.5 px-3 py-2 text-sm transition-colors cursor-pointer"
-        :class="isActive(child.to) ? 'text-white font-medium bg-white/10' : 'text-white/80 hover:text-white hover:bg-white/8'"
+        :class="isActive(child.to) ? 'text-[var(--sidebar-text)] font-medium bg-[var(--sidebar-active-link)]' : 'text-[var(--sidebar-text-secondary)] hover:text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)]'"
         @click="closeMobile"
       >
         <SidebarIcon :name="child.icon" class="flex-shrink-0 opacity-70" />
