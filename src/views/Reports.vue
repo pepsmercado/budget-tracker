@@ -362,7 +362,7 @@ const activeSummaries = computed(() => {
 })
 
 const bestMonth = computed(() => {
-  const ms = activeSummaries.value
+  const ms = activeSummaries.value.filter(m => (m.total_budget - m.total_spent) >= 0)
   if (!ms.length) return null
   let best = ms[0]
   for (const m of ms) {
@@ -371,7 +371,7 @@ const bestMonth = computed(() => {
   return best
 })
 const worstMonth = computed(() => {
-  const ms = activeSummaries.value
+  const ms = activeSummaries.value.filter(m => (m.total_budget - m.total_spent) < 0)
   if (!ms.length) return null
   let worst = ms[0]
   for (const m of ms) {
