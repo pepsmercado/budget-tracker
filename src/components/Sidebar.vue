@@ -153,7 +153,7 @@ onBeforeUnmount(() => clearTimeout(hoverTimeout))
     :class="collapsed ? 'w-14' : 'w-56'"
   >
     <div class="p-4 border-b border-white/10">
-      <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2.5 cursor-pointer" @click="router.push('/usd'); closeMobile()">
         <div class="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
           <img src="/favicon.png" alt="Logo" class="w-full h-full object-cover" />
         </div>

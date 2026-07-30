@@ -27,6 +27,7 @@ const routes = [
   ...currencyRoutes('php'),
   ...currencyRoutes('usd'),
   { path: '/', redirect: '/usd' },
+  { path: '/:pathMatch(.*)*', redirect: '/usd' },
 ]
 
 export default createRouter({

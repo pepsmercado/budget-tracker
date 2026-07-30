@@ -12,7 +12,7 @@ describe('router', () => {
     expect(usdRoutes.length).toBeGreaterThan(0)
   })
 
-  it('root redirects to /php', () => {
+  it('root redirects to /usd', () => {
     const root = router.getRoutes().find(r => r.path === '/')
     expect(root).toBeDefined()
   })
