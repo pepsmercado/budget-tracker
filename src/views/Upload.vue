@@ -371,7 +371,7 @@ function acceptAllSuggestions(rows) {
                 <td class="px-2 py-1.5 text-mushroom-700 dark:text-mushroom-300">{{ row.date }}</td>
                 <td class="px-2 py-1.5 text-mushroom-700 dark:text-mushroom-300 max-w-[200px] truncate" :title="row.description">{{ row.description }}</td>
                 <td class="px-2 py-1.5">
-                  <select v-model="row.category" class="bg-transparent border-b border-dashed border-mushroom-300 dark:border-mushroom-600 text-mushroom-700 dark:text-mushroom-300 text-xs focus:outline-none focus:border-kangkong-500 py-0.5 w-full">
+                  <select v-model="row.category" class="bg-transparent border-b border-dashed border-mushroom-300 dark:border-mushroom-600 text-mushroom-700 dark:text-mushroom-300 text-xs focus:outline-none focus:border-primary py-0.5 w-full">
                     <option v-for="c in expenseCategories" :key="c.id" :value="c.name">{{ c.name }}</option>
                   </select>
                 </td>
@@ -475,7 +475,7 @@ function acceptAllSuggestions(rows) {
                 <td class="px-2 py-1.5 text-mushroom-700 dark:text-mushroom-300">{{ row.date }}</td>
                 <td class="px-2 py-1.5">
                   <div class="flex items-center gap-1">
-                    <input v-model="row.account_id" class="bg-transparent border-b border-dashed border-mushroom-300 dark:border-mushroom-600 text-mushroom-700 dark:text-mushroom-300 text-xs w-full focus:outline-none focus:border-kangkong-500" :class="getWarningFor(row, 'Account') ? 'text-mango-600' : ''" />
+                    <input v-model="row.account_id" class="bg-transparent border-b border-dashed border-mushroom-300 dark:border-mushroom-600 text-mushroom-700 dark:text-mushroom-300 text-xs w-full focus:outline-none focus:border-primary" :class="getWarningFor(row, 'Account') ? 'text-mango-600' : ''" />
                   </div>
                   <div v-if="getWarningFor(row, 'Account')" class="flex items-center gap-1 mt-0.5">
                     <span class="text-[10px] text-mango-500 truncate">{{ getWarningFor(row, 'Account') }}</span>
@@ -485,7 +485,7 @@ function acceptAllSuggestions(rows) {
                 </td>
                 <td class="px-2 py-1.5">
                   <div class="flex items-center gap-1">
-                    <input v-model="row.category" class="bg-transparent border-b border-dashed border-mushroom-300 dark:border-mushroom-600 text-mushroom-700 dark:text-mushroom-300 text-xs w-full focus:outline-none focus:border-kangkong-500" :class="getWarningFor(row, 'Category') ? 'text-mango-600' : ''" />
+                    <input v-model="row.category" class="bg-transparent border-b border-dashed border-mushroom-300 dark:border-mushroom-600 text-mushroom-700 dark:text-mushroom-300 text-xs w-full focus:outline-none focus:border-primary" :class="getWarningFor(row, 'Category') ? 'text-mango-600' : ''" />
                   </div>
                   <div v-if="getWarningFor(row, 'Category')" class="flex items-center gap-1 mt-0.5">
                     <span class="text-[10px] text-mango-500 truncate">{{ getWarningFor(row, 'Category') }}</span>
@@ -504,7 +504,7 @@ function acceptAllSuggestions(rows) {
                 <td class="px-2 py-1.5 text-mushroom-700 dark:text-mushroom-300">{{ row.description }}</td>
                 <td class="px-2 py-1.5">
                   <div class="flex items-center gap-1">
-                    <input v-model="row.sub_account_id" class="bg-transparent border-b border-dashed border-mushroom-300 dark:border-mushroom-600 text-mushroom-700 dark:text-mushroom-300 text-xs w-full focus:outline-none focus:border-kangkong-500" :class="getWarningFor(row, 'Sub-account') ? 'text-mango-600' : ''" placeholder="—" />
+                    <input v-model="row.sub_account_id" class="bg-transparent border-b border-dashed border-mushroom-300 dark:border-mushroom-600 text-mushroom-700 dark:text-mushroom-300 text-xs w-full focus:outline-none focus:border-primary" :class="getWarningFor(row, 'Sub-account') ? 'text-mango-600' : ''" placeholder="—" />
                   </div>
                   <div v-if="getWarningFor(row, 'Sub-account')" class="flex items-center gap-1 mt-0.5">
                     <span class="text-[10px] text-mango-500 truncate">{{ getWarningFor(row, 'Sub-account') }}</span>
