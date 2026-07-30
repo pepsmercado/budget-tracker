@@ -37,9 +37,9 @@ const confirmingAcctNum = ref(null)
 
 const bankColors = {
   BPI: 'bg-tomato-100 text-tomato-700 dark:bg-tomato-500/15 dark:text-tomato-400',
-  BDO: 'bg-blueberry-100 text-blueberry-700 dark:bg-blueberry-500/15 dark:text-blueberry-400',
+  BDO: 'bg-carrot-100 text-carrot-700 dark:bg-carrot-500/15 dark:text-carrot-400',
   Maya: 'bg-kangkong-100 text-kangkong-700 dark:bg-kangkong-500/15 dark:text-kangkong-400',
-  'Bank of America': 'bg-blueberry-100 text-blueberry-700 dark:bg-blueberry-500/15 dark:text-blueberry-400',
+  'Bank of America': 'bg-tomato-100 text-tomato-700 dark:bg-tomato-500/15 dark:text-tomato-400',
 }
 
 const bankOptions = [
@@ -58,7 +58,7 @@ const accountTypeLabels = {
 
 const accountTypeColors = {
   savings: 'border-l-kangkong-500',
-  checking: 'border-l-blueberry-500',
+  checking: 'border-l-carrot-500',
   time_deposit: 'border-l-mango-500',
   equity: 'border-l-purple-500',
   investment: 'border-l-purple-500',

@@ -149,7 +149,7 @@ onBeforeUnmount(() => clearTimeout(hoverTimeout))
 
 <template>
   <aside
-    class="bg-[#11161e] text-white flex flex-col transition-all duration-200 ease-in-out h-full"
+    class="bg-[#121212] text-white flex flex-col transition-all duration-200 ease-in-out h-full"
     :class="collapsed ? 'w-14' : 'w-56'"
   >
     <div class="p-4 border-b border-white/10">
@@ -265,7 +265,7 @@ onBeforeUnmount(() => clearTimeout(hoverTimeout))
     <div
       v-if="collapsed && hoveredGroup"
       :style="flyoutStyle"
-      class="w-50 py-1 bg-[#1a202c] border border-white/10 rounded-lg shadow-xl z-[9999]"
+      class="w-50 py-1 bg-[#2c2420] border border-white/10 rounded-lg shadow-xl z-[9999]"
       @mouseenter="onFlyoutEnter()"
       @mouseleave="onGroupLeave()"
       style="margin-left: -2px; padding-left: 2px;"

@@ -158,7 +158,7 @@ watch(currencyParam, loadAll)
     </div>
 
     <div v-else class="space-y-3">
-      <div v-for="t in transfers" :key="t.id" class="card-elevated p-4 border-l-4 border-l-blueberry-400">
+      <div v-for="t in transfers" :key="t.id" class="card-elevated p-4 border-l-4 border-l-tomato-400">
         <div class="flex items-center justify-between">
           <div>
             <div class="flex items-center gap-2 mb-1">

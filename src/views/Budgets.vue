@@ -260,7 +260,7 @@ watch(selectedMonth, (val) => {
         <button @click="nextMonth" class="p-1.5 rounded-lg hover:bg-mushroom-100 dark:hover:bg-mushroom-700 text-mushroom-500 dark:text-mushroom-400 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </button>
-        <button v-if="selectedMonth !== currentMonth" @click="goToCurrentMonth" class="ml-2 px-2.5 py-1 text-xs font-medium rounded-lg bg-blueberry-500/10 dark:bg-blueberry-500/15 text-blueberry-600 dark:text-blueberry-400 hover:bg-blueberry-500/20 dark:hover:bg-blueberry-500/25 transition-colors border border-blueberry-200 dark:border-blueberry-500/20">
+        <button v-if="selectedMonth !== currentMonth" @click="goToCurrentMonth" class="ml-2 px-2.5 py-1 text-xs font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20">
           This Month
         </button>
       </div>

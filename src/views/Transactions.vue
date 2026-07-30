@@ -273,13 +273,13 @@ function exportCSV() {
           <span class="text-xs font-medium text-mushroom-500 dark:text-mushroom-400">{{ formatDate(date) }}</span>
         </div>
         <div v-for="t in txns" :key="t.id" class="flex items-center px-4 py-2.5 border-b border-mushroom-100 dark:border-mushroom-700/50 last:border-0">
-          <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-base" :class="t.transfer_pair_id ? 'bg-blueberry-50 dark:bg-blueberry-500/15' : t.type === 'income' ? 'bg-kangkong-50 dark:bg-kangkong-500/15' : 'bg-mushroom-50 dark:bg-mushroom-800'">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-base" :class="t.transfer_pair_id ? 'bg-mushroom-100 dark:bg-mushroom-700' : t.type === 'income' ? 'bg-kangkong-50 dark:bg-kangkong-500/15' : 'bg-mushroom-50 dark:bg-mushroom-800'">
             {{ t.transfer_pair_id ? '↗' : categoryIcons[t.category] || '📋' }}
           </div>
           <div class="flex-1 min-w-0 px-3">
             <div class="text-sm text-mushroom-950 dark:text-mushroom-50 truncate">{{ t.description || t.category }}</div>
             <div class="flex items-center gap-2 mt-0.5">
-              <span v-if="t.transfer_pair_id" class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-blueberry-100 text-blueberry-700 dark:bg-blueberry-500/15 dark:text-blueberry-400">Transfer</span>
+              <span v-if="t.transfer_pair_id" class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-mushroom-100 text-mushroom-700 dark:bg-mushroom-700 dark:text-mushroom-300">Transfer</span>
               <CategoryBadge v-else :name="t.category" :group="categoryToGroup[t.category]" />
               <span class="text-xs text-mushroom-400 dark:text-mushroom-500">{{ accounts.find(a => a.id === t.account_id)?.name || '' }}</span>
             </div>

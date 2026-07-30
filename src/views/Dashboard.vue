@@ -210,7 +210,7 @@ const monthlyChartData = computed(() => {
         label: 'Income',
         data: summary.value.monthly.map(m => Math.round(m.income)),
         borderColor: CHART_COLORS[0],
-        backgroundColor: 'rgba(23, 173, 73, 0.08)',
+        backgroundColor: 'rgba(76, 175, 80, 0.08)',
         fill: true,
         tension: 0.4,
         pointRadius: 3,
@@ -220,7 +220,7 @@ const monthlyChartData = computed(() => {
         label: 'Expense',
         data: summary.value.monthly.map(m => Math.round(m.expense)),
         borderColor: CHART_COLORS[1],
-        backgroundColor: 'rgba(218, 47, 56, 0.08)',
+        backgroundColor: 'rgba(194, 101, 42, 0.08)',
         fill: true,
         tension: 0.4,
         pointRadius: 3,
@@ -253,9 +253,9 @@ function pctTooltip(context) {
   return `${label}: ${pct}%`
 }
 
-const chartTickColor = computed(() => isDark.value ? '#b0b8b6' : '#5c6b61')
+const chartTickColor = computed(() => isDark.value ? '#9a887e' : '#7a6b62')
 const chartGridColor = computed(() => isDark.value ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)')
-const chartLegendColor = computed(() => isDark.value ? '#b0b8b6' : '#5c6b61')
+const chartLegendColor = computed(() => isDark.value ? '#9a887e' : '#7a6b62')
 
 const trendLineOpts = computed(() => ({
   responsive: true, maintainAspectRatio: false,
@@ -669,7 +669,7 @@ function formatConverted(val) {
       <Transition name="quote-fade" mode="out-in">
         <div :key="quoteKey" class="relative z-10 min-w-0 flex-1">
           <p class="text-sm font-medium leading-relaxed text-mushroom-800 dark:text-white/95">"{{ weeklyQuote.text }}"</p>
-          <p v-if="weeklyQuote.author" class="text-xs mt-1.5 not-italic tracking-wide uppercase text-mushroom-500 dark:text-white/50" style="font-family: 'Geist', sans-serif; font-size: 0.65rem;">— {{ weeklyQuote.author }}</p>
+          <p v-if="weeklyQuote.author" class="text-xs mt-1.5 not-italic tracking-wide uppercase text-mushroom-500 dark:text-white/50">— {{ weeklyQuote.author }}</p>
         </div>
       </Transition>
       <div class="relative z-10 shrink-0 w-7 h-7 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors" title="Next quote">
@@ -754,7 +754,7 @@ function formatConverted(val) {
             {{ drilledGroup ? drilledGroup : 'Expense by Group' }}
           </h3>
           <div class="flex items-center gap-2">
-            <button v-if="drilledGroup" @click="drilledGroup = null" class="text-xs text-kangkong-600 dark:text-blueberry-400 hover:text-kangkong-700 dark:hover:text-blueberry-300 font-medium whitespace-nowrap">
+            <button v-if="drilledGroup" @click="drilledGroup = null" class="text-xs text-kangkong-600 dark:text-kangkong-400 hover:text-kangkong-700 dark:hover:text-kangkong-300 font-medium whitespace-nowrap">
               ← Back
             </button>
             <select v-model="selectedMonth" class="select-field text-xs py-1 px-2 min-w-[70px]">

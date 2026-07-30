@@ -24,7 +24,7 @@ function handleInput(e) {
   <div v-if="!isEnabled || isVerified" class="contents">
     <slot />
   </div>
-  <div v-else class="flex h-screen bg-[#f2f2f4] dark:bg-[#0e1218] items-center justify-center p-5">
+  <div v-else class="flex h-screen bg-[#fdf8f7] dark:bg-[#121212] items-center justify-center p-5">
     <div class="w-full max-w-sm">
       <div class="card-elevated p-8 text-center">
         <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-mushroom-100 dark:bg-mushroom-800 flex items-center justify-center">

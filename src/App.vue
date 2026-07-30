@@ -18,7 +18,7 @@ const fabLink = computed(() => {
 
 <template>
   <AuthGate>
-    <div class="flex h-dvh bg-[#f2f2f4] dark:bg-[#0e1218]">
+    <div class="flex h-dvh bg-[#fdf8f7] dark:bg-[#121212]">
       <!-- Mobile overlay -->
       <div
         v-if="sidebarOpen"
@@ -45,7 +45,7 @@ const fabLink = computed(() => {
       <!-- FAB -->
       <router-link
         :to="fabLink"
-        class="fixed bottom-6 right-6 w-12 h-12 bg-kangkong-600 hover:bg-kangkong-700 dark:bg-blueberry-500 dark:hover:bg-blueberry-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all z-50 hover:scale-110"
+        class="fixed bottom-6 right-6 w-12 h-12 bg-kangkong-600 hover:bg-kangkong-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all z-50 hover:scale-110"
         title="Add Record"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">

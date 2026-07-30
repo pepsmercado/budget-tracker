@@ -81,9 +81,9 @@ function changeClass(curr, prev, invertColor) {
 
 const noAnim = { animation: false }
 
-const chartTickColor = computed(() => isDark.value ? '#b0b8b6' : '#5c6b61')
+const chartTickColor = computed(() => isDark.value ? '#9a887e' : '#7a6b62')
 const chartGridColor = computed(() => isDark.value ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)')
-const chartLegendColor = computed(() => isDark.value ? '#b0b8b6' : '#5c6b61')
+const chartLegendColor = computed(() => isDark.value ? '#9a887e' : '#7a6b62')
 
 const monthLabel = computed(() => {
   const [y, m] = selectedMonth.value.split('-')
@@ -228,8 +228,8 @@ const monthlyTrendData = computed(() => {
   return {
     labels: active.map(i => shortMonth(i + 1)),
     datasets: [
-      { label: 'Income', data: active.map(i => incomeArr[i]), backgroundColor: '#34d399', borderRadius: 4 },
-      { label: 'Expenses', data: active.map(i => expenseArr[i]), backgroundColor: '#f87171', borderRadius: 4 },
+      { label: 'Income', data: active.map(i => incomeArr[i]), backgroundColor: '#4caf50', borderRadius: 4 },
+      { label: 'Expenses', data: active.map(i => expenseArr[i]), backgroundColor: '#c2652a', borderRadius: 4 },
     ],
   }
 })
@@ -262,12 +262,12 @@ const cumulativeNetData = computed(() => {
     datasets: [{
       label: 'Cumulative Net',
       data,
-      borderColor: '#6366f1',
-      backgroundColor: 'rgba(99,102,241,0.08)',
+      borderColor: '#c2652a',
+      backgroundColor: 'rgba(194,101,42,0.08)',
       fill: true,
       tension: 0.3,
       pointRadius: 3,
-      pointBackgroundColor: '#6366f1',
+      pointBackgroundColor: '#c2652a',
     }]
   }
 })
@@ -623,8 +623,8 @@ function monthName(ms) {
         <div class="card-elevated p-4">
           <h3 class="text-xs font-medium text-mushroom-500 dark:text-mushroom-400 mb-3">Month Highlights</h3>
           <div class="space-y-4">
-            <div v-if="bestMonth" class="p-3 rounded-lg bg-kangkong-50 dark:bg-blueberry-500/10 border border-kangkong-100 dark:border-blueberry-500/20">
-              <div class="text-[10px] font-medium text-kangkong-600 dark:text-blueberry-400 uppercase tracking-wider mb-1">Best Month</div>
+            <div v-if="bestMonth" class="p-3 rounded-lg bg-kangkong-50 dark:bg-kangkong-500/10 border border-kangkong-100 dark:border-kangkong-500/20">
+              <div class="text-[10px] font-medium text-kangkong-600 dark:text-kangkong-400 uppercase tracking-wider mb-1">Best Month</div>
               <div class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50">{{ monthName(bestMonth.month) }}</div>
               <div class="text-xs text-mushroom-500 dark:text-mushroom-400 mt-0.5">Net: <span class="text-kangkong-600 font-medium">{{ fmt(bestMonth.total_budget - bestMonth.total_spent) }} under budget</span></div>
             </div>
