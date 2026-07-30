@@ -110,6 +110,7 @@
   --sidebar-active-link: rgba(255, 182, 144, 0.25);
   --sidebar-active-text: #ffffff;
   --sidebar-border: transparent;
+  --sidebar-parent-bg: rgba(255, 255, 255, 0.05);
   --sidebar-currency-bg: rgba(255, 255, 255, 0.04);
   --sidebar-currency-active: rgba(255, 255, 255, 0.15);
 }
@@ -136,13 +137,14 @@
   --surface-container: #2a2828;
 
   /* Sidebar */
-  --sidebar-bg: #3a1a0e;
+  --sidebar-bg: #0a0a0a;
   --sidebar-text: #ede0db;
   --sidebar-text-secondary: rgba(255, 255, 255, 0.65);
   --sidebar-hover: rgba(255, 255, 255, 0.08);
   --sidebar-active-link: rgba(255, 182, 144, 0.25);
   --sidebar-active-text: #ffffff;
   --sidebar-border: transparent;
+  --sidebar-parent-bg: rgba(255, 255, 255, 0.05);
   --sidebar-currency-bg: rgba(255, 255, 255, 0.04);
   --sidebar-currency-active: rgba(255, 255, 255, 0.15);
 
@@ -310,10 +312,12 @@ body {
   color: var(--sidebar-active-text);
 }
 .sidebar-link-parent {
-  background-color: transparent;
+  background-color: var(--sidebar-parent-bg);
+  color: var(--sidebar-text);
 }
 .sidebar-link-parent:hover {
   background-color: var(--sidebar-hover);
+  color: var(--sidebar-text);
 }
 .sidebar-link-parent.active {
   background-color: var(--primary);
