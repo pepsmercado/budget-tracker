@@ -681,56 +681,56 @@ function formatConverted(val) {
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="card-elevated p-4 bg-indigo-50 dark:bg-indigo-500/10">
-        <div class="text-xs text-indigo-600 dark:text-indigo-300 mb-1">Budget Status</div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="card-elevated p-4 rounded-none bg-indigo-100 dark:bg-indigo-500/10">
+        <div class="text-xs text-indigo-700 dark:text-indigo-300 mb-1">Budget Status</div>
         <div class="text-lg font-semibold text-indigo-800 dark:text-indigo-200">
           {{ budgetProgress }}%
         </div>
-        <div class="mt-2 h-2 bg-indigo-200 dark:bg-indigo-500/20 rounded-full overflow-hidden">
+        <div class="mt-2 h-2 bg-indigo-300 dark:bg-indigo-500/20 rounded-full overflow-hidden">
           <div
             class="h-full rounded-full transition-all duration-300"
             :class="budgetProgress > 100 ? 'bg-tomato-500' : budgetProgress > 80 ? 'bg-mango-500' : 'bg-kangkong-500'"
             :style="{ width: Math.min(budgetProgress, 100) + '%' }"
           ></div>
         </div>
-        <div class="text-xs text-indigo-600 dark:text-indigo-300 mt-1">
+        <div class="text-xs text-indigo-700 dark:text-indigo-300 mt-1">
           {{ currentMonthBudget ? `${formatCurrency(currentMonthExpense, curSym)} / ${formatCurrency(currentMonthBudget.total_budget, curSym)}` : 'No budget set' }}
         </div>
         <div v-if="currentMonthBudget" class="mt-1">
-          <span class="text-xs text-indigo-600 dark:text-indigo-300 mr-1">Remaining:</span>
-          <span class="text-xs font-medium" :class="budgetRemaining >= 0 ? 'text-kangkong-600' : 'text-tomato-600'">
+          <span class="text-xs text-indigo-700 dark:text-indigo-300 mr-1">Remaining:</span>
+          <span class="text-xs font-medium" :class="budgetRemaining >= 0 ? 'text-kangkong-700' : 'text-tomato-700'">
             {{ budgetRemaining < 0 ? '-' : '' }}{{ formatCurrency(Math.abs(budgetRemaining), curSym) }}
           </span>
         </div>
       </div>
 
-      <div class="card-elevated p-4 bg-tomato-50 dark:bg-tomato-500/10">
-        <div class="text-xs text-tomato-600 dark:text-tomato-300 mb-1">Expenses This Month</div>
-        <div class="text-lg font-semibold text-tomato-700 dark:text-tomato-400">
+      <div class="card-elevated p-4 rounded-none bg-tomato-100 dark:bg-tomato-500/10">
+        <div class="text-xs text-tomato-700 dark:text-tomato-300 mb-1">Expenses This Month</div>
+        <div class="text-lg font-semibold text-tomato-800 dark:text-tomato-400">
           {{ formatCurrency(currentMonthExpense, curSym) }}
         </div>
-        <div class="text-xs text-tomato-600 dark:text-tomato-300 mt-1">
+        <div class="text-xs text-tomato-700 dark:text-tomato-300 mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
         </div>
       </div>
 
-      <div class="card-elevated p-4 bg-kangkong-50 dark:bg-kangkong-500/10">
-        <div class="text-xs text-kangkong-600 dark:text-kangkong-300 mb-1">Income This Month</div>
-        <div class="text-lg font-semibold text-kangkong-700 dark:text-kangkong-400">
+      <div class="card-elevated p-4 rounded-none bg-kangkong-100 dark:bg-kangkong-500/10">
+        <div class="text-xs text-kangkong-700 dark:text-kangkong-300 mb-1">Income This Month</div>
+        <div class="text-lg font-semibold text-kangkong-800 dark:text-kangkong-400">
           {{ formatCurrency(currentMonthIncome, curSym) }}
         </div>
-        <div class="text-xs text-kangkong-600 dark:text-kangkong-300 mt-1">
+        <div class="text-xs text-kangkong-700 dark:text-kangkong-300 mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
         </div>
       </div>
 
-      <div class="card-elevated p-4 bg-purple-50 dark:bg-purple-500/10">
-        <div class="text-xs text-purple-600 dark:text-purple-300 mb-1">Savings This Month</div>
-        <div class="text-lg font-semibold" :class="savings >= 0 ? 'text-purple-700 dark:text-purple-200' : 'text-tomato-600 dark:text-tomato-400'">
+      <div class="card-elevated p-4 rounded-none bg-purple-100 dark:bg-purple-500/10">
+        <div class="text-xs text-purple-700 dark:text-purple-300 mb-1">Savings This Month</div>
+        <div class="text-lg font-semibold" :class="savings >= 0 ? 'text-purple-800 dark:text-purple-200' : 'text-tomato-700 dark:text-tomato-400'">
           {{ savings >= 0 ? '+' : '-' }}{{ formatCurrency(Math.abs(savings), curSym) }}
         </div>
-        <div class="text-xs text-purple-600 dark:text-purple-300 mt-1">
+        <div class="text-xs text-purple-700 dark:text-purple-300 mt-1">
           {{ savings >= 0 ? 'Positive cash flow' : 'Negative cash flow' }}
         </div>
       </div>
