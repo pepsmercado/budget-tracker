@@ -81,7 +81,7 @@ watch(currencyParam, loadAll)
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ viewLabel }} Transfers</h2>
-        <p class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-0.5">Move money between accounts</p>
+        <p class="text-xs text-mushroom-600 dark:text-mushroom-300 mt-0.5">Move money between accounts</p>
       </div>
       <button @click="showForm = !showForm" class="btn-primary text-xs">
         {{ showForm ? 'Cancel' : '+ New Transfer' }}
@@ -112,7 +112,7 @@ watch(currencyParam, loadAll)
             <input v-model.number="form.amount" type="number" step="0.01" min="0.01" required class="input-field" />
           </div>
           <div>
-            <label class="label-text">Fee ({{ curSym }}) <span class="text-mushroom-300 dark:text-mushroom-600">optional</span></label>
+            <label class="label-text">Fee ({{ curSym }}) <span class="text-mushroom-500 dark:text-mushroom-500">optional</span></label>
             <input v-model.number="form.fee" type="number" step="0.01" min="0" class="input-field" />
           </div>
           <div>
@@ -120,7 +120,7 @@ watch(currencyParam, loadAll)
             <input v-model="form.date" type="date" required class="input-field" />
           </div>
           <div>
-            <label class="label-text">Note <span class="text-mushroom-300 dark:text-mushroom-600">optional</span></label>
+            <label class="label-text">Note <span class="text-mushroom-500 dark:text-mushroom-500">optional</span></label>
             <input v-model="form.note" placeholder="e.g. Monthly savings" class="input-field" />
           </div>
         </div>
@@ -153,8 +153,8 @@ watch(currencyParam, loadAll)
 
     <div v-else-if="!transfers.length" class="text-center py-12">
       <div class="text-3xl mb-3">↔️</div>
-      <p class="text-sm text-mushroom-500 dark:text-mushroom-400">No transfers yet</p>
-      <p class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">Click "New Transfer" to move money between accounts</p>
+      <p class="text-sm text-mushroom-700 dark:text-mushroom-400">No transfers yet</p>
+      <p class="text-xs text-mushroom-600 dark:text-mushroom-300 mt-1">Click "New Transfer" to move money between accounts</p>
     </div>
 
     <div v-else class="space-y-3">
@@ -163,18 +163,18 @@ watch(currencyParam, loadAll)
           <div>
             <div class="flex items-center gap-2 mb-1">
               <span class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50">{{ accountName(t.from_account_id) }}</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-mushroom-300 dark:text-mushroom-600"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-mushroom-500 dark:text-mushroom-500"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               <span class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50">{{ accountName(t.to_account_id) }}</span>
             </div>
-            <div class="flex items-center gap-3 text-xs text-mushroom-400 dark:text-mushroom-500">
+            <div class="flex items-center gap-3 text-xs text-mushroom-600 dark:text-mushroom-300">
               <span>{{ formatDate(t.date) }}</span>
 
               <template v-if="t.fee > 0">
-                <span class="text-mushroom-200 dark:text-mushroom-600">|</span>
+                <span class="text-mushroom-400 dark:text-mushroom-500">|</span>
                 <span class="text-tomato-500 dark:text-tomato-400">Fee: {{ formatCurrency(t.fee, curSym) }}</span>
               </template>
               <template v-if="t.note">
-                <span class="text-mushroom-200 dark:text-mushroom-600">|</span>
+                <span class="text-mushroom-400 dark:text-mushroom-500">|</span>
                 <span>{{ t.note }}</span>
               </template>
             </div>
@@ -183,11 +183,11 @@ watch(currencyParam, loadAll)
             <span class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ formatCurrency(t.amount, curSym) }}</span>
             <div class="flex items-center gap-1">
               <template v-if="confirmingDelete === t.id">
-                <span class="text-xs text-mushroom-400 dark:text-mushroom-500 mr-1">Reverse?</span>
+                <span class="text-xs text-mushroom-600 dark:text-mushroom-300 mr-1">Reverse?</span>
                 <button @click="handleDelete(t)" class="text-tomato-500 hover:text-tomato-700 text-xs font-medium">Yes</button>
-                <button @click="confirmingDelete = null" class="text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300 text-xs">No</button>
+                <button @click="confirmingDelete = null" class="text-mushroom-600 dark:text-mushroom-300 hover:text-mushroom-600 dark:hover:text-mushroom-300 text-xs">No</button>
               </template>
-              <button v-else @click="confirmingDelete = t.id" class="text-mushroom-300 dark:text-mushroom-600 hover:text-tomato-500 transition-colors" title="Reverse transfer">
+              <button v-else @click="confirmingDelete = t.id" class="text-mushroom-500 dark:text-mushroom-500 hover:text-tomato-500 transition-colors" title="Reverse transfer">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               </button>
             </div>

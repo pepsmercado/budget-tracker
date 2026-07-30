@@ -195,7 +195,7 @@ function exportCSV() {
     <!-- Page Header -->
     <div v-else class="flex items-center justify-between">
       <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ viewLabel }} Transactions</h2>
-      <button @click="exportCSV" class="px-3 py-1.5 text-xs bg-kangkong-600 text-white rounded-lg hover:bg-kangkong-700 transition-colors font-medium">Export CSV</button>
+      <button @click="exportCSV" class="btn-primary text-xs">Export CSV</button>
     </div>
 
     <!-- Filter Skeleton -->
@@ -236,17 +236,17 @@ function exportCSV() {
       </select>
       <input v-model="filters.start_date" type="date" class="input-field py-1 px-1.5 text-xs w-auto shrink-0" />
       <input v-model="filters.end_date" type="date" class="input-field py-1 px-1.5 text-xs w-auto shrink-0" />
-      <button v-if="filters.account_id || filters.type || filters.group || filters.category || filters.start_date || filters.end_date" @click="clearFilters" class="px-2 py-1 text-xs text-mushroom-500 dark:text-mushroom-400 hover:text-tomato-600 dark:hover:text-tomato-400 transition-colors shrink-0">Clear Filters</button>
+      <button v-if="filters.account_id || filters.type || filters.group || filters.category || filters.start_date || filters.end_date" @click="clearFilters" class="px-2 py-1 text-xs text-mushroom-700 dark:text-mushroom-400 hover:text-tomato-600 dark:hover:text-tomato-400 transition-colors shrink-0">Clear Filters</button>
       <div class="ml-auto flex items-center gap-1.5 shrink-0">
         <button
           @click="toggleHideTransfers"
           class="relative w-8 h-4 rounded-full transition-colors"
-          :class="hideTransfers ? 'bg-kangkong-500' : 'bg-mushroom-200 dark:bg-mushroom-700'"
+          :class="hideTransfers ? 'bg-primary' : 'bg-mushroom-200 dark:bg-mushroom-700'"
           title="Toggle transfer visibility"
         >
           <span class="absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform" :class="hideTransfers ? 'translate-x-4' : ''" />
         </button>
-        <span class="text-xs text-mushroom-500 dark:text-mushroom-400">Transfers</span>
+        <span class="text-xs text-mushroom-700 dark:text-mushroom-400">Transfers</span>
       </div>
     </div>
 
@@ -269,19 +269,19 @@ function exportCSV() {
 
     <div v-else class="space-y-3">
       <div v-for="[date, txns] in groupedByDate(displayTransactions)" :key="date" class="card overflow-hidden">
-        <div class="px-4 py-2 bg-mushroom-50 dark:bg-mushroom-800 border-b border-mushroom-200 dark:border-mushroom-700">
-          <span class="text-xs font-medium text-mushroom-500 dark:text-mushroom-400">{{ formatDate(date) }}</span>
+        <div class="px-4 py-2 bg-mushroom-100 dark:bg-mushroom-700 border-b border-mushroom-200 dark:border-mushroom-700">
+          <span class="text-xs font-medium text-mushroom-700 dark:text-mushroom-400">{{ formatDate(date) }}</span>
         </div>
         <div v-for="t in txns" :key="t.id" class="flex items-center px-4 py-2.5 border-b border-mushroom-100 dark:border-mushroom-700/50 last:border-0">
-          <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-base" :class="t.transfer_pair_id ? 'bg-mushroom-100 dark:bg-mushroom-700' : t.type === 'income' ? 'bg-kangkong-50 dark:bg-kangkong-500/15' : 'bg-mushroom-50 dark:bg-mushroom-800'">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-base" :class="t.transfer_pair_id ? 'bg-mushroom-100 dark:bg-mushroom-700' : t.type === 'income' ? 'bg-kangkong-50 dark:bg-kangkong-500/15' : 'bg-mushroom-100 dark:bg-mushroom-700'">
             {{ t.transfer_pair_id ? '↗' : categoryIcons[t.category] || '📋' }}
           </div>
           <div class="flex-1 min-w-0 px-3">
             <div class="text-sm text-mushroom-950 dark:text-mushroom-50 truncate">{{ t.description || t.category }}</div>
             <div class="flex items-center gap-2 mt-0.5">
-              <span v-if="t.transfer_pair_id" class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-mushroom-100 text-mushroom-700 dark:bg-mushroom-700 dark:text-mushroom-300">Transfer</span>
+              <span v-if="t.transfer_pair_id" class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-mushroom-200 text-mushroom-700 dark:bg-mushroom-700 dark:text-mushroom-300">Transfer</span>
               <CategoryBadge v-else :name="t.category" :group="categoryToGroup[t.category]" />
-              <span class="text-xs text-mushroom-400 dark:text-mushroom-500">{{ accounts.find(a => a.id === t.account_id)?.name || '' }}</span>
+              <span class="text-xs text-mushroom-600 dark:text-mushroom-300">{{ accounts.find(a => a.id === t.account_id)?.name || '' }}</span>
             </div>
           </div>
           <div class="flex items-center gap-3 flex-shrink-0">
@@ -289,13 +289,13 @@ function exportCSV() {
               {{ t.type === 'income' ? '+' : '-' }}{{ formatCurrency(t.amount, curSym) }}
             </span>
             <div class="w-20 text-right">
-              <router-link :to="`/${currency}/transactions/${t.id}/edit`" class="text-xs text-mushroom-400 dark:text-mushroom-500 hover:text-kangkong-600 dark:hover:text-kangkong-400">Edit</router-link>
+              <router-link :to="`/${currency}/transactions/${t.id}/edit`" class="text-xs text-mushroom-600 dark:text-mushroom-300 hover:text-kangkong-600 dark:hover:text-kangkong-400">Edit</router-link>
               <template v-if="confirmingDelete === t.id">
-                <span class="text-xs text-mushroom-400 dark:text-mushroom-500 mx-1">|</span>
+                <span class="text-xs text-mushroom-600 dark:text-mushroom-300 mx-1">|</span>
                 <button @click="handleDelete(t.id)" class="text-xs text-tomato-500 hover:text-tomato-700 font-medium">Yes</button>
-                <button @click="confirmingDelete = null" class="text-xs text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300 ml-1">No</button>
+                <button @click="confirmingDelete = null" class="text-xs text-mushroom-600 dark:text-mushroom-300 hover:text-mushroom-600 dark:hover:text-mushroom-300 ml-1">No</button>
               </template>
-              <button v-else @click="confirmingDelete = t.id" class="text-xs text-mushroom-400 dark:text-mushroom-500 hover:text-tomato-600 dark:hover:text-tomato-400 ml-2">Del</button>
+              <button v-else @click="confirmingDelete = t.id" class="text-xs text-mushroom-600 dark:text-mushroom-300 hover:text-tomato-600 dark:hover:text-tomato-400 ml-2">Del</button>
             </div>
           </div>
         </div>

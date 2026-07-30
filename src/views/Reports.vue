@@ -74,16 +74,16 @@ function changeLabel(curr, prev) {
 
 function changeClass(curr, prev, invertColor) {
   const p = pctChange(curr, prev)
-  if (p === null) return 'text-mushroom-400 dark:text-mushroom-500'
+  if (p === null) return 'text-mushroom-500 dark:text-mushroom-400'
   if (invertColor) return p > 0 ? 'text-tomato-500' : 'text-kangkong-500'
   return p > 0 ? 'text-kangkong-500' : 'text-tomato-500'
 }
 
 const noAnim = { animation: false }
 
-const chartTickColor = computed(() => isDark.value ? '#9a887e' : '#7a6b62')
+const chartTickColor = computed(() => isDark.value ? '#7a6b62' : '#9a887e')
 const chartGridColor = computed(() => isDark.value ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)')
-const chartLegendColor = computed(() => isDark.value ? '#9a887e' : '#7a6b62')
+const chartLegendColor = computed(() => isDark.value ? '#7a6b62' : '#9a887e')
 
 const monthLabel = computed(() => {
   const [y, m] = selectedMonth.value.split('-')
@@ -228,7 +228,7 @@ const monthlyTrendData = computed(() => {
   return {
     labels: active.map(i => shortMonth(i + 1)),
     datasets: [
-      { label: 'Income', data: active.map(i => incomeArr[i]), backgroundColor: '#4caf50', borderRadius: 4 },
+      { label: 'Income', data: active.map(i => incomeArr[i]), backgroundColor: '#c2652a', borderRadius: 4 },
       { label: 'Expenses', data: active.map(i => expenseArr[i]), backgroundColor: '#c2652a', borderRadius: 4 },
     ],
   }
@@ -391,29 +391,29 @@ function monthName(ms) {
     <!-- Header -->
     <div class="flex items-center justify-between">
       <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">Reports</h2>
-      <div class="flex items-center gap-2 bg-mushroom-100 dark:bg-mushroom-800 rounded-lg p-0.5">
-        <button @click="mode = 'monthly'" class="px-3 py-1 text-xs font-medium rounded-md transition-colors" :class="mode === 'monthly' ? 'bg-white dark:bg-mushroom-900 text-mushroom-950 dark:text-mushroom-50 shadow-sm' : 'text-mushroom-500 dark:text-mushroom-400 hover:text-mushroom-700 dark:hover:text-mushroom-200'">Monthly</button>
-        <button @click="mode = 'yearly'" class="px-3 py-1 text-xs font-medium rounded-md transition-colors" :class="mode === 'yearly' ? 'bg-white dark:bg-mushroom-900 text-mushroom-950 dark:text-mushroom-50 shadow-sm' : 'text-mushroom-500 dark:text-mushroom-400 hover:text-mushroom-700 dark:hover:text-mushroom-200'">Yearly</button>
+      <div class="flex items-center gap-2 bg-mushroom-200 dark:bg-mushroom-700 rounded-lg p-0.5">
+        <button @click="mode = 'monthly'" class="px-3 py-1 text-xs font-medium rounded-md transition-colors" :class="mode === 'monthly' ? 'bg-white dark:bg-mushroom-900 text-mushroom-950 dark:text-mushroom-50 shadow-sm' : 'text-mushroom-700 dark:text-mushroom-300 hover:text-mushroom-700 dark:hover:text-mushroom-200'">Monthly</button>
+        <button @click="mode = 'yearly'" class="px-3 py-1 text-xs font-medium rounded-md transition-colors" :class="mode === 'yearly' ? 'bg-white dark:bg-mushroom-900 text-mushroom-950 dark:text-mushroom-50 shadow-sm' : 'text-mushroom-700 dark:text-mushroom-300 hover:text-mushroom-700 dark:hover:text-mushroom-200'">Yearly</button>
       </div>
     </div>
 
     <!-- Month/Year selector -->
     <div class="flex items-center gap-3">
       <template v-if="mode === 'monthly'">
-        <button @click="selectedMonth = (() => { const [y,m] = selectedMonth.split('-').map(Number); const d = new Date(y, m-2, 1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` })()" class="text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300 transition-colors">
+        <button @click="selectedMonth = (() => { const [y,m] = selectedMonth.split('-').map(Number); const d = new Date(y, m-2, 1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` })()" class="text-mushroom-500 dark:text-mushroom-400 hover:text-mushroom-600 dark:hover:text-mushroom-300 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
         <span class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50 min-w-[160px] text-center">{{ monthLabel }}</span>
-        <button @click="selectedMonth = (() => { const [y,m] = selectedMonth.split('-').map(Number); const d = new Date(y, m, 1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` })()" class="text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300 transition-colors">
+        <button @click="selectedMonth = (() => { const [y,m] = selectedMonth.split('-').map(Number); const d = new Date(y, m, 1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` })()" class="text-mushroom-500 dark:text-mushroom-400 hover:text-mushroom-600 dark:hover:text-mushroom-300 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </button>
       </template>
       <template v-else>
-        <button @click="selectedYear--" class="text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300 transition-colors">
+        <button @click="selectedYear--" class="text-mushroom-500 dark:text-mushroom-400 hover:text-mushroom-600 dark:hover:text-mushroom-300 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
         <span class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50">{{ selectedYear }}</span>
-        <button @click="selectedYear++" class="text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300 transition-colors">
+        <button @click="selectedYear++" class="text-mushroom-500 dark:text-mushroom-400 hover:text-mushroom-600 dark:hover:text-mushroom-300 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </button>
       </template>
@@ -459,23 +459,23 @@ function monthName(ms) {
       <!-- Summary row -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div class="card-elevated p-4">
-          <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Budget</div>
+          <div class="text-xs text-mushroom-500 dark:text-mushroom-400 mb-1">Budget</div>
           <div class="text-xl font-semibold text-mushroom-950 dark:text-mushroom-50">{{ fmt(totalBudget) }}</div>
           <div v-if="prevTotalBudget" class="text-[10px] mt-1" :class="changeClass(totalBudget, prevTotalBudget, true)">
             {{ changeLabel(totalBudget, prevTotalBudget) }} vs last month
           </div>
         </div>
         <div class="card-elevated p-4">
-          <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Spent</div>
+          <div class="text-xs text-mushroom-500 dark:text-mushroom-400 mb-1">Spent</div>
           <div class="text-xl font-semibold" :class="totalSpent > totalBudget ? 'text-tomato-600' : 'text-mushroom-950 dark:text-mushroom-50'">{{ fmt(totalSpent) }}</div>
           <div v-if="prevTotalSpent" class="text-[10px] mt-1" :class="changeClass(totalSpent, prevTotalSpent, true)">
             {{ changeLabel(totalSpent, prevTotalSpent) }} vs last month
           </div>
         </div>
         <div class="card-elevated p-4">
-          <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Remaining</div>
+          <div class="text-xs text-mushroom-500 dark:text-mushroom-400 mb-1">Remaining</div>
           <div class="text-xl font-semibold" :class="totalBudget - totalSpent >= 0 ? 'text-kangkong-600' : 'text-tomato-600'">{{ fmt(totalBudget - totalSpent) }}</div>
-          <div class="text-[10px] text-mushroom-400 dark:text-mushroom-500 mt-1">
+          <div class="text-[10px] text-mushroom-500 dark:text-mushroom-400 mt-1">
             {{ totalBudget > 0 ? ((totalSpent / totalBudget) * 100).toFixed(0) : 0 }}% of budget used
           </div>
         </div>
@@ -484,7 +484,7 @@ function monthName(ms) {
       <!-- Charts row: Doughnut + top categories -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="card-elevated p-4">
-          <h3 class="text-xs font-medium text-mushroom-500 dark:text-mushroom-400 mb-2">Spending Breakdown</h3>
+          <h3 class="text-xs font-medium text-mushroom-700 dark:text-mushroom-400 mb-2">Spending Breakdown</h3>
           <div class="h-48 flex items-center justify-center">
             <Doughnut v-if="doughnutData" :data="doughnutData" :options="doughnutOpts" class="max-h-48" />
             <span v-else class="text-xs text-mushroom-300">No spending data</span>
@@ -501,14 +501,14 @@ function monthName(ms) {
         </div>
 
         <div class="card-elevated p-4">
-          <h3 class="text-xs font-medium text-mushroom-500 dark:text-mushroom-400 mb-2">Account Balances</h3>
+          <h3 class="text-xs font-medium text-mushroom-700 dark:text-mushroom-400 mb-2">Account Balances</h3>
           <div class="space-y-2.5">
             <div v-for="acc in accountBalances" :key="acc.account_id" class="flex items-center justify-between">
               <span class="text-sm text-mushroom-700 dark:text-mushroom-300">{{ acc.account_name }}</span>
               <span class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50">{{ fmt(acc.balance) }}</span>
             </div>
             <div class="pt-2 border-t border-mushroom-100 dark:border-mushroom-700/50 flex items-center justify-between">
-              <span class="text-xs font-medium text-mushroom-500 dark:text-mushroom-400">Total</span>
+              <span class="text-xs font-medium text-mushroom-700 dark:text-mushroom-400">Total</span>
               <span class="text-sm font-semibold text-mushroom-950 dark:text-mushroom-50">{{ fmt(totalBalance) }}</span>
             </div>
           </div>
@@ -518,9 +518,9 @@ function monthName(ms) {
       <!-- Grouped categories (budgeted) -->
       <div class="space-y-3">
         <div v-for="group in sortedGroupKeys" :key="group" class="card-elevated overflow-hidden">
-          <div class="px-4 py-2.5 border-b border-mushroom-100 dark:border-mushroom-700/50 flex items-center justify-between bg-mushroom-50 dark:bg-mushroom-800">
-            <span class="text-xs font-semibold uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400">{{ group }}</span>
-            <span class="text-xs text-mushroom-400 dark:text-mushroom-500">{{ fmt(groupSpent(group)) }} / {{ fmt(groupBudget(group)) }}</span>
+          <div class="px-4 py-2.5 border-b border-mushroom-100 dark:border-mushroom-700/50 flex items-center justify-between bg-mushroom-100 dark:bg-mushroom-700">
+            <span class="text-xs font-semibold uppercase tracking-wider text-mushroom-700 dark:text-mushroom-400">{{ group }}</span>
+            <span class="text-xs text-mushroom-500 dark:text-mushroom-400">{{ fmt(groupSpent(group)) }} / {{ fmt(groupBudget(group)) }}</span>
           </div>
           <div class="divide-y divide-mushroom-100 dark:divide-mushroom-700/50">
             <div v-for="cat in groupedCategories[group]" :key="cat.name" class="px-4 py-2.5 flex items-center justify-between">
@@ -531,13 +531,13 @@ function monthName(ms) {
                     {{ changeLabel(cat.spent, prevCategories[cat.name].spent) }}
                   </span>
                 </div>
-                <div class="w-full bg-mushroom-100 dark:bg-mushroom-800 rounded-full h-1.5 mt-1.5">
+                <div class="w-full bg-mushroom-200 dark:bg-mushroom-700 rounded-full h-1.5 mt-1.5">
                   <div class="h-1.5 rounded-full transition-all" :class="cat.budget > 0 && cat.spent / cat.budget > 0.9 ? 'bg-tomato-400' : 'bg-kangkong-400'" :style="{ width: cat.budget > 0 ? Math.min((cat.spent / cat.budget) * 100, 100) + '%' : '0%' }" />
                 </div>
               </div>
               <div class="ml-3 text-right flex-shrink-0 w-32">
                 <div class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50">{{ fmt(cat.spent) }}</div>
-                <div class="text-[10px] text-mushroom-400 dark:text-mushroom-500">of {{ fmt(cat.budget) }}</div>
+                <div class="text-[10px] text-mushroom-500 dark:text-mushroom-400">of {{ fmt(cat.budget) }}</div>
               </div>
             </div>
           </div>
@@ -546,20 +546,20 @@ function monthName(ms) {
 
       <!-- Non-budgeted expenses -->
       <div v-if="nonBudgetedCategories.length" class="card-elevated overflow-hidden">
-        <div class="px-4 py-2.5 border-b border-mushroom-100 dark:border-mushroom-700/50 bg-mushroom-50 dark:bg-mushroom-800">
-          <span class="text-xs font-semibold uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400">Non-budgeted</span>
+        <div class="px-4 py-2.5 border-b border-mushroom-100 dark:border-mushroom-700/50 bg-mushroom-100 dark:bg-mushroom-700">
+          <span class="text-xs font-semibold uppercase tracking-wider text-mushroom-700 dark:text-mushroom-400">Non-budgeted</span>
         </div>
         <div class="divide-y divide-mushroom-100 dark:divide-mushroom-700/50">
           <div v-for="cat in nonBudgetedCategories" :key="cat.name" class="px-4 py-2.5 flex items-center justify-between">
             <div class="flex-1 min-w-0">
               <span class="text-sm text-mushroom-950 dark:text-mushroom-50">{{ cat.name }}</span>
-              <div class="text-[10px] text-mushroom-400 dark:text-mushroom-500 mt-0.5">{{ cat.group || 'Misc' }}</div>
+              <div class="text-[10px] text-mushroom-500 dark:text-mushroom-400 mt-0.5">{{ cat.group || 'Misc' }}</div>
             </div>
             <span class="ml-3 text-sm font-medium text-mushroom-950 dark:text-mushroom-50 flex-shrink-0 w-28 text-right">{{ fmt(cat.spent) }}</span>
           </div>
         </div>
         <div class="px-4 py-2 bg-mushroom-50/50 dark:bg-mushroom-800/50 border-t border-mushroom-100 dark:border-mushroom-700/50 flex items-center justify-between text-xs">
-          <span class="text-mushroom-500 dark:text-mushroom-400">Total non-budgeted</span>
+          <span class="text-mushroom-700 dark:text-mushroom-400">Total non-budgeted</span>
           <span class="font-medium text-mushroom-950 dark:text-mushroom-50">{{ fmt(nonBudgetedCategories.reduce((s, c) => s + c.spent, 0)) }}</span>
         </div>
       </div>
@@ -570,19 +570,19 @@ function monthName(ms) {
       <!-- Summary cards -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="card-elevated p-4">
-          <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Total Income</div>
+          <div class="text-xs text-mushroom-500 dark:text-mushroom-400 mb-1">Total Income</div>
           <div class="text-xl font-semibold text-kangkong-600">{{ fmt(totalIncome) }}</div>
         </div>
         <div class="card-elevated p-4">
-          <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Total Expenses</div>
+          <div class="text-xs text-mushroom-500 dark:text-mushroom-400 mb-1">Total Expenses</div>
           <div class="text-xl font-semibold text-tomato-600">{{ fmt(totalExpense) }}</div>
         </div>
         <div class="card-elevated p-4">
-          <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Net</div>
+          <div class="text-xs text-mushroom-500 dark:text-mushroom-400 mb-1">Net</div>
           <div class="text-xl font-semibold" :class="totalNet >= 0 ? 'text-kangkong-600' : 'text-tomato-600'">{{ totalNet >= 0 ? '+' : '-' }}{{ fmt(totalNet) }}</div>
         </div>
         <div class="card-elevated p-4">
-          <div class="text-xs text-mushroom-400 dark:text-mushroom-500 mb-1">Savings Rate</div>
+          <div class="text-xs text-mushroom-500 dark:text-mushroom-400 mb-1">Savings Rate</div>
           <div class="text-xl font-semibold" :class="savingsRate >= 20 ? 'text-kangkong-600' : savingsRate >= 0 ? 'text-mushroom-950 dark:text-mushroom-50' : 'text-tomato-600'">{{ savingsRate.toFixed(1) }}%</div>
         </div>
       </div>
@@ -590,13 +590,13 @@ function monthName(ms) {
       <!-- Monthly trend + cumulative net -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="card-elevated p-4">
-          <h3 class="text-xs font-medium text-mushroom-500 dark:text-mushroom-400 mb-3">Monthly Income vs Expenses</h3>
+          <h3 class="text-xs font-medium text-mushroom-700 dark:text-mushroom-400 mb-3">Monthly Income vs Expenses</h3>
           <div class="h-56">
             <Bar v-if="monthlyTrendData" :data="monthlyTrendData" :options="barOpts" />
           </div>
         </div>
         <div class="card-elevated p-4">
-          <h3 class="text-xs font-medium text-mushroom-500 dark:text-mushroom-400 mb-3">Cumulative Net Savings</h3>
+          <h3 class="text-xs font-medium text-mushroom-700 dark:text-mushroom-400 mb-3">Cumulative Net Savings</h3>
           <div class="h-56">
             <Line v-if="cumulativeNetData" :data="cumulativeNetData" :options="cumulativeNetOpts" />
           </div>
@@ -606,7 +606,7 @@ function monthName(ms) {
       <!-- Doughnut + best/worst month -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="card-elevated p-4">
-          <h3 class="text-xs font-medium text-mushroom-500 dark:text-mushroom-400 mb-2">Expense Breakdown</h3>
+          <h3 class="text-xs font-medium text-mushroom-700 dark:text-mushroom-400 mb-2">Expense Breakdown</h3>
           <div class="h-48 flex items-center justify-center">
             <Doughnut v-if="yearlyDoughnutData" :data="yearlyDoughnutData" :options="doughnutOpts" class="max-h-48" />
           </div>
@@ -621,20 +621,20 @@ function monthName(ms) {
           </div>
         </div>
         <div class="card-elevated p-4">
-          <h3 class="text-xs font-medium text-mushroom-500 dark:text-mushroom-400 mb-3">Month Highlights</h3>
+          <h3 class="text-xs font-medium text-mushroom-700 dark:text-mushroom-400 mb-3">Month Highlights</h3>
           <div class="space-y-4">
-            <div v-if="bestMonth" class="p-3 rounded-lg bg-kangkong-50 dark:bg-kangkong-500/10 border border-kangkong-100 dark:border-kangkong-500/20">
+            <div v-if="bestMonth" class="p-3 rounded-lg bg-kangkong-50 dark:bg-kangkong-500/15 border border-kangkong-100 dark:border-kangkong-500/20">
               <div class="text-[10px] font-medium text-kangkong-600 dark:text-kangkong-400 uppercase tracking-wider mb-1">Best Month</div>
               <div class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50">{{ monthName(bestMonth.month) }}</div>
-              <div class="text-xs text-mushroom-500 dark:text-mushroom-400 mt-0.5">Net: <span class="text-kangkong-600 font-medium">{{ fmt(bestMonth.total_budget - bestMonth.total_spent) }} under budget</span></div>
+              <div class="text-xs text-mushroom-700 dark:text-mushroom-400 mt-0.5">Net: <span class="text-kangkong-600 font-medium">{{ fmt(bestMonth.total_budget - bestMonth.total_spent) }} under budget</span></div>
             </div>
             <div v-if="worstMonth" class="p-3 rounded-lg bg-tomato-50 dark:bg-tomato-500/10 border border-tomato-100 dark:border-tomato-500/20">
               <div class="text-[10px] font-medium text-tomato-600 uppercase tracking-wider mb-1">Over Budget</div>
               <div class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50">{{ monthName(worstMonth.month) }}</div>
-              <div class="text-xs text-mushroom-500 dark:text-mushroom-400 mt-0.5">Net: <span class="text-tomato-600 font-medium">{{ fmt(Math.abs(worstMonth.total_budget - worstMonth.total_spent)) }} over budget</span></div>
+              <div class="text-xs text-mushroom-700 dark:text-mushroom-400 mt-0.5">Net: <span class="text-tomato-600 font-medium">{{ fmt(Math.abs(worstMonth.total_budget - worstMonth.total_spent)) }} over budget</span></div>
             </div>
-            <div class="p-3 rounded-lg bg-mushroom-50 dark:bg-mushroom-800 border border-mushroom-100 dark:border-mushroom-700">
-              <div class="text-[10px] font-medium text-mushroom-500 dark:text-mushroom-400 uppercase tracking-wider mb-1">Average Monthly Spend</div>
+            <div class="p-3 rounded-lg bg-mushroom-100 dark:bg-mushroom-700 border border-mushroom-100 dark:border-mushroom-700">
+              <div class="text-[10px] font-medium text-mushroom-700 dark:text-mushroom-400 uppercase tracking-wider mb-1">Average Monthly Spend</div>
               <div class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50">{{ fmt(activeSummaries.length ? totalExpense / activeSummaries.length : 0) }}</div>
             </div>
           </div>
@@ -650,25 +650,25 @@ function monthName(ms) {
           <table class="w-full text-xs">
             <thead>
               <tr class="border-b border-mushroom-100 dark:border-mushroom-700/50">
-                <th class="px-4 py-2 text-left font-medium text-mushroom-500 dark:text-mushroom-400">Month</th>
-                <th class="px-4 py-2 text-right font-medium text-mushroom-500 dark:text-mushroom-400">Budget</th>
-                <th class="px-4 py-2 text-right font-medium text-mushroom-500 dark:text-mushroom-400">Spent</th>
-                <th class="px-4 py-2 text-right font-medium text-mushroom-500 dark:text-mushroom-400">Remaining</th>
-                <th class="px-4 py-2 text-right font-medium text-mushroom-500 dark:text-mushroom-400">% Used</th>
+                <th class="px-4 py-2 text-left font-medium text-mushroom-700 dark:text-mushroom-400">Month</th>
+                <th class="px-4 py-2 text-right font-medium text-mushroom-700 dark:text-mushroom-400">Budget</th>
+                <th class="px-4 py-2 text-right font-medium text-mushroom-700 dark:text-mushroom-400">Spent</th>
+                <th class="px-4 py-2 text-right font-medium text-mushroom-700 dark:text-mushroom-400">Remaining</th>
+                <th class="px-4 py-2 text-right font-medium text-mushroom-700 dark:text-mushroom-400">% Used</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="ms in activeSummaries" :key="ms.month" class="border-b border-mushroom-50 hover:bg-mushroom-50 dark:hover:bg-mushroom-700 transition-colors">
+              <tr v-for="ms in activeSummaries" :key="ms.month" class="border-b border-mushroom-50 hover:bg-mushroom-100 dark:hover:bg-mushroom-700 transition-colors">
                 <td class="px-4 py-2 font-medium text-mushroom-950 dark:text-mushroom-50">{{ monthName(ms.month) }}</td>
                 <td class="px-4 py-2 text-right text-mushroom-600 dark:text-mushroom-400">{{ fmt(ms.total_budget) }}</td>
                 <td class="px-4 py-2 text-right" :class="ms.total_spent > ms.total_budget ? 'text-tomato-600' : 'text-mushroom-600 dark:text-mushroom-400'">{{ fmt(ms.total_spent) }}</td>
                 <td class="px-4 py-2 text-right" :class="(ms.total_budget - ms.total_spent) >= 0 ? 'text-kangkong-600' : 'text-tomato-600'">{{ fmt(ms.total_budget - ms.total_spent) }}</td>
                 <td class="px-4 py-2 text-right">
                   <span class="inline-flex items-center gap-1">
-                    <span class="w-12 bg-mushroom-100 dark:bg-mushroom-800 rounded-full h-1 inline-block">
+                    <span class="w-12 bg-mushroom-200 dark:bg-mushroom-700 rounded-full h-1 inline-block">
                       <span class="h-1 rounded-full inline-block" :class="ms.total_budget > 0 && ms.total_spent / ms.total_budget > 0.9 ? 'bg-tomato-400' : 'bg-kangkong-400'" :style="{ width: ms.total_budget > 0 ? Math.min((ms.total_spent / ms.total_budget) * 100, 100) + '%' : '0%', display: 'inline-block' }" />
                     </span>
-                    <span class="text-mushroom-500 dark:text-mushroom-400">{{ ms.total_budget > 0 ? ((ms.total_spent / ms.total_budget) * 100).toFixed(0) : 0 }}%</span>
+                    <span class="text-mushroom-700 dark:text-mushroom-400">{{ ms.total_budget > 0 ? ((ms.total_spent / ms.total_budget) * 100).toFixed(0) : 0 }}%</span>
                   </span>
                 </td>
               </tr>
@@ -680,14 +680,14 @@ function monthName(ms) {
       <!-- Grouped yearly category totals -->
       <div class="space-y-3">
         <div v-for="(cats, group) in yearlyGroupedCategories" :key="group" class="card-elevated overflow-hidden">
-          <div class="px-4 py-2.5 border-b border-mushroom-100 dark:border-mushroom-700/50 bg-mushroom-50 dark:bg-mushroom-800">
-            <span class="text-xs font-semibold uppercase tracking-wider text-mushroom-500 dark:text-mushroom-400">{{ group }}</span>
+          <div class="px-4 py-2.5 border-b border-mushroom-100 dark:border-mushroom-700/50 bg-mushroom-100 dark:bg-mushroom-700">
+            <span class="text-xs font-semibold uppercase tracking-wider text-mushroom-700 dark:text-mushroom-400">{{ group }}</span>
           </div>
           <div class="divide-y divide-mushroom-100 dark:divide-mushroom-700/50">
             <div v-for="cat in cats" :key="cat.name" class="px-4 py-2.5 flex items-center justify-between">
               <div class="flex-1 min-w-0">
                 <div class="text-sm text-mushroom-950 dark:text-mushroom-50">{{ cat.name }}</div>
-                <div class="w-full bg-mushroom-100 dark:bg-mushroom-800 rounded-full h-1.5 mt-1.5">
+                <div class="w-full bg-mushroom-200 dark:bg-mushroom-700 rounded-full h-1.5 mt-1.5">
                   <div class="h-1.5 rounded-full bg-kangkong-400 transition-all" :style="{ width: (cat.amount / yearlyCatMax * 100) + '%' }" />
                 </div>
               </div>

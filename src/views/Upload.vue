@@ -238,14 +238,14 @@ function acceptAllSuggestions(rows) {
       <button
         @click="activeTab = 'bank'"
         class="px-4 py-1.5 text-xs font-medium rounded-md transition-colors"
-        :class="activeTab === 'bank' ? 'bg-white dark:bg-mushroom-900 text-mushroom-900 dark:text-mushroom-50 shadow-sm' : 'text-mushroom-500 dark:text-mushroom-400 hover:text-mushroom-700 dark:hover:text-mushroom-200'"
+        :class="activeTab === 'bank' ? 'bg-white dark:bg-mushroom-900 text-mushroom-900 dark:text-mushroom-50 shadow-sm' : 'text-mushroom-700 dark:text-mushroom-400 hover:text-mushroom-700 dark:hover:text-mushroom-200'"
       >
         Bank Statement
       </button>
       <button
         @click="activeTab = 'bulk'"
         class="px-4 py-1.5 text-xs font-medium rounded-md transition-colors"
-        :class="activeTab === 'bulk' ? 'bg-white dark:bg-mushroom-900 text-mushroom-900 dark:text-mushroom-50 shadow-sm' : 'text-mushroom-500 dark:text-mushroom-400 hover:text-mushroom-700 dark:hover:text-mushroom-200'"
+        :class="activeTab === 'bulk' ? 'bg-white dark:bg-mushroom-900 text-mushroom-900 dark:text-mushroom-50 shadow-sm' : 'text-mushroom-700 dark:text-mushroom-400 hover:text-mushroom-700 dark:hover:text-mushroom-200'"
       >
         CSV Template
       </button>
@@ -317,7 +317,7 @@ function acceptAllSuggestions(rows) {
           </div>
           <div>
             <label class="label-text">CSV File</label>
-            <input type="file" accept=".csv,.pdf" @change="handleBankFileChange" class="input-field file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-kangkong-50 dark:file:bg-kangkong-500/10 file:text-kangkong-700 dark:file:text-kangkong-400 file:text-xs file:font-medium" />
+            <input type="file" accept=".csv,.pdf" @change="handleBankFileChange" class="input-field file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-tomato-50 dark:file:bg-tomato-500/10 file:text-tomato-700 dark:file:text-tomato-400 file:text-xs file:font-medium" />
           </div>
         </div>
 
@@ -351,7 +351,7 @@ function acceptAllSuggestions(rows) {
           <div class="flex gap-3 text-xs">
             <span class="text-kangkong-700 dark:text-kangkong-400">Income: {{ bankPreview.total_income.toLocaleString() }}</span>
             <span class="text-tomato-600 dark:text-tomato-400">Expense: {{ bankPreview.total_expense.toLocaleString() }}</span>
-            <span class="text-mushroom-400">{{ bankPreview.total_rows }} rows</span>
+            <span class="text-mushroom-600">{{ bankPreview.total_rows }} rows</span>
           </div>
         </div>
 
@@ -359,11 +359,11 @@ function acceptAllSuggestions(rows) {
           <table class="w-full text-xs">
             <thead class="sticky top-0 bg-mushroom-50 dark:bg-mushroom-800">
               <tr>
-                <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">Date</th>
-                <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">Description</th>
-                <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">Category</th>
-                <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">Amount</th>
-                <th class="text-center px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">Type</th>
+                <th class="text-left px-2 py-1.5 font-medium text-mushroom-700 dark:text-mushroom-400">Date</th>
+                <th class="text-left px-2 py-1.5 font-medium text-mushroom-700 dark:text-mushroom-400">Description</th>
+                <th class="text-left px-2 py-1.5 font-medium text-mushroom-700 dark:text-mushroom-400">Category</th>
+                <th class="text-right px-2 py-1.5 font-medium text-mushroom-700 dark:text-mushroom-400">Amount</th>
+                <th class="text-center px-2 py-1.5 font-medium text-mushroom-700 dark:text-mushroom-400">Type</th>
               </tr>
             </thead>
             <tbody>
@@ -404,10 +404,10 @@ function acceptAllSuggestions(rows) {
             <p class="text-xs text-mushroom-600 dark:text-mushroom-400">Upload a CSV file with your transactions. Download the template and legend for valid values.</p>
           </div>
           <div class="flex gap-2">
-            <button @click="downloadLegend" class="px-3 py-1.5 text-xs bg-mushroom-100 dark:bg-mushroom-800 text-mushroom-600 dark:text-mushroom-400 rounded-lg hover:bg-mushroom-200 transition-colors font-medium whitespace-nowrap">
+            <button @click="downloadLegend" class="px-3 py-1.5 text-xs bg-mushroom-200 dark:bg-mushroom-700 text-mushroom-700 dark:text-mushroom-400 rounded-lg hover:bg-mushroom-200 transition-colors font-medium whitespace-nowrap">
               Download Legend
             </button>
-            <button @click="downloadTemplate" class="px-3 py-1.5 text-xs bg-mushroom-100 dark:bg-mushroom-800 text-mushroom-600 dark:text-mushroom-400 rounded-lg hover:bg-mushroom-200 transition-colors font-medium whitespace-nowrap">
+            <button @click="downloadTemplate" class="px-3 py-1.5 text-xs bg-mushroom-200 dark:bg-mushroom-700 text-mushroom-700 dark:text-mushroom-400 rounded-lg hover:bg-mushroom-200 transition-colors font-medium whitespace-nowrap">
               Download Template
             </button>
           </div>
@@ -415,7 +415,7 @@ function acceptAllSuggestions(rows) {
 
         <div>
           <label class="label-text">CSV File</label>
-          <input type="file" accept=".csv" @change="handleBulkFileChange" class="input-field file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-kangkong-50 dark:file:bg-kangkong-500/10 file:text-kangkong-700 dark:file:text-kangkong-400 file:text-xs file:font-medium" />
+          <input type="file" accept=".csv" @change="handleBulkFileChange" class="input-field file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-tomato-50 dark:file:bg-tomato-500/10 file:text-tomato-700 dark:file:text-tomato-400 file:text-xs file:font-medium" />
         </div>
 
         <div class="flex gap-2">
@@ -434,10 +434,10 @@ function acceptAllSuggestions(rows) {
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-medium text-mushroom-700 dark:text-mushroom-300">Preview</h3>
           <div class="flex gap-3 text-xs">
-            <span v-if="flaggedCount > 0" class="text-mango-600 dark:text-mango-400 font-medium">{{ flaggedCount }} flagged</span>
+            <span v-if="flaggedCount > 0" class="text-mango-500 dark:text-mango-400 font-medium">{{ flaggedCount }} flagged</span>
             <span class="text-kangkong-700 dark:text-kangkong-400">Income: {{ bulkPreview.total_income.toLocaleString() }}</span>
             <span class="text-tomato-600 dark:text-tomato-400">Expense: {{ bulkPreview.total_expense.toLocaleString() }}</span>
-            <span class="text-mushroom-400">{{ bulkPreview.total_rows }} rows</span>
+            <span class="text-mushroom-600">{{ bulkPreview.total_rows }} rows</span>
           </div>
         </div>
 
@@ -445,7 +445,7 @@ function acceptAllSuggestions(rows) {
           <div v-for="(err, i) in bulkPreview.errors" :key="i">{{ err }}</div>
         </div>
 
-        <div v-if="flaggedCount > 0" class="bg-mango-50 dark:bg-mango-500/10 text-mango-700 dark:text-mango-400 p-2.5 rounded text-xs">
+        <div v-if="flaggedCount > 0" class="bg-mango-50 dark:bg-mango-500/10 text-mango-600 dark:text-mango-400 p-2.5 rounded text-xs">
           {{ flaggedCount }} rows were auto-corrected or have warnings. Rows with orange highlights need your review.
         </div>
 
@@ -453,14 +453,14 @@ function acceptAllSuggestions(rows) {
           <table class="w-full text-xs">
             <thead class="sticky top-0 bg-mushroom-50 dark:bg-mushroom-800">
               <tr>
-                <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400 w-6"></th>
-                <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">Date</th>
-                <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">Account</th>
-                <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">Category</th>
-                <th class="text-right px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">Amount</th>
-                <th class="text-center px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">Type</th>
-                <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">Description</th>
-                <th class="text-left px-2 py-1.5 font-medium text-mushroom-500 dark:text-mushroom-400">Sub-Account</th>
+                <th class="text-left px-2 py-1.5 font-medium text-mushroom-700 dark:text-mushroom-400 w-6"></th>
+                <th class="text-left px-2 py-1.5 font-medium text-mushroom-700 dark:text-mushroom-400">Date</th>
+                <th class="text-left px-2 py-1.5 font-medium text-mushroom-700 dark:text-mushroom-400">Account</th>
+                <th class="text-left px-2 py-1.5 font-medium text-mushroom-700 dark:text-mushroom-400">Category</th>
+                <th class="text-right px-2 py-1.5 font-medium text-mushroom-700 dark:text-mushroom-400">Amount</th>
+                <th class="text-center px-2 py-1.5 font-medium text-mushroom-700 dark:text-mushroom-400">Type</th>
+                <th class="text-left px-2 py-1.5 font-medium text-mushroom-700 dark:text-mushroom-400">Description</th>
+                <th class="text-left px-2 py-1.5 font-medium text-mushroom-700 dark:text-mushroom-400">Sub-Account</th>
               </tr>
             </thead>
             <tbody>
@@ -468,29 +468,29 @@ function acceptAllSuggestions(rows) {
                 class="border-t border-mushroom-100 dark:border-mushroom-700/50"
                 :class="row.warnings?.length ? 'bg-mango-50/50 dark:bg-mango-500/10' : ''">
                 <td class="px-1 py-1.5">
-                  <button @click="removeRow(i)" class="text-mushroom-400 hover:text-tomato-600 transition-colors" title="Remove row">
+                  <button @click="removeRow(i)" class="text-mushroom-600 hover:text-tomato-600 transition-colors" title="Remove row">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                   </button>
                 </td>
                 <td class="px-2 py-1.5 text-mushroom-700 dark:text-mushroom-300">{{ row.date }}</td>
                 <td class="px-2 py-1.5">
                   <div class="flex items-center gap-1">
-                    <input v-model="row.account_id" class="bg-transparent border-b border-dashed border-mushroom-300 dark:border-mushroom-600 text-mushroom-700 dark:text-mushroom-300 text-xs w-full focus:outline-none focus:border-kangkong-500" :class="getWarningFor(row, 'Account') ? 'text-mango-700' : ''" />
+                    <input v-model="row.account_id" class="bg-transparent border-b border-dashed border-mushroom-300 dark:border-mushroom-600 text-mushroom-700 dark:text-mushroom-300 text-xs w-full focus:outline-none focus:border-kangkong-500" :class="getWarningFor(row, 'Account') ? 'text-mango-600' : ''" />
                   </div>
                   <div v-if="getWarningFor(row, 'Account')" class="flex items-center gap-1 mt-0.5">
-                    <span class="text-[10px] text-mango-600 truncate">{{ getWarningFor(row, 'Account') }}</span>
-                    <button v-if="getSuggestion(getWarningFor(row, 'Account'))" @click="acceptSuggestion(row, 'Account', getWarningFor(row, 'Account'))" class="text-[10px] text-kangkong-600 hover:text-kangkong-800 font-medium whitespace-nowrap">Accept</button>
-                    <button @click="dismissWarning(row, getWarningFor(row, 'Account'))" class="text-[10px] text-mushroom-400 hover:text-tomato-600 whitespace-nowrap">Dismiss</button>
+                    <span class="text-[10px] text-mango-500 truncate">{{ getWarningFor(row, 'Account') }}</span>
+                    <button v-if="getSuggestion(getWarningFor(row, 'Account'))" @click="acceptSuggestion(row, 'Account', getWarningFor(row, 'Account'))" class="text-[10px] text-primary hover:text-kangkong-800 font-medium whitespace-nowrap">Accept</button>
+                    <button @click="dismissWarning(row, getWarningFor(row, 'Account'))" class="text-[10px] text-mushroom-600 hover:text-tomato-600 whitespace-nowrap">Dismiss</button>
                   </div>
                 </td>
                 <td class="px-2 py-1.5">
                   <div class="flex items-center gap-1">
-                    <input v-model="row.category" class="bg-transparent border-b border-dashed border-mushroom-300 dark:border-mushroom-600 text-mushroom-700 dark:text-mushroom-300 text-xs w-full focus:outline-none focus:border-kangkong-500" :class="getWarningFor(row, 'Category') ? 'text-mango-700' : ''" />
+                    <input v-model="row.category" class="bg-transparent border-b border-dashed border-mushroom-300 dark:border-mushroom-600 text-mushroom-700 dark:text-mushroom-300 text-xs w-full focus:outline-none focus:border-kangkong-500" :class="getWarningFor(row, 'Category') ? 'text-mango-600' : ''" />
                   </div>
                   <div v-if="getWarningFor(row, 'Category')" class="flex items-center gap-1 mt-0.5">
-                    <span class="text-[10px] text-mango-600 truncate">{{ getWarningFor(row, 'Category') }}</span>
-                    <button v-if="getSuggestion(getWarningFor(row, 'Category'))" @click="acceptSuggestion(row, 'Category', getWarningFor(row, 'Category'))" class="text-[10px] text-kangkong-600 hover:text-kangkong-800 font-medium whitespace-nowrap">Accept</button>
-                    <button @click="dismissWarning(row, getWarningFor(row, 'Category'))" class="text-[10px] text-mushroom-400 hover:text-tomato-600 whitespace-nowrap">Dismiss</button>
+                    <span class="text-[10px] text-mango-500 truncate">{{ getWarningFor(row, 'Category') }}</span>
+                    <button v-if="getSuggestion(getWarningFor(row, 'Category'))" @click="acceptSuggestion(row, 'Category', getWarningFor(row, 'Category'))" class="text-[10px] text-primary hover:text-kangkong-800 font-medium whitespace-nowrap">Accept</button>
+                    <button @click="dismissWarning(row, getWarningFor(row, 'Category'))" class="text-[10px] text-mushroom-600 hover:text-tomato-600 whitespace-nowrap">Dismiss</button>
                   </div>
                 </td>
                 <td class="px-2 py-1.5 text-right font-medium" :class="row.type === 'income' ? 'text-kangkong-700 dark:text-kangkong-400' : 'text-tomato-600 dark:text-tomato-400'">
@@ -504,12 +504,12 @@ function acceptAllSuggestions(rows) {
                 <td class="px-2 py-1.5 text-mushroom-700 dark:text-mushroom-300">{{ row.description }}</td>
                 <td class="px-2 py-1.5">
                   <div class="flex items-center gap-1">
-                    <input v-model="row.sub_account_id" class="bg-transparent border-b border-dashed border-mushroom-300 dark:border-mushroom-600 text-mushroom-700 dark:text-mushroom-300 text-xs w-full focus:outline-none focus:border-kangkong-500" :class="getWarningFor(row, 'Sub-account') ? 'text-mango-700' : ''" placeholder="—" />
+                    <input v-model="row.sub_account_id" class="bg-transparent border-b border-dashed border-mushroom-300 dark:border-mushroom-600 text-mushroom-700 dark:text-mushroom-300 text-xs w-full focus:outline-none focus:border-kangkong-500" :class="getWarningFor(row, 'Sub-account') ? 'text-mango-600' : ''" placeholder="—" />
                   </div>
                   <div v-if="getWarningFor(row, 'Sub-account')" class="flex items-center gap-1 mt-0.5">
-                    <span class="text-[10px] text-mango-600 truncate">{{ getWarningFor(row, 'Sub-account') }}</span>
-                    <button v-if="getSuggestion(getWarningFor(row, 'Sub-account'))" @click="acceptSuggestion(row, 'Sub-account', getWarningFor(row, 'Sub-account'))" class="text-[10px] text-kangkong-600 hover:text-kangkong-800 font-medium whitespace-nowrap">Accept</button>
-                    <button @click="dismissWarning(row, getWarningFor(row, 'Sub-account'))" class="text-[10px] text-mushroom-400 hover:text-tomato-600 whitespace-nowrap">Dismiss</button>
+                    <span class="text-[10px] text-mango-500 truncate">{{ getWarningFor(row, 'Sub-account') }}</span>
+                    <button v-if="getSuggestion(getWarningFor(row, 'Sub-account'))" @click="acceptSuggestion(row, 'Sub-account', getWarningFor(row, 'Sub-account'))" class="text-[10px] text-primary hover:text-kangkong-800 font-medium whitespace-nowrap">Accept</button>
+                    <button @click="dismissWarning(row, getWarningFor(row, 'Sub-account'))" class="text-[10px] text-mushroom-600 hover:text-tomato-600 whitespace-nowrap">Dismiss</button>
                   </div>
                 </td>
               </tr>
@@ -518,7 +518,7 @@ function acceptAllSuggestions(rows) {
         </div>
 
         <div class="flex gap-2 pt-1">
-          <button v-if="flaggedCount > 0" @click="acceptAllSuggestions(bulkPreview.rows)" class="btn-ghost text-xs text-kangkong-600 hover:text-kangkong-800">
+          <button v-if="flaggedCount > 0" @click="acceptAllSuggestions(bulkPreview.rows)" class="btn-ghost text-xs text-primary hover:text-kangkong-800">
             Accept All Suggestions
           </button>
           <button @click="handleBulkImport" :disabled="bulkLoading || bulkPreview.rows.length === 0" class="btn-secondary text-xs disabled:opacity-50">

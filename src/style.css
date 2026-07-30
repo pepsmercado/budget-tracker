@@ -6,7 +6,7 @@
 @theme {
   --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
 
-  --color-mushroom-50: #f5ece8;
+  --color-mushroom-50: #faf5f2;
   --color-mushroom-100: #f5ece8;
   --color-mushroom-200: #ede0db;
   --color-mushroom-300: #d8c2b9;
@@ -44,6 +44,8 @@
   --color-carrot-300: #fdba74;
   --color-carrot-400: #fb923c;
   --color-carrot-500: #e07c2e;
+  --color-carrot-600: #c26a28;
+  --color-carrot-700: #a55822;
 
   --color-mango-50: #fffbeb;
   --color-mango-100: #fef3c7;
@@ -51,6 +53,8 @@
   --color-mango-300: #fcd34d;
   --color-mango-400: #fbbf24;
   --color-mango-500: #e6a817;
+  --color-mango-600: #c98f14;
+  --color-mango-700: #ab7711;
 
   --color-ochre-50: #f9f6e8;
   --color-ochre-100: #f0e9c4;
@@ -99,15 +103,15 @@
   --surface-container: #ffffff;
 
   /* Sidebar */
-  --sidebar-bg: #ede0db;
+  --sidebar-bg: #ffffff;
   --sidebar-text: #2c2420;
   --sidebar-text-secondary: #7a6b62;
-  --sidebar-hover: rgba(44, 36, 32, 0.06);
+  --sidebar-hover: rgba(44, 36, 32, 0.08);
   --sidebar-active-link: rgba(194, 101, 42, 0.12);
   --sidebar-active-text: #c2652a;
   --sidebar-border: rgba(44, 36, 32, 0.08);
-  --sidebar-currency-bg: rgba(44, 36, 32, 0.04);
-  --sidebar-currency-active: rgba(44, 36, 32, 0.10);
+  --sidebar-currency-bg: rgba(44, 36, 32, 0.06);
+  --sidebar-currency-active: rgba(44, 36, 32, 0.12);
 }
 
 .dark {
@@ -122,12 +126,12 @@
   --secondary: #2c2420;
   --secondary-foreground: #ede0db;
   --tertiary: #d1c893;
-  --muted: #1a1a1a;
+  --muted: #2a2828;
   --muted-foreground: #9a887e;
   --border: #393939;
   --outline: #a08d85;
   --outline-variant: #53443d;
-  --input: #1a1a1a;
+  --input: #2a2828;
   --ring: #ffb690;
   --surface-container: #1c1b1b;
 
@@ -145,15 +149,15 @@
   /* Mushroom palette → warm brown-grey tones in dark mode */
   --color-mushroom-50: #ede0db;
   --color-mushroom-100: #d8c2b9;
-  --color-mushroom-200: #b8a69c;
-  --color-mushroom-300: #9a887e;
-  --color-mushroom-400: #7a6b62;
-  --color-mushroom-500: #5c4f48;
-  --color-mushroom-600: #3e3530;
-  --color-mushroom-700: #2c2420;
-  --color-mushroom-800: #1c1b1b;
-  --color-mushroom-900: #181717;
-  --color-mushroom-950: #121212;
+  --color-mushroom-200: #c8afa4;
+  --color-mushroom-300: #b8a69c;
+  --color-mushroom-400: #a08d84;
+  --color-mushroom-500: #8a786e;
+  --color-mushroom-600: #7a6b62;
+  --color-mushroom-700: #5c4f48;
+  --color-mushroom-800: #3e3530;
+  --color-mushroom-900: #2c2420;
+  --color-mushroom-950: #1c1b1b;
 }
 
 body {

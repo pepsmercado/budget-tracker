@@ -44,10 +44,10 @@ function nextDateLabel(r) {
 }
 
 function nextDateClass(r) {
-  if (!r.next_date) return 'text-mushroom-400 dark:text-mushroom-500'
+  if (!r.next_date) return 'text-mushroom-600 dark:text-mushroom-300'
   const today = new Date().toISOString().slice(0, 10)
   if (r.next_date <= today) return 'text-tomato-600 font-medium'
-  return 'text-mushroom-400 dark:text-mushroom-500'
+  return 'text-mushroom-600 dark:text-mushroom-300'
 }
 
 function startCreate() {
@@ -141,7 +141,7 @@ watch(currencyParam, loadAll)
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-lg font-medium text-mushroom-950 dark:text-mushroom-50">{{ viewLabel }} Recurring</h2>
-        <p class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-0.5">Automated expense templates</p>
+        <p class="text-xs text-mushroom-600 dark:text-mushroom-300 mt-0.5">Automated expense templates</p>
       </div>
       <div class="flex items-center gap-3">
         <button @click="handleRun" class="btn-primary text-xs flex items-center gap-1.5">
@@ -194,13 +194,13 @@ watch(currencyParam, loadAll)
             <input v-model="form.start_date" type="date" required class="input-field" />
           </div>
           <div>
-            <label class="label-text">End Date <span class="text-mushroom-300 dark:text-mushroom-600">(optional)</span></label>
+            <label class="label-text">End Date <span class="text-mushroom-500 dark:text-mushroom-500">(optional)</span></label>
             <input v-model="form.end_date" type="date" class="input-field" />
           </div>
         </div>
         <div class="flex items-center gap-2">
           <button @click="submitForm" class="btn-primary text-xs">{{ editingRule ? 'Save Changes' : 'Create Rule' }}</button>
-          <button @click="cancelForm" class="text-xs text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300">Cancel</button>
+          <button @click="cancelForm" class="text-xs text-mushroom-600 dark:text-mushroom-300 hover:text-mushroom-600 dark:hover:text-mushroom-300">Cancel</button>
         </div>
       </div>
     </transition>
@@ -234,8 +234,8 @@ watch(currencyParam, loadAll)
 
     <div v-else-if="!rules.length" class="text-center py-12">
       <div class="text-3xl mb-3">🔄</div>
-      <p class="text-sm text-mushroom-500 dark:text-mushroom-400">No recurring rules yet</p>
-      <p class="text-xs text-mushroom-400 dark:text-mushroom-500 mt-1">Click "Add Rule" to set up automated expenses</p>
+      <p class="text-sm text-mushroom-700 dark:text-mushroom-400">No recurring rules yet</p>
+      <p class="text-xs text-mushroom-600 dark:text-mushroom-300 mt-1">Click "Add Rule" to set up automated expenses</p>
     </div>
 
     <div v-else class="space-y-3">
@@ -245,7 +245,7 @@ watch(currencyParam, loadAll)
             <button
               @click="handleToggle(r)"
               class="relative w-9 h-5 rounded-full transition-colors"
-              :class="r.active ? 'bg-kangkong-500' : 'bg-mushroom-200 dark:bg-mushroom-700'"
+              :class="r.active ? 'bg-primary' : 'bg-mushroom-200 dark:bg-mushroom-700'"
               :title="r.active ? 'Disable' : 'Enable'"
             >
               <span class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform" :class="r.active ? 'translate-x-4' : ''" />
@@ -254,31 +254,31 @@ watch(currencyParam, loadAll)
               <div class="flex items-center gap-2">
                 <span class="text-lg">{{ categoryIcons[r.category] || '📋' }}</span>
                 <span class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50">{{ r.name }}</span>
-                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium" :class="r.active ? 'bg-kangkong-100 text-kangkong-700 dark:bg-kangkong-500/15 dark:text-kangkong-400' : 'bg-mushroom-100 text-mushroom-400 dark:bg-mushroom-700 dark:text-mushroom-500'">{{ r.active ? 'Active' : 'Paused' }}</span>
+                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium" :class="r.active ? 'bg-kangkong-100 text-kangkong-700 dark:bg-kangkong-500/15 dark:text-kangkong-400 dark:text-kangkong-300' : 'bg-mushroom-200 text-mushroom-600 dark:bg-mushroom-700 dark:text-mushroom-400'">{{ r.active ? 'Active' : 'Paused' }}</span>
               </div>
-              <div class="flex items-center gap-3 mt-1 text-xs text-mushroom-400 dark:text-mushroom-500">
+              <div class="flex items-center gap-3 mt-1 text-xs text-mushroom-600 dark:text-mushroom-300">
                 <span>{{ frequencyLabels[r.frequency] }} on {{ r.day_of_month }}{{ r.day_of_month === 1 ? 'st' : r.day_of_month === 2 ? 'nd' : r.day_of_month === 3 ? 'rd' : 'th' }}</span>
-                <span class="text-mushroom-200 dark:text-mushroom-600">|</span>
-                <span class="font-medium text-mushroom-700 dark:text-mushroom-300">{{ formatCurrency(r.amount, curSym) }}</span>
-                <span class="text-mushroom-200 dark:text-mushroom-600">|</span>
+                <span class="text-mushroom-400 dark:text-mushroom-500">|</span>
+                <span class="font-medium text-mushroom-700 dark:text-mushroom-50">{{ formatCurrency(r.amount, curSym) }}</span>
+                <span class="text-mushroom-400 dark:text-mushroom-500">|</span>
                 <span :class="nextDateClass(r)">{{ nextDateLabel(r) }}</span>
                 <template v-if="r.end_date">
-                  <span class="text-mushroom-200 dark:text-mushroom-600">|</span>
+                  <span class="text-mushroom-400 dark:text-mushroom-500">|</span>
                   <span>Ends {{ formatDate(r.end_date) }}</span>
                 </template>
               </div>
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <button @click="startEdit(r)" class="text-mushroom-300 dark:text-mushroom-600 hover:text-tomato-500 dark:hover:text-tomato-400 transition-colors" title="Edit">
+            <button @click="startEdit(r)" class="text-mushroom-500 dark:text-mushroom-500 hover:text-tomato-500 dark:hover:text-tomato-400 transition-colors" title="Edit">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
             <template v-if="confirmingDelete === r.id">
-              <span class="text-xs text-mushroom-400 dark:text-mushroom-500 mr-1">Delete?</span>
+              <span class="text-xs text-mushroom-600 dark:text-mushroom-300 mr-1">Delete?</span>
               <button @click="handleDelete(r)" class="text-tomato-500 hover:text-tomato-700 text-xs font-medium">Yes</button>
-              <button @click="confirmingDelete = null" class="text-mushroom-400 dark:text-mushroom-500 hover:text-mushroom-600 dark:hover:text-mushroom-300 text-xs">No</button>
+              <button @click="confirmingDelete = null" class="text-mushroom-600 dark:text-mushroom-300 hover:text-mushroom-600 dark:hover:text-mushroom-300 text-xs">No</button>
             </template>
-            <button v-else @click="confirmingDelete = r.id" class="text-mushroom-300 dark:text-mushroom-600 hover:text-tomato-500 dark:hover:text-tomato-400 transition-colors" title="Delete">
+            <button v-else @click="confirmingDelete = r.id" class="text-mushroom-500 dark:text-mushroom-500 hover:text-tomato-500 dark:hover:text-tomato-400 transition-colors" title="Delete">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
             </button>
           </div>
