@@ -37,7 +37,7 @@ const confirmingAcctNum = ref(null)
 
 const bankColors = {
   BPI: 'bg-tomato-100 text-tomato-700 dark:bg-tomato-500/15 dark:text-tomato-400',
-  BDO: 'bg-carrot-100 text-carrot-600 dark:bg-carrot-500/15 dark:text-carrot-400',
+  BDO: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
   Maya: 'bg-kangkong-100 text-kangkong-700 dark:bg-kangkong-500/15 dark:text-kangkong-400',
   'Bank of America': 'bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400',
   'Security Bank': 'bg-ochre-100 text-ochre-700 dark:bg-ochre-500/15 dark:text-ochre-400',
