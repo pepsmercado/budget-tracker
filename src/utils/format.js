@@ -17,4 +17,4 @@ export function shortMonth(month) {
   return d.toLocaleString('en-US', { month: 'short' })
 }
 
-export const CHART_COLORS = ['#17ad49', '#da2f38', '#8952f6', '#f59e0b', '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1', '#14b8a6']
+export const CHART_COLORS = ['#4caf50', '#c2652a', '#8952f6', '#e6a817', '#06b6d4', '#ec4899', '#84cc16', '#e07c2e', '#6366f1', '#14b8a6']
