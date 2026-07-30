@@ -39,10 +39,10 @@ const bankColors = {
   BPI: 'bg-tomato-100 text-tomato-700 dark:bg-tomato-500/15 dark:text-tomato-400',
   BDO: 'bg-carrot-100 text-carrot-600 dark:bg-carrot-500/15 dark:text-carrot-400',
   Maya: 'bg-kangkong-100 text-kangkong-700 dark:bg-kangkong-500/15 dark:text-kangkong-400',
-  'Bank of America': 'bg-tomato-100 text-tomato-700 dark:bg-tomato-500/15 dark:text-tomato-400',
+  'Bank of America': 'bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400',
   'Security Bank': 'bg-ochre-100 text-ochre-700 dark:bg-ochre-500/15 dark:text-ochre-400',
   'Metrobank': 'bg-mango-100 text-mango-700 dark:bg-mango-500/15 dark:text-mango-400',
-  'Landbank': 'bg-tomato-100 text-tomato-700 dark:bg-tomato-500/15 dark:text-tomato-400',
+  'Landbank': 'bg-tomato-200 text-tomato-800 dark:bg-tomato-500/25 dark:text-tomato-300',
 }
 
 const bankOptions = [
