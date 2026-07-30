@@ -458,24 +458,24 @@ function monthName(ms) {
     <template v-else-if="mode === 'monthly' && monthlyData">
       <!-- Summary row -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div class="card-elevated p-4 bg-indigo-500 dark:bg-indigo-500/10">
-          <div class="text-xs text-white/80 dark:text-indigo-300 mb-1">Budget</div>
-          <div class="text-xl font-semibold text-white dark:text-indigo-200">{{ fmt(totalBudget) }}</div>
-          <div v-if="prevTotalBudget" class="text-[10px] mt-1 text-white/70">
+        <div class="card-elevated p-4 bg-indigo-400 dark:bg-indigo-500/10">
+          <div class="text-xs font-semibold text-white dark:text-indigo-300 mb-1">Budget</div>
+          <div class="text-xl font-bold text-white dark:text-indigo-200">{{ fmt(totalBudget) }}</div>
+          <div v-if="prevTotalBudget" class="text-[10px] font-semibold mt-1 text-white/70">
             {{ changeLabel(totalBudget, prevTotalBudget) }} vs last month
           </div>
         </div>
-        <div class="card-elevated p-4 bg-tomato-500 dark:bg-tomato-500/10">
-          <div class="text-xs text-white/80 dark:text-tomato-300 mb-1">Spent</div>
-          <div class="text-xl font-semibold text-white dark:text-tomato-200">{{ fmt(totalSpent) }}</div>
-          <div v-if="prevTotalSpent" class="text-[10px] mt-1 text-white/70">
+        <div class="card-elevated p-4 bg-tomato-400 dark:bg-tomato-500/10">
+          <div class="text-xs font-semibold text-white dark:text-tomato-300 mb-1">Spent</div>
+          <div class="text-xl font-bold text-white dark:text-tomato-200">{{ fmt(totalSpent) }}</div>
+          <div v-if="prevTotalSpent" class="text-[10px] font-semibold mt-1 text-white/70">
             {{ changeLabel(totalSpent, prevTotalSpent) }} vs last month
           </div>
         </div>
-        <div class="card-elevated p-4 bg-kangkong-500 dark:bg-kangkong-500/10">
-          <div class="text-xs text-white/80 dark:text-kangkong-300 mb-1">Remaining</div>
-          <div class="text-xl font-semibold text-white dark:text-kangkong-200">{{ fmt(totalBudget - totalSpent) }}</div>
-          <div class="text-[10px] text-white/70 mt-1">
+        <div class="card-elevated p-4 bg-kangkong-400 dark:bg-kangkong-500/10">
+          <div class="text-xs font-semibold text-white dark:text-kangkong-300 mb-1">Remaining</div>
+          <div class="text-xl font-bold text-white dark:text-kangkong-200">{{ fmt(totalBudget - totalSpent) }}</div>
+          <div class="text-[10px] font-semibold text-white/70 mt-1">
             {{ totalBudget > 0 ? ((totalSpent / totalBudget) * 100).toFixed(0) : 0 }}% of budget used
           </div>
         </div>
@@ -569,21 +569,21 @@ function monthName(ms) {
     <template v-else-if="mode === 'yearly' && yearlyData">
       <!-- Summary cards -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div class="card-elevated p-4 bg-kangkong-500 dark:bg-kangkong-500/10">
-          <div class="text-xs text-white/80 dark:text-kangkong-300 mb-1">Total Income</div>
-          <div class="text-xl font-semibold text-white dark:text-kangkong-200">{{ fmt(totalIncome) }}</div>
+        <div class="card-elevated p-4 bg-kangkong-400 dark:bg-kangkong-500/10">
+          <div class="text-xs font-semibold text-white dark:text-kangkong-300 mb-1">Total Income</div>
+          <div class="text-xl font-bold text-white dark:text-kangkong-200">{{ fmt(totalIncome) }}</div>
         </div>
-        <div class="card-elevated p-4 bg-tomato-500 dark:bg-tomato-500/10">
-          <div class="text-xs text-white/80 dark:text-tomato-300 mb-1">Total Expenses</div>
-          <div class="text-xl font-semibold text-white dark:text-tomato-200">{{ fmt(totalExpense) }}</div>
+        <div class="card-elevated p-4 bg-tomato-400 dark:bg-tomato-500/10">
+          <div class="text-xs font-semibold text-white dark:text-tomato-300 mb-1">Total Expenses</div>
+          <div class="text-xl font-bold text-white dark:text-tomato-200">{{ fmt(totalExpense) }}</div>
         </div>
-        <div class="card-elevated p-4 bg-purple-500 dark:bg-purple-500/10">
-          <div class="text-xs text-white/80 dark:text-purple-300 mb-1">Savings</div>
-          <div class="text-xl font-semibold text-white dark:text-purple-200">{{ totalNet >= 0 ? '+' : '-' }}{{ fmt(totalNet) }}</div>
+        <div class="card-elevated p-4 bg-purple-400 dark:bg-purple-500/10">
+          <div class="text-xs font-semibold text-white dark:text-purple-300 mb-1">Savings</div>
+          <div class="text-xl font-bold text-white dark:text-purple-200">{{ totalNet >= 0 ? '+' : '-' }}{{ fmt(totalNet) }}</div>
         </div>
-        <div class="card-elevated p-4 bg-indigo-500 dark:bg-indigo-500/10">
-          <div class="text-xs text-white/80 dark:text-indigo-300 mb-1">Savings Rate</div>
-          <div class="text-xl font-semibold text-white dark:text-indigo-200">{{ savingsRate.toFixed(1) }}%</div>
+        <div class="card-elevated p-4 bg-indigo-400 dark:bg-indigo-500/10">
+          <div class="text-xs font-semibold text-white dark:text-indigo-300 mb-1">Savings Rate</div>
+          <div class="text-xl font-bold text-white dark:text-indigo-200">{{ savingsRate.toFixed(1) }}%</div>
         </div>
       </div>
 
