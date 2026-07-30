@@ -189,10 +189,29 @@ const savingsRate = computed(() => {
 
 const INCOME_CATS = new Set(['Salary', 'Cashback', 'Interest'])
 
+const monthlyTotals = computed(() => {
+  const mc = yearlyData.value?.monthly_categories
+  if (!mc) return new Array(12).fill(0)
+  const totals = new Array(12).fill(0)
+  for (const row of mc) {
+    for (const [mon, val] of Object.entries(row.monthly)) {
+      if (!val || val <= 0) continue
+      const idx = parseInt(mon, 10) - 1
+      if (idx >= 0 && idx <= 11) totals[idx] += val
+    }
+  }
+  return totals
+})
+
+const activeMonthIndices = computed(() => {
+  return monthlyTotals.value
+    .map((t, i) => t > 0 ? i : -1)
+    .filter(i => i >= 0)
+})
+
 const monthlyTrendData = computed(() => {
   const mc = yearlyData.value?.monthly_categories
   if (!mc) return null
-  const mons = Array.from({ length: 12 }, (_, i) => shortMonth(i + 1))
   const incomeArr = new Array(12).fill(0)
   const expenseArr = new Array(12).fill(0)
   for (const row of mc) {
@@ -204,11 +223,13 @@ const monthlyTrendData = computed(() => {
       else expenseArr[idx] += val
     }
   }
+  const active = activeMonthIndices.value
+  if (!active.length) return null
   return {
-    labels: mons,
+    labels: active.map(i => shortMonth(i + 1)),
     datasets: [
-      { label: 'Income', data: incomeArr, backgroundColor: '#34d399', borderRadius: 4 },
-      { label: 'Expenses', data: expenseArr, backgroundColor: '#f87171', borderRadius: 4 },
+      { label: 'Income', data: active.map(i => incomeArr[i]), backgroundColor: '#34d399', borderRadius: 4 },
+      { label: 'Expenses', data: active.map(i => expenseArr[i]), backgroundColor: '#f87171', borderRadius: 4 },
     ],
   }
 })
@@ -216,7 +237,6 @@ const monthlyTrendData = computed(() => {
 const cumulativeNetData = computed(() => {
   const mc = yearlyData.value?.monthly_categories
   if (!mc) return null
-  const mons = Array.from({ length: 12 }, (_, i) => shortMonth(i + 1))
   const monthlyNet = new Array(12).fill(0)
   for (const row of mc) {
     for (const [mon, val] of Object.entries(row.monthly)) {
@@ -227,17 +247,21 @@ const cumulativeNetData = computed(() => {
       else monthlyNet[idx] -= val
     }
   }
-  const cumulative = []
+  const active = activeMonthIndices.value
+  if (!active.length) return null
+  const labels = []
+  const data = []
   let running = 0
-  for (let i = 0; i < 12; i++) {
+  for (const i of active) {
     running += monthlyNet[i]
-    cumulative.push(running)
+    labels.push(shortMonth(i + 1))
+    data.push(running)
   }
   return {
-    labels: mons,
+    labels,
     datasets: [{
       label: 'Cumulative Net',
-      data: cumulative,
+      data,
       borderColor: '#6366f1',
       backgroundColor: 'rgba(99,102,241,0.08)',
       fill: true,
@@ -330,20 +354,27 @@ const yearlyDoughnutData = computed(() => {
 })
 
 const monthlySummaries = computed(() => yearlyData.value?.monthly_summary || [])
-const monthNames = Array.from({ length: 12 }, (_, i) => shortMonth(i + 1))
+
+
+const activeSummaries = computed(() => {
+  const activeSet = new Set(activeMonthIndices.value)
+  return monthlySummaries.value.filter((_, i) => activeSet.has(i))
+})
 
 const bestMonth = computed(() => {
-  if (!monthlySummaries.value.length) return null
-  let best = monthlySummaries.value[0]
-  for (const m of monthlySummaries.value) {
+  const ms = activeSummaries.value
+  if (!ms.length) return null
+  let best = ms[0]
+  for (const m of ms) {
     if ((m.total_budget - m.total_spent) > (best.total_budget - best.total_spent)) best = m
   }
   return best
 })
 const worstMonth = computed(() => {
-  if (!monthlySummaries.value.length) return null
-  let worst = monthlySummaries.value[0]
-  for (const m of monthlySummaries.value) {
+  const ms = activeSummaries.value
+  if (!ms.length) return null
+  let worst = ms[0]
+  for (const m of ms) {
     if ((m.total_budget - m.total_spent) < (worst.total_budget - worst.total_spent)) worst = m
   }
   return worst
@@ -604,7 +635,7 @@ function monthName(ms) {
             </div>
             <div class="p-3 rounded-lg bg-mushroom-50 dark:bg-mushroom-800 border border-mushroom-100 dark:border-mushroom-700">
               <div class="text-[10px] font-medium text-mushroom-500 dark:text-mushroom-400 uppercase tracking-wider mb-1">Average Monthly Spend</div>
-              <div class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50">{{ fmt(totalExpense / 12) }}</div>
+              <div class="text-sm font-medium text-mushroom-950 dark:text-mushroom-50">{{ fmt(activeSummaries.length ? totalExpense / activeSummaries.length : 0) }}</div>
             </div>
           </div>
         </div>
@@ -627,8 +658,8 @@ function monthName(ms) {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(ms, i) in monthlySummaries" :key="ms.month" class="border-b border-mushroom-50 hover:bg-mushroom-50 dark:hover:bg-mushroom-700 transition-colors">
-                <td class="px-4 py-2 font-medium text-mushroom-950 dark:text-mushroom-50">{{ monthNames[i] }}</td>
+              <tr v-for="ms in activeSummaries" :key="ms.month" class="border-b border-mushroom-50 hover:bg-mushroom-50 dark:hover:bg-mushroom-700 transition-colors">
+                <td class="px-4 py-2 font-medium text-mushroom-950 dark:text-mushroom-50">{{ monthName(ms.month) }}</td>
                 <td class="px-4 py-2 text-right text-mushroom-600 dark:text-mushroom-400">{{ fmt(ms.total_budget) }}</td>
                 <td class="px-4 py-2 text-right" :class="ms.total_spent > ms.total_budget ? 'text-tomato-600' : 'text-mushroom-600 dark:text-mushroom-400'">{{ fmt(ms.total_spent) }}</td>
                 <td class="px-4 py-2 text-right" :class="(ms.total_budget - ms.total_spent) >= 0 ? 'text-kangkong-600' : 'text-tomato-600'">{{ fmt(ms.total_budget - ms.total_spent) }}</td>
