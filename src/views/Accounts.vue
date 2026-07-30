@@ -60,8 +60,8 @@ const accountTypeColors = {
   savings: 'border-l-kangkong-500',
   checking: 'border-l-carrot-500',
   time_deposit: 'border-l-mango-500',
-  equity: 'border-l-purple-500',
-  investment: 'border-l-purple-500',
+  equity: 'border-l-ochre-600',
+  investment: 'border-l-ochre-600',
 }
 
 const groupedByType = computed(() => {

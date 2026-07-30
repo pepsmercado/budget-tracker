@@ -52,13 +52,16 @@
   --color-mango-400: #fbbf24;
   --color-mango-500: #e6a817;
 
-  --color-blueberry-50: #eff6ff;
-  --color-blueberry-100: #dbeafe;
-  --color-blueberry-200: #bfdbfe;
-  --color-blueberry-300: #93c5fd;
-  --color-blueberry-400: #60a5fa;
-  --color-blueberry-500: #3b82f6;
-  --color-blueberry-600: #2563eb;
+  --color-ochre-50: #f9f6e8;
+  --color-ochre-100: #f0e9c4;
+  --color-ochre-200: #e5d99e;
+  --color-ochre-300: #d6c875;
+  --color-ochre-400: #c1b14a;
+  --color-ochre-500: #8a7f35;
+  --color-ochre-600: #666034;
+  --color-ochre-700: #4d4826;
+  --color-ochre-800: #35311a;
+  --color-ochre-900: #1f1c0e;
 
   --color-purple-50: #faf5ff;
   --color-purple-100: #f3e8ff;
@@ -67,14 +70,6 @@
   --color-purple-400: #c084fc;
   --color-purple-500: #a855f7;
   --color-purple-600: #9333ea;
-
-  --color-wintermelon-50: #ecfeff;
-  --color-wintermelon-100: #cefbff;
-  --color-wintermelon-200: #a3f3fe;
-  --color-wintermelon-300: #64e9fc;
-  --color-wintermelon-400: #1ed5f2;
-  --color-wintermelon-500: #02afce;
-  --color-wintermelon-600: #0592b5;
 }
 
 * {
@@ -88,14 +83,19 @@
   --card: #ffffff;
   --card-foreground: #201a18;
   --primary: #c2652a;
-  --primary-foreground: #ffffff;
+  --on-primary: #ffffff;
+  --primary-container: #ffdbcb;
   --secondary: #ede0db;
   --secondary-foreground: #53443d;
+  --tertiary: #666034;
   --muted: #f5ece8;
   --muted-foreground: #7a6b62;
   --border: #d8c2b9;
+  --outline: #85736c;
+  --outline-variant: #d8c2b9;
   --input: #ede0db;
   --ring: #c2652a;
+  --surface-container: #ffffff;
 }
 
 .dark {
@@ -104,14 +104,19 @@
   --card: #1c1b1b;
   --card-foreground: #ede0db;
   --primary: #ffb690;
-  --primary-foreground: #201a18;
+  --on-primary: #542100;
+  --primary-container: #783200;
   --secondary: #2c2420;
   --secondary-foreground: #b8a69c;
-  --muted: #1c1b1b;
+  --tertiary: #d1c893;
+  --muted: #1a1a1a;
   --muted-foreground: #9a887e;
   --border: #393939;
-  --input: #393939;
+  --outline: #a08d85;
+  --outline-variant: #53443d;
+  --input: #1a1a1a;
   --ring: #ffb690;
+  --surface-container: #1c1b1b;
 
   /* Mushroom palette → warm brown-grey tones in dark mode */
   --color-mushroom-50: #ede0db;

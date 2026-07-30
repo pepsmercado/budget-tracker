@@ -18,7 +18,7 @@ const fabLink = computed(() => {
 
 <template>
   <AuthGate>
-    <div class="flex h-dvh bg-[#fdf8f7] dark:bg-[#121212]">
+    <div class="flex h-dvh bg-mushroom-50 dark:bg-mushroom-950">
       <!-- Mobile overlay -->
       <div
         v-if="sidebarOpen"
