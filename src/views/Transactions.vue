@@ -273,7 +273,7 @@ function exportCSV() {
           <span class="text-xs font-medium text-mushroom-700 dark:text-mushroom-400">{{ formatDate(date) }}</span>
         </div>
         <div v-for="t in txns" :key="t.id" class="flex items-center px-4 py-2.5 border-b border-mushroom-100 dark:border-mushroom-700/50 last:border-0">
-          <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-base" :class="t.transfer_pair_id ? 'bg-mushroom-100 dark:bg-mushroom-700' : t.type === 'income' ? 'bg-kangkong-50 dark:bg-kangkong-500/15' : 'bg-mushroom-100 dark:bg-mushroom-700'">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-base" :class="t.transfer_pair_id ? 'bg-mushroom-100 dark:bg-mushroom-700' : t.type === 'income' ? 'bg-kangkong-50 dark:bg-kangkong-500/15' : 'bg-tomato-50 dark:bg-tomato-500/15'">
             {{ t.transfer_pair_id ? '↗' : categoryIcons[t.category] || '📋' }}
           </div>
           <div class="flex-1 min-w-0 px-3">

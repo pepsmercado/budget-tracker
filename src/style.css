@@ -118,7 +118,7 @@
 }
 
 :root {
-  --background: #fcf8ff;
+  --background: #f3eefb;
   --foreground: #1b1b1f;
   --card: #ffffff;
   --card-foreground: #1b1b1f;
@@ -267,16 +267,25 @@ body {
   .card {
     background-color: var(--card);
     border-radius: 1rem;
+    border: 1px solid var(--border);
+  }
+  .dark .card {
+    border: 1px solid var(--border);
   }
 
   .card-elevated {
     background-color: var(--card);
     border-radius: 1rem;
+    border: 1px solid var(--border);
     box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08);
   }
   .dark .card-elevated {
     box-shadow: none;
     border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .card-sticky-cell {
+    background-color: var(--card);
   }
 }
 

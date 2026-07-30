@@ -317,7 +317,7 @@ function acceptAllSuggestions(rows) {
           </div>
           <div>
             <label class="label-text">CSV File</label>
-            <input type="file" accept=".csv,.pdf" @change="handleBankFileChange" class="input-field file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-tomato-50 dark:file:bg-tomato-500/10 file:text-tomato-700 dark:file:text-tomato-400 file:text-xs file:font-medium" />
+            <input type="file" accept=".csv,.pdf" @change="handleBankFileChange" class="input-field file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-indigo-50 dark:file:bg-indigo-500/10 file:text-indigo-700 dark:file:text-indigo-400 file:text-xs file:font-medium" />
           </div>
         </div>
 
@@ -415,7 +415,7 @@ function acceptAllSuggestions(rows) {
 
         <div>
           <label class="label-text">CSV File</label>
-          <input type="file" accept=".csv" @change="handleBulkFileChange" class="input-field file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-tomato-50 dark:file:bg-tomato-500/10 file:text-tomato-700 dark:file:text-tomato-400 file:text-xs file:font-medium" />
+          <input type="file" accept=".csv" @change="handleBulkFileChange" class="input-field file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-indigo-50 dark:file:bg-indigo-500/10 file:text-indigo-700 dark:file:text-indigo-400 file:text-xs file:font-medium" />
         </div>
 
         <div class="flex gap-2">

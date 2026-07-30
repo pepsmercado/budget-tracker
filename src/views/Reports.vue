@@ -578,7 +578,7 @@ function monthName(ms) {
           <div class="text-xl font-semibold text-tomato-700 dark:text-tomato-200">{{ fmt(totalExpense) }}</div>
         </div>
         <div class="card-elevated p-4 bg-purple-50 dark:bg-purple-500/10">
-          <div class="text-xs text-purple-600 dark:text-purple-300 mb-1">Net</div>
+          <div class="text-xs text-purple-600 dark:text-purple-300 mb-1">Savings</div>
           <div class="text-xl font-semibold" :class="totalNet >= 0 ? 'text-purple-700 dark:text-purple-200' : 'text-tomato-600'">{{ totalNet >= 0 ? '+' : '-' }}{{ fmt(totalNet) }}</div>
         </div>
         <div class="card-elevated p-4 bg-indigo-50 dark:bg-indigo-500/10">
