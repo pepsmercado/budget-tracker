@@ -83,6 +83,7 @@
   --card: #ffffff;
   --card-foreground: #201a18;
   --primary: #c2652a;
+  --primary-foreground: #ffffff;
   --on-primary: #ffffff;
   --primary-container: #ffdbcb;
   --secondary: #ede0db;
@@ -104,10 +105,11 @@
   --card: #1c1b1b;
   --card-foreground: #ede0db;
   --primary: #ffb690;
+  --primary-foreground: #542100;
   --on-primary: #542100;
   --primary-container: #783200;
   --secondary: #2c2420;
-  --secondary-foreground: #b8a69c;
+  --secondary-foreground: #ede0db;
   --tertiary: #d1c893;
   --muted: #1a1a1a;
   --muted-foreground: #9a887e;
@@ -289,6 +291,7 @@ body {
 }
 .sidebar-link-parent.active {
   background-color: var(--primary);
+  color: var(--on-primary);
 }
 
 /* Weekly quote banner */
