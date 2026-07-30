@@ -679,8 +679,8 @@ function formatConverted(val) {
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="card-elevated p-4 bg-indigo-50 dark:bg-indigo-500/10">
-        <div class="text-xs text-mushroom-500 dark:text-indigo-300 mb-1">Budget Status</div>
-        <div class="text-lg font-semibold text-mushroom-950 dark:text-indigo-200">
+        <div class="text-xs text-indigo-600 dark:text-indigo-300 mb-1">Budget Status</div>
+        <div class="text-lg font-semibold text-indigo-800 dark:text-indigo-200">
           {{ budgetProgress }}%
         </div>
         <div class="mt-2 h-2 bg-indigo-200 dark:bg-indigo-500/20 rounded-full overflow-hidden">
@@ -690,11 +690,11 @@ function formatConverted(val) {
             :style="{ width: Math.min(budgetProgress, 100) + '%' }"
           ></div>
         </div>
-        <div class="text-xs text-mushroom-500 dark:text-indigo-300 mt-1">
+        <div class="text-xs text-indigo-600 dark:text-indigo-300 mt-1">
           {{ currentMonthBudget ? `${formatCurrency(currentMonthExpense, curSym)} / ${formatCurrency(currentMonthBudget.total_budget, curSym)}` : 'No budget set' }}
         </div>
         <div v-if="currentMonthBudget" class="mt-1">
-          <span class="text-xs text-mushroom-500 dark:text-indigo-300 mr-1">Remaining:</span>
+          <span class="text-xs text-indigo-600 dark:text-indigo-300 mr-1">Remaining:</span>
           <span class="text-xs font-medium" :class="budgetRemaining >= 0 ? 'text-kangkong-600' : 'text-tomato-600'">
             {{ budgetRemaining < 0 ? '-' : '' }}{{ formatCurrency(Math.abs(budgetRemaining), curSym) }}
           </span>
@@ -702,21 +702,21 @@ function formatConverted(val) {
       </div>
 
       <div class="card-elevated p-4 bg-tomato-50 dark:bg-tomato-500/10">
-        <div class="text-xs text-mushroom-500 dark:text-tomato-300 mb-1">Expenses This Month</div>
-        <div class="text-lg font-semibold text-tomato-600 dark:text-tomato-400">
+        <div class="text-xs text-tomato-600 dark:text-tomato-300 mb-1">Expenses This Month</div>
+        <div class="text-lg font-semibold text-tomato-700 dark:text-tomato-400">
           {{ formatCurrency(currentMonthExpense, curSym) }}
         </div>
-        <div class="text-xs text-mushroom-500 dark:text-tomato-300 mt-1">
+        <div class="text-xs text-tomato-600 dark:text-tomato-300 mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
         </div>
       </div>
 
       <div class="card-elevated p-4 bg-kangkong-50 dark:bg-kangkong-500/10">
-        <div class="text-xs text-mushroom-500 dark:text-kangkong-300 mb-1">Income This Month</div>
-        <div class="text-lg font-semibold text-kangkong-600 dark:text-kangkong-400">
+        <div class="text-xs text-kangkong-600 dark:text-kangkong-300 mb-1">Income This Month</div>
+        <div class="text-lg font-semibold text-kangkong-700 dark:text-kangkong-400">
           {{ formatCurrency(currentMonthIncome, curSym) }}
         </div>
-        <div class="text-xs text-mushroom-500 dark:text-kangkong-300 mt-1">
+        <div class="text-xs text-kangkong-600 dark:text-kangkong-300 mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
         </div>
       </div>
