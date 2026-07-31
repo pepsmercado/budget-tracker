@@ -458,23 +458,23 @@ function monthName(ms) {
     <template v-else-if="mode === 'monthly' && monthlyData">
       <!-- Summary row -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div class="card-elevated p-4 bg-indigo-400 dark:bg-indigo-500/10">
-          <div class="text-xs font-semibold text-white dark:text-indigo-300 mb-1">Budget</div>
-          <div class="text-xl font-bold text-white dark:text-indigo-200">{{ fmt(totalBudget) }}</div>
+        <div class="card-elevated p-4" style="background-color: #4F5FF0;">
+          <div class="text-xs font-semibold mb-1" style="color: #DCE0FE;">Budget</div>
+          <div class="text-xl font-bold text-white">{{ fmt(totalBudget) }}</div>
           <div v-if="prevTotalBudget" class="text-[10px] font-semibold mt-1 text-white/70">
             {{ changeLabel(totalBudget, prevTotalBudget) }} vs last month
           </div>
         </div>
-        <div class="card-elevated p-4 bg-tomato-400 dark:bg-tomato-500/10">
-          <div class="text-xs font-semibold text-white dark:text-tomato-300 mb-1">Spent</div>
-          <div class="text-xl font-bold text-white dark:text-tomato-200">{{ fmt(totalSpent) }}</div>
+        <div class="card-elevated p-4" style="background-color: #F5487D;">
+          <div class="text-xs font-semibold mb-1" style="color: #FDD6E2;">Spent</div>
+          <div class="text-xl font-bold text-white">{{ fmt(totalSpent) }}</div>
           <div v-if="prevTotalSpent" class="text-[10px] font-semibold mt-1 text-white/70">
             {{ changeLabel(totalSpent, prevTotalSpent) }} vs last month
           </div>
         </div>
-        <div class="card-elevated p-4 bg-kangkong-400 dark:bg-kangkong-500/10">
-          <div class="text-xs font-semibold text-white dark:text-kangkong-300 mb-1">Remaining</div>
-          <div class="text-xl font-bold text-white dark:text-kangkong-200">{{ fmt(totalBudget - totalSpent) }}</div>
+        <div class="card-elevated p-4" style="background-color: #14B8A6;">
+          <div class="text-xs font-semibold mb-1" style="color: #D3F6F0;">Remaining</div>
+          <div class="text-xl font-bold text-white">{{ fmt(totalBudget - totalSpent) }}</div>
           <div class="text-[10px] font-semibold text-white/70 mt-1">
             {{ totalBudget > 0 ? ((totalSpent / totalBudget) * 100).toFixed(0) : 0 }}% of budget used
           </div>
