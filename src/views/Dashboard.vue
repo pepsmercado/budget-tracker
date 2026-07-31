@@ -682,55 +682,55 @@ function formatConverted(val) {
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="card-elevated p-4 bg-blue-400 dark:bg-indigo-500/10">
-        <div class="text-xs font-semibold text-white dark:text-indigo-300 mb-1">Budget Status</div>
-        <div class="text-lg font-bold text-white dark:text-indigo-200">
+      <div class="card-elevated p-4 bg-[#4F5FF0] dark:bg-[#4F5FF0]">
+        <div class="text-xs font-semibold text-[#DCE0FE] mb-1">Budget Status</div>
+        <div class="text-lg font-bold text-white">
           {{ budgetProgress }}%
         </div>
-        <div class="mt-2 h-2 bg-white/30 dark:bg-indigo-500/20 rounded-full overflow-hidden">
+        <div class="mt-2 h-2 bg-[#DCE0FE]/40 rounded-full overflow-hidden">
           <div
             class="h-full rounded-full transition-all duration-300"
             :class="budgetProgress > 100 ? 'bg-tomato-500' : budgetProgress > 80 ? 'bg-mango-500' : 'bg-kangkong-500'"
             :style="{ width: Math.min(budgetProgress, 100) + '%' }"
           ></div>
         </div>
-        <div class="text-xs font-semibold text-white/80 dark:text-indigo-300 mt-1">
+        <div class="text-xs font-semibold text-[#DCE0FE] mt-1">
           {{ currentMonthBudget ? `${formatCurrency(currentMonthExpense, curSym)} / ${formatCurrency(currentMonthBudget.total_budget, curSym)}` : 'No budget set' }}
         </div>
         <div v-if="currentMonthBudget" class="mt-1">
-          <span class="text-xs font-semibold text-white/70 dark:text-indigo-300 mr-1">Remaining:</span>
-          <span class="text-xs font-bold text-white dark:text-indigo-200">
+          <span class="text-xs font-semibold text-[#DCE0FE] mr-1">Remaining:</span>
+          <span class="text-xs font-bold text-white">
             {{ budgetRemaining < 0 ? '-' : '' }}{{ formatCurrency(Math.abs(budgetRemaining), curSym) }}
           </span>
         </div>
       </div>
 
-      <div class="card-elevated p-4 bg-tomato-400 dark:bg-tomato-500/10">
-        <div class="text-xs font-semibold text-white dark:text-tomato-300 mb-1">Expenses This Month</div>
-        <div class="text-lg font-bold text-white dark:text-tomato-400">
+      <div class="card-elevated p-4 bg-[#F5487D] dark:bg-[#F5487D]">
+        <div class="text-xs font-semibold text-[#FDD6E2] mb-1">Expenses This Month</div>
+        <div class="text-lg font-bold text-white">
           {{ formatCurrency(currentMonthExpense, curSym) }}
         </div>
-        <div class="text-xs font-semibold text-white/70 dark:text-tomato-300 mt-1">
+        <div class="text-xs font-semibold text-[#FDD6E2] mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
         </div>
       </div>
 
-      <div class="card-elevated p-4 bg-kangkong-400 dark:bg-kangkong-500/10">
-        <div class="text-xs font-semibold text-white dark:text-kangkong-300 mb-1">Income This Month</div>
-        <div class="text-lg font-bold text-white dark:text-kangkong-400">
+      <div class="card-elevated p-4 bg-[#14B8A6] dark:bg-[#14B8A6]">
+        <div class="text-xs font-semibold text-[#D3F6F0] mb-1">Income This Month</div>
+        <div class="text-lg font-bold text-white">
           {{ formatCurrency(currentMonthIncome, curSym) }}
         </div>
-        <div class="text-xs font-semibold text-white/70 dark:text-kangkong-300 mt-1">
+        <div class="text-xs font-semibold text-[#D3F6F0] mt-1">
           {{ new Date().toLocaleString('en-US', { month: 'long' }) }} {{ currentYear }}
         </div>
       </div>
 
-      <div class="card-elevated p-4 bg-purple-400 dark:bg-purple-500/10">
-        <div class="text-xs font-semibold text-white dark:text-purple-300 mb-1">Savings This Month</div>
-        <div class="text-lg font-bold text-white dark:text-purple-200">
+      <div class="card-elevated p-4 bg-[#8B5CF6] dark:bg-[#8B5CF6]">
+        <div class="text-xs font-semibold text-[#E9DFFD] mb-1">Savings This Month</div>
+        <div class="text-lg font-bold text-white">
           {{ savings >= 0 ? '+' : '-' }}{{ formatCurrency(Math.abs(savings), curSym) }}
         </div>
-        <div class="text-xs font-semibold text-white/70 dark:text-purple-300 mt-1">
+        <div class="text-xs font-semibold text-[#E9DFFD] mt-1">
           {{ savings >= 0 ? 'Positive cash flow' : 'Negative cash flow' }}
         </div>
       </div>
