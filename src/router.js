@@ -9,6 +9,7 @@ const Upload = () => import('./views/Upload.vue')
 const Recurring = () => import('./views/Recurring.vue')
 const Transfers = () => import('./views/Transfers.vue')
 const Reports = () => import('./views/Reports.vue')
+const SavingsPlanner = () => import('./views/SavingsPlanner.vue')
 
 const currencyRoutes = (currency) => [
   { path: `/${currency}`, name: `${currency}-Dashboard`, component: Dashboard, props: { currency } },
@@ -21,6 +22,7 @@ const currencyRoutes = (currency) => [
   { path: `/${currency}/recurring`, name: `${currency}-Recurring`, component: Recurring, props: { currency } },
   { path: `/${currency}/transfers`, name: `${currency}-Transfers`, component: Transfers, props: { currency } },
   { path: `/${currency}/reports`, name: `${currency}-Reports`, component: Reports, props: { currency } },
+  { path: `/${currency}/savings-planner`, name: `${currency}-SavingsPlanner`, component: SavingsPlanner, props: { currency } },
 ]
 
 const routes = [

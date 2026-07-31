@@ -17,6 +17,10 @@ def backend():
     b.recurring_rules = {}
     b.transfers = {}
     b.monthly_budgets = {}
+    b.planners = {}
+    b.savings_reserves = {}
+    b.savings_goals = {}
+    b.savings_activity = {}
     b._balance_cache = {}
     b._seed()
     with patch.object(b, "_save"):
@@ -28,7 +32,22 @@ def client(backend):
     from fastapi.testclient import TestClient
     import app_state
     import main
+    from routers import (
+        accounts, transactions, categories, budgets, summary, upload,
+        recurring, transfers, reports, monthly_budgets, savings_planner,
+    )
 
-    with patch.object(app_state, "backend", backend):
+    # Routers bind `backend` at import time (`from app_state import backend`),
+    # so patching app_state alone is not enough. Patch every module attribute.
+    modules = [app_state, accounts, transactions, categories, budgets,
+               summary, upload, recurring, transfers, reports,
+               monthly_budgets, savings_planner]
+    patches = [patch.object(m, "backend", backend) for m in modules]
+    for p in patches:
+        p.start()
+    try:
         with TestClient(main.app) as c:
             yield c
+    finally:
+        for p in reversed(patches):
+            p.stop()

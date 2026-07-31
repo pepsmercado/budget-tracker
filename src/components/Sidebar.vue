@@ -75,6 +75,7 @@ function menuFor(currency) {
       icon: 'budgets',
       children: [
         { to: `${prefix}/budgets`, label: 'Budgets', icon: 'budgets' },
+        { to: `${prefix}/savings-planner`, label: 'Savings Planner', icon: 'savings' },
         { to: `${prefix}/accounts`, label: 'Accounts', icon: 'accounts' },
         { to: `${prefix}/recurring`, label: 'Recurring', icon: 'recurring' },
       ]

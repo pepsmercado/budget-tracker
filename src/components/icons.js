@@ -8,4 +8,5 @@ export const icons = {
   recurring: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/><polyline points="21 3 21 9 15 9"/></svg>`,
   transfers: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>`,
   reports: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>`,
+  savings: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5c-1.5 0-2.8 1-3.4 2.5A6 6 0 0111 13H7a3 3 0 010-6h1.2A6 6 0 0112 3c1.5 0 2.8.7 3.6 1.8.9-.5 1.9-.8 3.4-.8z"/><path d="M7 13v4"/><path d="M7 17H4"/><path d="M17 8h.01"/></svg>`,
 }

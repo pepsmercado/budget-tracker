@@ -240,3 +240,89 @@ class TransferCreate(BaseModel):
     fee: float = 0.0
     date: str
     note: str = ""
+
+
+class SavingsPlanner(BaseModel):
+    id: str
+    currency: str
+    linked_account_id: str = ""
+    created_at: datetime = Field(default_factory=datetime.now)
+
+
+class SavingsPlannerLink(BaseModel):
+    account_id: str
+
+
+class SavingsReserve(BaseModel):
+    id: str
+    planner_id: str
+    name: str
+    icon: str = "🏦"
+    allocated: float = 0.0
+    floor: Optional[float] = None  # None = no floor (sinking fund)
+    position: int = 0
+    created_at: datetime = Field(default_factory=datetime.now)
+
+
+class SavingsReserveCreate(BaseModel):
+    name: str
+    icon: str = "🏦"
+    allocated: float = 0.0
+    floor: Optional[float] = None
+
+
+class SavingsReserveUpdate(BaseModel):
+    name: Optional[str] = None
+    icon: Optional[str] = None
+    allocated: Optional[float] = None
+    floor: Optional[float] = None
+
+
+class SavingsGoal(BaseModel):
+    id: str
+    planner_id: str
+    name: str
+    icon: str = "🎯"
+    target: float
+    allocated: float = 0.0
+    position: int = 0
+    created_at: datetime = Field(default_factory=datetime.now)
+
+
+class SavingsGoalCreate(BaseModel):
+    name: str
+    icon: str = "🎯"
+    target: float = Field(gt=0)
+    allocated: float = 0.0
+
+
+class SavingsGoalUpdate(BaseModel):
+    name: Optional[str] = None
+    icon: Optional[str] = None
+    target: Optional[float] = None
+    allocated: Optional[float] = None
+    position: Optional[int] = None
+
+
+class SavingsMove(BaseModel):
+    from_bucket: str  # "unallocated" or bucket id
+    to_bucket: str  # "unallocated" or bucket id
+    amount: float = Field(gt=0)
+
+
+class SavingsAllocateItem(BaseModel):
+    to_bucket: str
+    amount: float = Field(gt=0)
+
+
+class SavingsAllocate(BaseModel):
+    allocations: list[SavingsAllocateItem]
+
+
+class SavingsActivity(BaseModel):
+    id: str
+    planner_id: str
+    type: str
+    amount: float = 0.0
+    description: str = ""
+    created_at: datetime = Field(default_factory=datetime.now)

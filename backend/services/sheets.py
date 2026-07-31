@@ -17,7 +17,11 @@ from models import (
     BudgetSummary, CategoryBudgetSummary,
     RecurringRule, RecurringRuleCreate, RecurringRunResult,
     Transfer, TransferCreate,
+    SavingsPlanner, SavingsReserve, SavingsGoal, SavingsActivity,
+    SavingsReserveCreate, SavingsReserveUpdate, SavingsGoalCreate,
+    SavingsGoalUpdate, SavingsMove, SavingsAllocate,
 )
+from services.savings_planner import reconcile, replenish_floor, move_money, unallocated, completed_goals
 
 
 SCOPES = [
@@ -40,6 +44,13 @@ SHEET_TABS = {
     "transfers": ["id", "from_account_id", "to_account_id", "amount",
                   "currency", "fee", "date", "note", "created_at"],
     "monthly_budgets": ["month", "category", "budget", "currency"],
+    "savings_planner": ["id", "currency", "linked_account_id", "created_at"],
+    "savings_reserves": ["id", "planner_id", "name", "icon", "allocated",
+                         "floor", "position", "created_at"],
+    "savings_goals": ["id", "planner_id", "name", "icon", "target", "allocated",
+                      "position", "created_at"],
+    "savings_activity": ["id", "planner_id", "type", "amount", "description",
+                         "created_at"],
 }
 
 
@@ -367,6 +378,7 @@ class SheetsBackend(BackendService):
             "created_at": str(t.created_at),
         }
         self._append_row("transactions", row)
+        self._reconcile_planner_for_account(t.account_id)
         return t
 
     def update_transaction(self, transaction_id: str, data: TransactionCreate) -> Transaction:
@@ -375,6 +387,7 @@ class SheetsBackend(BackendService):
             raise KeyError("Transaction not found")
         rows = self._read_all("transactions")
         old = rows[idx]
+        old_account = str(old.get("account_id", ""))
         t = Transaction(id=transaction_id, **data.model_dump(),
                         created_at=_parse_datetime(old.get("created_at")))
         row = {
@@ -386,13 +399,18 @@ class SheetsBackend(BackendService):
             "created_at": str(t.created_at),
         }
         self._write_row("transactions", idx + 2, row)
+        for account_id in {old_account, t.account_id}:
+            self._reconcile_planner_for_account(account_id)
         return t
 
     def delete_transaction(self, transaction_id: str) -> None:
         idx = self._find_row_index("transactions", transaction_id)
         if idx is None:
             raise KeyError("Transaction not found")
+        rows = self._read_all("transactions")
+        account_id = str(rows[idx].get("account_id", ""))
         self._delete_row("transactions", idx)
+        self._reconcile_planner_for_account(account_id)
 
     # ===================== CATEGORIES =====================
 
@@ -919,3 +937,444 @@ class SheetsBackend(BackendService):
         self._delete_row("transfers", idx)
         for txn_idx in sorted(txn_indices, reverse=True):
             self._delete_row("transactions", txn_idx)
+        self._reconcile_planner_for_account(from_account)
+        self._reconcile_planner_for_account(to_account)
+
+    # ===================== SAVINGS PLANNER =====================
+
+    def _row_to_savings_planner(self, row: dict) -> SavingsPlanner:
+        return SavingsPlanner(
+            id=str(row.get("id", "")),
+            currency=str(row.get("currency", "")),
+            linked_account_id=str(row.get("linked_account_id", "")),
+            created_at=_parse_datetime(row.get("created_at")),
+        )
+
+    def _planner_to_row(self, p: SavingsPlanner) -> dict:
+        return {"id": p.id, "currency": p.currency,
+                "linked_account_id": p.linked_account_id,
+                "created_at": str(p.created_at)}
+
+    def _row_to_savings_reserve(self, row: dict) -> SavingsReserve:
+        floor_raw = row.get("floor")
+        return SavingsReserve(
+            id=str(row.get("id", "")),
+            planner_id=str(row.get("planner_id", "")),
+            name=str(row.get("name", "")),
+            icon=str(row.get("icon", "")),
+            allocated=_parse_float(row.get("allocated")),
+            floor=None if floor_raw in (None, "") else _parse_float(floor_raw),
+            position=_parse_int(row.get("position"), 0),
+            created_at=_parse_datetime(row.get("created_at")),
+        )
+
+    def _reserve_to_row(self, r: SavingsReserve) -> dict:
+        return {
+            "id": r.id, "planner_id": r.planner_id, "name": r.name,
+            "icon": r.icon, "allocated": r.allocated,
+            "floor": "" if r.floor is None else r.floor,
+            "position": r.position, "created_at": str(r.created_at),
+        }
+
+    def _row_to_savings_goal(self, row: dict) -> SavingsGoal:
+        return SavingsGoal(
+            id=str(row.get("id", "")),
+            planner_id=str(row.get("planner_id", "")),
+            name=str(row.get("name", "")),
+            icon=str(row.get("icon", "")),
+            target=_parse_float(row.get("target")),
+            allocated=_parse_float(row.get("allocated")),
+            position=_parse_int(row.get("position"), 0),
+            created_at=_parse_datetime(row.get("created_at")),
+        )
+
+    def _goal_to_row(self, g: SavingsGoal) -> dict:
+        return {
+            "id": g.id, "planner_id": g.planner_id, "name": g.name,
+            "icon": g.icon, "target": g.target, "allocated": g.allocated,
+            "position": g.position, "created_at": str(g.created_at),
+        }
+
+    def _row_to_savings_activity(self, row: dict) -> SavingsActivity:
+        return SavingsActivity(
+            id=str(row.get("id", "")),
+            planner_id=str(row.get("planner_id", "")),
+            type=str(row.get("type", "")),
+            amount=_parse_float(row.get("amount")),
+            description=str(row.get("description", "")),
+            created_at=_parse_datetime(row.get("created_at")),
+        )
+
+    def _activity_to_row(self, a: SavingsActivity) -> dict:
+        return {
+            "id": a.id, "planner_id": a.planner_id, "type": a.type,
+            "amount": a.amount, "description": a.description,
+            "created_at": str(a.created_at),
+        }
+
+    def _get_planner(self, currency: str) -> SavingsPlanner | None:
+        for row in self._read_all("savings_planner"):
+            p = self._row_to_savings_planner(row)
+            if p.currency == currency:
+                return p
+        return None
+
+    def _get_reserves(self, planner_id: str) -> list[SavingsReserve]:
+        result = [self._row_to_savings_reserve(r) for r in self._read_all("savings_reserves")
+                  if str(r.get("planner_id", "")) == planner_id]
+        return sorted(result, key=lambda r: r.position)
+
+    def _get_goals(self, planner_id: str) -> list[SavingsGoal]:
+        result = [self._row_to_savings_goal(g) for g in self._read_all("savings_goals")
+                  if str(g.get("planner_id", "")) == planner_id]
+        return sorted(result, key=lambda g: g.position)
+
+    def _get_activity(self, planner_id: str, limit: int = 50) -> list[SavingsActivity]:
+        result = [self._row_to_savings_activity(a) for a in self._read_all("savings_activity")
+                  if str(a.get("planner_id", "")) == planner_id]
+        result.sort(key=lambda a: a.created_at, reverse=True)
+        return result[:limit]
+
+    def _log_activity(self, planner_id: str, events: list[dict]):
+        for ev in events:
+            a = SavingsActivity(
+                id=_uid(), planner_id=planner_id,
+                type=ev.get("type", "Planner Recalculated"),
+                amount=round(float(ev.get("amount", 0)), 2),
+                description=ev.get("description", ""),
+            )
+            self._append_row("savings_activity", self._activity_to_row(a))
+
+    def _account_balance(self, account_id: str) -> float:
+        acc = next((a for a in self.get_accounts() if a.id == account_id), None)
+        if acc is None:
+            return 0.0
+        bal = acc.initial_balance
+        for t in self.get_transactions():
+            if t.account_id == account_id:
+                if t.type == "income":
+                    bal += t.amount
+                elif t.type == "expense":
+                    bal -= t.amount
+        return round(bal, 2)
+
+    def _persist_buckets(self, reserves: list[SavingsReserve], goals: list[SavingsGoal]):
+        for r in reserves:
+            idx = self._find_row_index("savings_reserves", r.id)
+            if idx is not None:
+                self._write_row("savings_reserves", idx + 2, self._reserve_to_row(r))
+        for g in goals:
+            idx = self._find_row_index("savings_goals", g.id)
+            if idx is not None:
+                self._write_row("savings_goals", idx + 2, self._goal_to_row(g))
+
+    def _reconcile_planner(self, planner: SavingsPlanner):
+        reserves = self._get_reserves(planner.id)
+        goals = self._get_goals(planner.id)
+        balance = self._account_balance(planner.linked_account_id)
+        reserves, goals, events, _ = reconcile(balance, reserves, goals)
+        conv_events = self._convert_completed_goals(planner, reserves, goals)
+        events = events + conv_events
+        if events:
+            self._log_activity(planner.id, events)
+            self._persist_buckets(reserves, goals)
+
+    def _convert_completed_goals(self, planner: SavingsPlanner, reserves: list, goals: list) -> list:
+        """Auto-convert fully-funded goals into floor-less reserves."""
+        events = []
+        for g in completed_goals(goals):
+            position = max((r.position for r in reserves), default=-1) + 1
+            r = SavingsReserve(
+                id=_uid(), planner_id=planner.id, name=g.name, icon=g.icon,
+                allocated=g.allocated, floor=None, position=position,
+            )
+            self._append_row("savings_reserves", self._reserve_to_row(r))
+            idx = self._find_row_index("savings_goals", g.id)
+            if idx is not None:
+                self._delete_row("savings_goals", idx)
+            events.append({
+                "type": "Goal Converted",
+                "amount": r.allocated,
+                "description": f"Goal '{r.name}' completed and moved to Reserves",
+            })
+        return events
+
+    def _reconcile_planner_for_account(self, account_id: str):
+        for row in self._read_all("savings_planner"):
+            p = self._row_to_savings_planner(row)
+            if p.linked_account_id == account_id:
+                self._reconcile_planner(p)
+
+    def _savings_planner_state(self, currency: str, limit: int = 50) -> dict:
+        planner = self._get_planner(currency)
+        if planner is None:
+            return {
+                "planner": None, "linked_account": None, "balance": 0.0,
+                "unallocated": 0.0, "reserves": [], "goals": [],
+                "activity": [], "underfunded": False,
+                "savings_accounts": [a for a in self.get_accounts() if a.type == "savings"],
+            }
+        balance = self._account_balance(planner.linked_account_id)
+        reserves = self._get_reserves(planner.id)
+        goals = self._get_goals(planner.id)
+        linked_account = next((a for a in self.get_accounts()
+                               if a.id == planner.linked_account_id), None)
+        return {
+            "planner": planner,
+            "linked_account": linked_account,
+            "balance": balance,
+            "unallocated": unallocated(balance, reserves, goals),
+            "reserves": reserves,
+            "goals": goals,
+            "activity": self._get_activity(planner.id, limit),
+            "underfunded": unallocated(balance, reserves, goals) < 0,
+            "savings_accounts": [a for a in self.get_accounts() if a.type == "savings"],
+        }
+
+    def get_savings_planner(self, currency: str, limit: int = 50) -> dict:
+        return self._savings_planner_state(currency, limit)
+
+    def link_savings_planner(self, currency: str, account_id: str) -> dict:
+        acc = next((a for a in self.get_accounts() if a.id == account_id), None)
+        if acc is None:
+            raise KeyError("Account not found")
+        if acc.type != "savings":
+            raise ValueError("Only savings accounts can be linked to the planner")
+        if acc.currency != currency:
+            raise ValueError("Account currency does not match planner currency")
+        planner = self._get_planner(currency)
+        if planner is None:
+            planner = SavingsPlanner(id=_uid(), currency=currency)
+            self._append_row("savings_planner", self._planner_to_row(planner))
+        changed = planner.linked_account_id != account_id
+        planner.linked_account_id = account_id
+        idx = self._find_row_index("savings_planner", planner.id)
+        if idx is not None:
+            self._write_row("savings_planner", idx + 2, self._planner_to_row(planner))
+        if changed:
+            self._log_activity(planner.id, [{
+                "type": "Planner Recalculated",
+                "amount": 0,
+                "description": f"Linked to savings account '{acc.name}'",
+            }])
+        self._reconcile_planner(planner)
+        return self._savings_planner_state(currency)
+
+    def create_savings_reserve(self, currency: str, data: SavingsReserveCreate) -> dict:
+        planner = self._get_planner(currency)
+        if planner is None:
+            raise ValueError("Planner not linked")
+        reserves = self._get_reserves(planner.id)
+        goals = self._get_goals(planner.id)
+        balance = self._account_balance(planner.linked_account_id)
+        avail = unallocated(balance, reserves, goals)
+        if data.allocated > avail + 0.005:
+            raise ValueError(f"Insufficient Unallocated balance. Available: {avail:,.2f}")
+        position = max((r.position for r in reserves), default=-1) + 1
+        r = SavingsReserve(
+            id=_uid(), planner_id=planner.id, name=data.name, icon=data.icon,
+            allocated=max(0.0, data.allocated), floor=data.floor, position=position,
+        )
+        self._append_row("savings_reserves", self._reserve_to_row(r))
+        self._log_activity(planner.id, [{
+            "type": "Moved Funds" if r.allocated > 0 else "Planner Recalculated",
+            "amount": r.allocated,
+            "description": f"Reserve '{r.name}' created" + (f" with {r.allocated:,.2f} allocated" if r.allocated > 0 else ""),
+        }])
+        return self._savings_planner_state(currency)
+
+    def update_savings_reserve(self, currency: str, reserve_id: str, data: SavingsReserveUpdate) -> dict:
+        planner = self._get_planner(currency)
+        if planner is None:
+            raise ValueError("Planner not linked")
+        rows = self._read_all("savings_reserves")
+        idx = self._find_row_index("savings_reserves", reserve_id)
+        if idx is None or str(rows[idx].get("planner_id", "")) != planner.id:
+            raise KeyError("Reserve not found")
+        r = self._row_to_savings_reserve(rows[idx])
+        reserves = self._get_reserves(planner.id)
+        goals = self._get_goals(planner.id)
+        balance = self._account_balance(planner.linked_account_id)
+        fields = data.model_fields_set
+        if "name" in fields:
+            r.name = data.name
+        if "icon" in fields:
+            r.icon = data.icon
+        if "allocated" in fields and data.allocated is not None:
+            avail = unallocated(balance, reserves, goals) + r.allocated
+            if data.allocated > avail + 0.005:
+                raise ValueError(f"Insufficient Unallocated balance. Available: {avail:,.2f}")
+            r.allocated = max(0.0, data.allocated)
+        old_floor = r.floor
+        if "floor" in fields:
+            r.floor = data.floor
+            if data.floor is not None and (old_floor is None or data.floor > old_floor):
+                reserves, goals, events = replenish_floor(r, reserves, goals, balance)
+                self._log_activity(planner.id, events)
+                self._persist_buckets(reserves, goals)
+        self._write_row("savings_reserves", idx + 2, self._reserve_to_row(r))
+        return self._savings_planner_state(currency)
+
+    def delete_savings_reserve(self, currency: str, reserve_id: str) -> dict:
+        planner = self._get_planner(currency)
+        if planner is None:
+            raise ValueError("Planner not linked")
+        rows = self._read_all("savings_reserves")
+        idx = self._find_row_index("savings_reserves", reserve_id)
+        if idx is None or str(rows[idx].get("planner_id", "")) != planner.id:
+            raise KeyError("Reserve not found")
+        r = self._row_to_savings_reserve(rows[idx])
+        released = r.allocated
+        self._delete_row("savings_reserves", idx)
+        self._log_activity(planner.id, [{
+            "type": "Reserve Deleted",
+            "amount": released,
+            "description": f"Reserve '{r.name}' deleted; {released:,.2f} released to Unallocated",
+        }])
+        return self._savings_planner_state(currency)
+
+    def create_savings_goal(self, currency: str, data: SavingsGoalCreate) -> dict:
+        planner = self._get_planner(currency)
+        if planner is None:
+            raise ValueError("Planner not linked")
+        reserves = self._get_reserves(planner.id)
+        goals = self._get_goals(planner.id)
+        balance = self._account_balance(planner.linked_account_id)
+        avail = unallocated(balance, reserves, goals)
+        if data.allocated > avail + 0.005:
+            raise ValueError(f"Insufficient Unallocated balance. Available: {avail:,.2f}")
+        position = max((g.position for g in goals), default=-1) + 1
+        g = SavingsGoal(
+            id=_uid(), planner_id=planner.id, name=data.name, icon=data.icon,
+            target=data.target, allocated=max(0.0, data.allocated), position=position,
+        )
+        self._append_row("savings_goals", self._goal_to_row(g))
+        self._log_activity(planner.id, [{
+            "type": "Moved Funds" if g.allocated > 0 else "Planner Recalculated",
+            "amount": g.allocated,
+            "description": f"Goal '{g.name}' created" + (f" with {g.allocated:,.2f} allocated" if g.allocated > 0 else ""),
+        }])
+        return self._savings_planner_state(currency)
+
+    def update_savings_goal(self, currency: str, goal_id: str, data: SavingsGoalUpdate) -> dict:
+        planner = self._get_planner(currency)
+        if planner is None:
+            raise ValueError("Planner not linked")
+        rows = self._read_all("savings_goals")
+        idx = self._find_row_index("savings_goals", goal_id)
+        if idx is None or str(rows[idx].get("planner_id", "")) != planner.id:
+            raise KeyError("Goal not found")
+        g = self._row_to_savings_goal(rows[idx])
+        reserves = self._get_reserves(planner.id)
+        goals = self._get_goals(planner.id)
+        balance = self._account_balance(planner.linked_account_id)
+        fields = data.model_fields_set
+        if "name" in fields:
+            g.name = data.name
+        if "icon" in fields:
+            g.icon = data.icon
+        if "position" in fields:
+            g.position = data.position
+        if "target" in fields and data.target is not None:
+            g.target = data.target
+            if g.allocated > g.target:
+                excess = round(g.allocated - g.target, 2)
+                g.allocated = g.target
+                self._log_activity(planner.id, [{
+                    "type": "Planner Recalculated",
+                    "amount": excess,
+                    "description": f"Goal '{g.name}' target reduced; {excess:,.2f} released to Unallocated",
+                }])
+        if "allocated" in fields and data.allocated is not None:
+            avail = unallocated(balance, reserves, goals) + g.allocated
+            if data.allocated > avail + 0.005:
+                raise ValueError(f"Insufficient Unallocated balance. Available: {avail:,.2f}")
+            g.allocated = max(0.0, data.allocated)
+            if g.allocated > g.target:
+                excess = round(g.allocated - g.target, 2)
+                g.allocated = g.target
+                self._log_activity(planner.id, [{
+                    "type": "Planner Recalculated",
+                    "amount": excess,
+                    "description": f"Goal '{g.name}' overfunded; {excess:,.2f} spilled to Unallocated",
+                }])
+        self._write_row("savings_goals", idx + 2, self._goal_to_row(g))
+        return self._savings_planner_state(currency)
+
+    def delete_savings_goal(self, currency: str, goal_id: str) -> dict:
+        planner = self._get_planner(currency)
+        if planner is None:
+            raise ValueError("Planner not linked")
+        rows = self._read_all("savings_goals")
+        idx = self._find_row_index("savings_goals", goal_id)
+        if idx is None or str(rows[idx].get("planner_id", "")) != planner.id:
+            raise KeyError("Goal not found")
+        g = self._row_to_savings_goal(rows[idx])
+        released = g.allocated
+        self._delete_row("savings_goals", idx)
+        self._log_activity(planner.id, [{
+            "type": "Goal Deleted",
+            "amount": released,
+            "description": f"Goal '{g.name}' deleted; {released:,.2f} released to Unallocated",
+        }])
+        return self._savings_planner_state(currency)
+
+    def move_savings_money(self, currency: str, data: SavingsMove) -> dict:
+        planner = self._get_planner(currency)
+        if planner is None:
+            raise ValueError("Planner not linked")
+        reserves = self._get_reserves(planner.id)
+        goals = self._get_goals(planner.id)
+        balance = self._account_balance(planner.linked_account_id)
+        reserves, goals, events, error = move_money(
+            balance, reserves, goals, data.from_bucket, data.to_bucket, data.amount)
+        if error:
+            raise ValueError(error)
+        self._log_activity(planner.id, events)
+        self._reconcile_planner(planner)
+        return self._savings_planner_state(currency)
+
+    def allocate_savings_money(self, currency: str, data: SavingsAllocate) -> dict:
+        planner = self._get_planner(currency)
+        if planner is None:
+            raise ValueError("Planner not linked")
+        reserves = self._get_reserves(planner.id)
+        goals = self._get_goals(planner.id)
+        balance = self._account_balance(planner.linked_account_id)
+        total = round(sum(item.amount for item in data.allocations), 2)
+        if round(unallocated(balance, reserves, goals), 2) < total:
+            raise ValueError("Total allocation exceeds Unallocated balance")
+        events = []
+        for item in data.allocations:
+            reserves, goals, ev, error = move_money(
+                balance, reserves, goals, "unallocated", item.to_bucket, item.amount)
+            if error:
+                raise ValueError(error)
+            events.extend(ev)
+        self._log_activity(planner.id, events)
+        self._reconcile_planner(planner)
+        return self._savings_planner_state(currency)
+
+    def convert_savings_goal(self, currency: str, goal_id: str) -> dict:
+        planner = self._get_planner(currency)
+        if planner is None:
+            raise ValueError("Planner not linked")
+        rows = self._read_all("savings_goals")
+        idx = self._find_row_index("savings_goals", goal_id)
+        if idx is None or str(rows[idx].get("planner_id", "")) != planner.id:
+            raise KeyError("Goal not found")
+        g = self._row_to_savings_goal(rows[idx])
+        reserves = self._get_reserves(planner.id)
+        position = max((r.position for r in reserves), default=-1) + 1
+        r = SavingsReserve(
+            id=_uid(), planner_id=planner.id, name=g.name, icon=g.icon,
+            allocated=g.allocated, floor=None, position=position,
+        )
+        self._append_row("savings_reserves", self._reserve_to_row(r))
+        self._delete_row("savings_goals", idx)
+        self._log_activity(planner.id, [{
+            "type": "Goal Converted",
+            "amount": r.allocated,
+            "description": f"Goal '{r.name}' converted to a Reserve",
+        }])
+        return self._savings_planner_state(currency)

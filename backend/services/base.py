@@ -141,3 +141,49 @@ class BackendService(ABC):
     @abstractmethod
     def bulk_update_category_budgets(self, updates: dict[str, float]) -> list[Category]:
         pass
+
+    # ===================== SAVINGS PLANNER =====================
+
+    @abstractmethod
+    def get_savings_planner(self, currency: str, limit: int = 50) -> dict:
+        pass
+
+    @abstractmethod
+    def link_savings_planner(self, currency: str, account_id: str) -> dict:
+        pass
+
+    @abstractmethod
+    def create_savings_reserve(self, currency: str, data) -> dict:
+        pass
+
+    @abstractmethod
+    def update_savings_reserve(self, currency: str, reserve_id: str, data) -> dict:
+        pass
+
+    @abstractmethod
+    def delete_savings_reserve(self, currency: str, reserve_id: str) -> dict:
+        pass
+
+    @abstractmethod
+    def create_savings_goal(self, currency: str, data) -> dict:
+        pass
+
+    @abstractmethod
+    def update_savings_goal(self, currency: str, goal_id: str, data) -> dict:
+        pass
+
+    @abstractmethod
+    def delete_savings_goal(self, currency: str, goal_id: str) -> dict:
+        pass
+
+    @abstractmethod
+    def move_savings_money(self, currency: str, data) -> dict:
+        pass
+
+    @abstractmethod
+    def allocate_savings_money(self, currency: str, data) -> dict:
+        pass
+
+    @abstractmethod
+    def convert_savings_goal(self, currency: str, goal_id: str) -> dict:
+        pass
