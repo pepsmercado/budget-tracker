@@ -139,7 +139,7 @@
   --surface-container: #f5f2fe;
 
   /* Sidebar */
-  --sidebar-bg: #4338ca;
+  --sidebar-bg: #1e1035;
   --sidebar-text: #ffffff;
   --sidebar-text-secondary: rgba(255, 255, 255, 0.65);
   --sidebar-hover: rgba(255, 255, 255, 0.1);
@@ -173,7 +173,7 @@
   --surface-container: #1c1b1b;
 
   /* Sidebar */
-  --sidebar-bg: #4338ca;
+  --sidebar-bg: #1e1035;
   --sidebar-text: #e5e2e1;
   --sidebar-text-secondary: #c7c5d0;
   --sidebar-hover: rgba(255, 255, 255, 0.06);
