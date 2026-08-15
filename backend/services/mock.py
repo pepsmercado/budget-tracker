@@ -403,7 +403,7 @@ class MockBackend(BackendService):
         exp_cats = [c for c in self.categories.values() if c.type == "expense"]
         cat_spent = {c.name: 0.0 for c in exp_cats}
         for t in self.transactions.values():
-            if t.type == "expense" and start <= t.date < end:
+            if t.type == "expense" and start <= t.date < end and not t.transfer_pair_id:
                 if currency_account_ids is not None and t.account_id not in currency_account_ids:
                     continue
                 cat_spent[t.category] = cat_spent.get(t.category, 0) + t.amount

@@ -496,7 +496,7 @@ class SheetsBackend(BackendService):
         cat_spent = {c.name: 0.0 for c in exp_cats}
 
         for t in self.get_transactions():
-            if t.type == "expense" and start <= t.date < end:
+            if t.type == "expense" and start <= t.date < end and not t.transfer_pair_id:
                 if currency_account_ids is not None and t.account_id not in currency_account_ids:
                     continue
                 cat_spent[t.category] = cat_spent.get(t.category, 0) + t.amount

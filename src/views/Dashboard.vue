@@ -180,8 +180,8 @@ async function fetchCurrentMonthSummary() {
   }
 
   const txns = txnsRes.data || []
-  currentMonthIncome.value = txns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
-  currentMonthExpense.value = txns.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+  currentMonthIncome.value = txns.filter(t => t.type === 'income' && !t.transfer_pair_id).reduce((s, t) => s + t.amount, 0)
+  currentMonthExpense.value = txns.filter(t => t.type === 'expense' && !t.transfer_pair_id).reduce((s, t) => s + t.amount, 0)
 }
 
 const budgetProgress = computed(() => {
@@ -244,7 +244,7 @@ watch(selectedMonth, async (val) => {
     const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate()
     await fetchTransactions({ currency: currencyParam.value, start_date: `${y}-${m}-01`, end_date: `${y}-${m}-${lastDay}` })
   }
-  monthlyTransactions.value = transactions.value.filter(t => t.type === 'expense')
+  monthlyTransactions.value = transactions.value.filter(t => t.type === 'expense' && !t.transfer_pair_id)
 })
 
 function pctTooltip(context) {
