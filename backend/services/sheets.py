@@ -119,15 +119,17 @@ class SheetsBackend(BackendService):
 
     def _seed_categories_if_empty(self):
         rows = self._read_all("categories")
-        if len(rows) > 0:
-            return
+        existing = {str(r.get("name", "")).strip() for r in rows}
         categories_data = CATEGORIES_DATA
-        for name, ctype, group, budget in categories_data:
+        missing = [(name, ctype, group, budget) for name, ctype, group, budget in categories_data
+                   if name not in existing]
+        for name, ctype, group, budget in missing:
             c = Category(id=_uid(), name=name, type=ctype, group=group,
                          budget_amount=budget)
             row = {"id": c.id, "name": c.name, "type": c.type, "group": c.group,
                    "budget_amount": c.budget_amount}
             self._append_row("categories", row)
+            existing.add(name)
 
     def _get_client(self):
         if self._client is None:
