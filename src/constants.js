@@ -4,7 +4,7 @@ export const categoryIcons = {
   Transportation: '🚗', Medical: '💊', 'Eating Out': '🍽️', 'Social Events': '🎉',
   Hobbies: '🎯', Shopping: '🛍️', Beauty: '💄', Travel: '✈️', Others: '📋',
   Tuition: '🎓', 'School Supplies': '📚', Salary: '💰', Cashback: '💵',
-  Interest: '📈', 'Transfer Fees': '💸',
+  Interest: '📈', 'Transfer Fees': '💸', Laundry: '🧺',
 }
 
 export const EXPENSE_GROUP_ORDER = ['Fixed', 'Essential', 'Lifestyle', 'School', 'Misc', 'Sinking']

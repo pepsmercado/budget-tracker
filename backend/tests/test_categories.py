@@ -2,7 +2,7 @@ def test_list_categories(client):
     resp = client.get("/api/categories")
     assert resp.status_code == 200
     data = resp.json()
-    assert len(data) == 25
+    assert len(data) == 26
 
 
 def test_create_category(client):

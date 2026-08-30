@@ -60,6 +60,7 @@ CATEGORY_KEYWORDS = {
     "Phone & Wifi": ["globe", "smart", "dito", "pldt", "converge", "internet", "wifi", "phone", "telecom"],
     "Groceries": ["grocery", "supermarket", "sm market", "puregold", "ralphs", "trader joe", "whole foods", "walmart", "costco", "safeway"],
     "Household": ["household", "shopee", "lazada", "home depot"],
+    "Laundry": ["laundry", "washer", "washing", "dryer", "dry clean", "pressing", "labanderia"],
     "Transportation": ["grab", "angkas", "gasoline", "fuel", "parking", "toll", "uber", "lyft", "train", "bus"],
     "Medical": ["pharmacy", "drugstore", "hospital", "clinic", "doctor", "medical", "mercury", "watsons"],
     "Eating Out": ["restaurant", "food", "mcdonald", "jollibee", "starbucks", "coffee", "dining", "cafe", "doordash", "ubereats", "grubhub"],

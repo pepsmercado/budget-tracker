@@ -6,7 +6,7 @@ describe('categoryIcons', () => {
     const expected = ['Rent', 'Electricity', 'Gas', 'Subscriptions', 'Phone & Wifi',
       'Groceries', 'Household', 'Transportation', 'Medical', 'Eating Out',
       'Social Events', 'Hobbies', 'Shopping', 'Beauty', 'Travel', 'Others',
-      'Tuition', 'School Supplies']
+      'Tuition', 'School Supplies', 'Laundry']
     for (const cat of expected) {
       expect(categoryIcons[cat]).toBeDefined()
     }
@@ -26,7 +26,7 @@ describe('categoryIcons', () => {
     }
   })
 
-  it('has 24 categories', () => {
-    expect(Object.keys(categoryIcons).length).toBe(24)
+  it('has 25 categories', () => {
+    expect(Object.keys(categoryIcons).length).toBe(25)
   })
 })

@@ -8,6 +8,7 @@ CATEGORIES_DATA = [
     ("Health Insurance", "expense", "Fixed", 2500),
     ("Groceries", "expense", "Essential", 12000),
     ("Household", "expense", "Essential", 3000),
+    ("Laundry", "expense", "Essential", 1500),
     ("Transportation", "expense", "Essential", 4000),
     ("Medical", "expense", "Essential", 2000),
     ("Eating Out", "expense", "Lifestyle", 5000),
